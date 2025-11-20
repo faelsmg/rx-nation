@@ -6,12 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { trpc } from "@/lib/trpc";
-import { Dumbbell, CheckCircle, Trophy } from "lucide-react";
+import { Dumbbell, CheckCircle, Trophy, Medal, Clock, Zap } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function WodDoDia() {
   const { data: wodHoje, isLoading } = trpc.wods.getToday.useQuery();
+  const { data: resultados } = trpc.resultados.getByWod.useQuery(
+    { wodId: wodHoje?.id! },
+    { enabled: !!wodHoje?.id }
+  );
   const checkinMutation = trpc.checkins.create.useMutation();
   const resultadoMutation = trpc.resultados.create.useMutation();
   const utils = trpc.useUtils();
@@ -119,6 +124,82 @@ export default function WodDoDia() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Leaderboard */}
+            {resultados && resultados.length > 0 && (
+              <Card className="card-impacto">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                    Leaderboard
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {resultados.length} atleta{resultados.length > 1 ? 's' : ''} completou este WOD
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {resultados.map((resultado: any, index: number) => {
+                      const isTop3 = index < 3;
+                      const medalColor = index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : 'text-orange-600';
+                      
+                      return (
+                        <div
+                          key={resultado.id}
+                          className={`flex items-center gap-4 p-4 rounded-lg border ${
+                            isTop3 ? 'bg-accent/50 border-primary/20' : 'bg-card'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            {isTop3 ? (
+                              <Medal className={`w-6 h-6 ${medalColor}`} />
+                            ) : (
+                              <span className="text-muted-foreground font-bold w-6 text-center">
+                                {index + 1}
+                              </span>
+                            )}
+                            
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback className="bg-primary text-primary-foreground">
+                                {resultado.user?.name?.charAt(0) || '?'}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1">
+                              <p className="font-semibold">{resultado.user?.name || 'Atleta'}</p>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                {resultado.tempo && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {Math.floor(resultado.tempo / 60)}:{String(resultado.tempo % 60).padStart(2, '0')}
+                                  </span>
+                                )}
+                                {resultado.reps && (
+                                  <span className="flex items-center gap-1">
+                                    <Zap className="w-3 h-3" />
+                                    {resultado.reps} reps
+                                  </span>
+                                )}
+                                {resultado.carga && (
+                                  <span>{resultado.carga}kg</span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  resultado.rxOuScale === 'rx' 
+                                    ? 'bg-green-500/20 text-green-700 dark:text-green-400' 
+                                    : 'bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                                }`}>
+                                  {resultado.rxOuScale === 'rx' ? 'RX' : 'Scaled'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {showResultForm && (
               <Card className="card-impacto">

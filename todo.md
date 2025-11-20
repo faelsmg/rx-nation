@@ -966,3 +966,21 @@
 - [ ] Adicionar exportação de relatório em PDF (futuro)
 - [ ] Adicionar exportação de dados em CSV (futuro)
 - [ ] Criar testes para cálculos financeiros
+
+
+### Core de Atletas - Implementação - ✅ CONCLUÍDO
+- [x] Verificar schema de wods e resultados_treinos
+- [x] Criar procedure para buscar WOD do dia
+- [x] Criar procedure para registrar resultado de WOD
+- [x] Criar procedure para listar histórico de resultados do atleta
+- [x] Criar procedure para buscar ranking do WOD (getByWod)
+- [x] Criar procedure para calcular pontos de gamificação
+- [x] Criar procedure para atribuir badges automáticos
+- [x] Atualizar página de WOD do Dia com registro de resultados
+- [x] Adicionar Leaderboard do WOD com ranking de resultados
+- [x] Criar componente de formulário de registro de resultado
+- [x] Página de Rankings com PRs já existe e funciona
+- [x] Melhorar página de Badges (conquistados + bloqueados)
+- [x] Implementar sistema de pontos (check-in +10, WOD +20, PR +30)
+- [x] Implementar badges automáticos com notificações
+- [ ] Criar testes para funcionalidades de atletas
