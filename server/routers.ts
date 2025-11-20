@@ -1372,6 +1372,116 @@ export const appRouter = router({
         return db.getComparacaoEvolucao(input.atletasIds, input.meses || 6);
       }),
   }),
+
+  // ===== MENSAGENS DIRETAS =====
+  messages: router({
+    getConversations: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getConversations(ctx.user.id);
+      }),
+
+    getMessages: protectedProcedure
+      .input(z.object({ conversationId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getMessages(input.conversationId, ctx.user.id);
+      }),
+
+    sendMessage: protectedProcedure
+      .input(z.object({
+        recipientId: z.number(),
+        content: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const conversation = await db.getOrCreateConversation(ctx.user.id, input.recipientId);
+        const message = await db.sendMessage(conversation.id, ctx.user.id, input.content);
+        
+        // Emitir notificação em tempo real
+        const io = (global as any).io;
+        if (io) {
+          io.to(`user-${input.recipientId}`).emit('new-message', {
+            conversationId: conversation.id,
+            senderId: ctx.user.id,
+            senderName: ctx.user.name,
+            content: input.content,
+            createdAt: message.created_at,
+          });
+        }
+        
+        return message;
+      }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({ conversationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.markMessagesAsRead(input.conversationId, ctx.user.id);
+      }),
+  }),
+
+  // ===== EVENTOS DO BOX =====
+  eventos: router({
+    create: protectedProcedure
+      .input(z.object({
+        titulo: z.string().min(1),
+        descricao: z.string().optional(),
+        tipo: z.enum(['workshop', 'competicao', 'social', 'outro']),
+        dataInicio: z.date(),
+        dataFim: z.date().optional(),
+        local: z.string().optional(),
+        maxParticipantes: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new Error("Usuário não pertence a um box");
+        }
+        return db.createEvento({
+          ...input,
+          boxId: ctx.user.boxId,
+          criadorId: ctx.user.id,
+        });
+      }),
+
+    list: protectedProcedure
+      .input(z.object({
+        mes: z.number().optional(),
+        ano: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new Error("Usuário não pertence a um box");
+        }
+        return db.getEventos(ctx.user.boxId, input.mes, input.ano);
+      }),
+
+    getDetalhes: protectedProcedure
+      .input(z.object({ eventoId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getEventoDetalhes(input.eventoId);
+      }),
+
+    confirmRSVP: protectedProcedure
+      .input(z.object({ eventoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.confirmRSVP(input.eventoId, ctx.user.id);
+      }),
+
+    cancelRSVP: protectedProcedure
+      .input(z.object({ eventoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.cancelRSVP(input.eventoId, ctx.user.id);
+      }),
+
+    getParticipantes: protectedProcedure
+      .input(z.object({ eventoId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getParticipantesEvento(input.eventoId);
+      }),
+
+    getRSVPStatus: protectedProcedure
+      .input(z.object({ eventoId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getUserRSVPStatus(input.eventoId, ctx.user.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

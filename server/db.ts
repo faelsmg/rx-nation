@@ -3789,3 +3789,309 @@ export async function getComparacaoEvolucao(atletasIds: number[], meses: number 
 
   return (result as any)[0] || [];
 }
+
+
+// ===== MENSAGENS DIRETAS =====
+
+export async function getOrCreateConversation(user1Id: number, user2Id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [minId, maxId] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
+
+  // Buscar conversa existente
+  const existing = await db.execute(sql`
+    SELECT * FROM conversations 
+    WHERE user1_id = ${minId} AND user2_id = ${maxId}
+    LIMIT 1
+  `);
+
+  const rows = (existing as any)[0];
+  if (rows && rows.length > 0) {
+    return rows[0];
+  }
+
+  // Criar nova conversa
+  const result = await db.execute(sql`
+    INSERT INTO conversations (user1_id, user2_id)
+    VALUES (${minId}, ${maxId})
+  `);
+
+  const insertId = (result as any)[0].insertId;
+  
+  const newConv = await db.execute(sql`
+    SELECT * FROM conversations WHERE id = ${insertId}
+  `);
+  
+  return ((newConv as any)[0])[0];
+}
+
+export async function sendMessage(conversationId: number, senderId: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO messages (conversation_id, sender_id, content)
+    VALUES (${conversationId}, ${senderId}, ${content})
+  `);
+
+  // Atualizar timestamp da conversa
+  await db.execute(sql`
+    UPDATE conversations 
+    SET last_message_at = NOW()
+    WHERE id = ${conversationId}
+  `);
+
+  const insertId = (result as any)[0].insertId;
+  
+  const message = await db.execute(sql`
+    SELECT * FROM messages WHERE id = ${insertId}
+  `);
+  
+  return ((message as any)[0])[0];
+}
+
+export async function getConversations(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    SELECT 
+      c.*,
+      CASE 
+        WHEN c.user1_id = ${userId} THEN u2.name
+        ELSE u1.name
+      END as other_user_name,
+      CASE 
+        WHEN c.user1_id = ${userId} THEN c.user2_id
+        ELSE c.user1_id
+      END as other_user_id,
+      (SELECT content FROM messages 
+       WHERE conversation_id = c.id 
+       ORDER BY created_at DESC LIMIT 1) as last_message,
+      (SELECT COUNT(*) FROM messages 
+       WHERE conversation_id = c.id 
+       AND sender_id != ${userId}
+       AND is_read = FALSE) as unread_count
+    FROM conversations c
+    LEFT JOIN users u1 ON c.user1_id = u1.id
+    LEFT JOIN users u2 ON c.user2_id = u2.id
+    WHERE c.user1_id = ${userId} OR c.user2_id = ${userId}
+    ORDER BY c.last_message_at DESC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getMessages(conversationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar se o usuário faz parte da conversa
+  const conv = await db.execute(sql`
+    SELECT * FROM conversations 
+    WHERE id = ${conversationId}
+    AND (user1_id = ${userId} OR user2_id = ${userId})
+  `);
+
+  const convRows = (conv as any)[0];
+  if (!convRows || convRows.length === 0) {
+    throw new Error("Unauthorized");
+  }
+
+  const result = await db.execute(sql`
+    SELECT 
+      m.*,
+      u.name as sender_name
+    FROM messages m
+    LEFT JOIN users u ON m.sender_id = u.id
+    WHERE m.conversation_id = ${conversationId}
+    ORDER BY m.created_at ASC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function markMessagesAsRead(conversationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE messages 
+    SET is_read = TRUE
+    WHERE conversation_id = ${conversationId}
+    AND sender_id != ${userId}
+    AND is_read = FALSE
+  `);
+
+  return { success: true };
+}
+
+
+// ===== EVENTOS DO BOX =====
+
+export async function createEvento(data: {
+  boxId: number;
+  criadorId: number;
+  titulo: string;
+  descricao?: string;
+  tipo: 'workshop' | 'competicao' | 'social' | 'outro';
+  dataInicio: Date;
+  dataFim?: Date;
+  local?: string;
+  maxParticipantes?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO eventos_box (
+      box_id, criador_id, titulo, descricao, tipo, 
+      data_inicio, data_fim, local, max_participantes
+    )
+    VALUES (
+      ${data.boxId}, ${data.criadorId}, ${data.titulo}, ${data.descricao || null}, ${data.tipo},
+      ${data.dataInicio}, ${data.dataFim || null}, ${data.local || null}, ${data.maxParticipantes || null}
+    )
+  `);
+
+  const insertId = (result as any)[0].insertId;
+  
+  const evento = await db.execute(sql`
+    SELECT * FROM eventos_box WHERE id = ${insertId}
+  `);
+  
+  return ((evento as any)[0])[0];
+}
+
+export async function getEventos(boxId: number, mes?: number, ano?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  let query = sql`
+    SELECT 
+      e.*,
+      u.name as criador_name,
+      (SELECT COUNT(*) FROM evento_rsvps 
+       WHERE evento_id = e.id AND status = 'confirmado') as total_confirmados
+    FROM eventos_box e
+    LEFT JOIN users u ON e.criador_id = u.id
+    WHERE e.box_id = ${boxId}
+  `;
+
+  if (mes && ano) {
+    query = sql`
+      SELECT 
+        e.*,
+        u.name as criador_name,
+        (SELECT COUNT(*) FROM evento_rsvps 
+         WHERE evento_id = e.id AND status = 'confirmado') as total_confirmados
+      FROM eventos_box e
+      LEFT JOIN users u ON e.criador_id = u.id
+      WHERE e.box_id = ${boxId}
+      AND MONTH(e.data_inicio) = ${mes}
+      AND YEAR(e.data_inicio) = ${ano}
+    `;
+  }
+
+  query = sql`${query} ORDER BY e.data_inicio ASC`;
+
+  const result = await db.execute(query);
+  return (result as any)[0];
+}
+
+export async function getEventoDetalhes(eventoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    SELECT 
+      e.*,
+      u.name as criador_name,
+      (SELECT COUNT(*) FROM evento_rsvps 
+       WHERE evento_id = e.id AND status = 'confirmado') as total_confirmados
+    FROM eventos_box e
+    LEFT JOIN users u ON e.criador_id = u.id
+    WHERE e.id = ${eventoId}
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function confirmRSVP(eventoId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar se já existe RSVP
+  const existing = await db.execute(sql`
+    SELECT * FROM evento_rsvps 
+    WHERE evento_id = ${eventoId} AND user_id = ${userId}
+  `);
+
+  const existingRows = (existing as any)[0];
+  
+  if (existingRows && existingRows.length > 0) {
+    // Atualizar status
+    await db.execute(sql`
+      UPDATE evento_rsvps 
+      SET status = 'confirmado'
+      WHERE evento_id = ${eventoId} AND user_id = ${userId}
+    `);
+  } else {
+    // Criar novo RSVP
+    await db.execute(sql`
+      INSERT INTO evento_rsvps (evento_id, user_id, status)
+      VALUES (${eventoId}, ${userId}, 'confirmado')
+    `);
+  }
+
+  return { success: true };
+}
+
+export async function cancelRSVP(eventoId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE evento_rsvps 
+    SET status = 'cancelado'
+    WHERE evento_id = ${eventoId} AND user_id = ${userId}
+  `);
+
+  return { success: true };
+}
+
+export async function getParticipantesEvento(eventoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      r.status,
+      r.created_at as confirmado_em
+    FROM evento_rsvps r
+    INNER JOIN users u ON r.user_id = u.id
+    WHERE r.evento_id = ${eventoId}
+    AND r.status = 'confirmado'
+    ORDER BY r.created_at ASC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getUserRSVPStatus(eventoId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    SELECT status FROM evento_rsvps 
+    WHERE evento_id = ${eventoId} AND user_id = ${userId}
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0].status : null;
+}

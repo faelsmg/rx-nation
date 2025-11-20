@@ -699,3 +699,39 @@
 - [x] Adicionar indicadores de vantagem/desvantagem (coroa para melhor)
 - [x] Adicionar link de Comparar Atletas no menu
 - [ ] Criar testes para funcionalidades de comparação
+
+
+## Sistema de Mensagens Diretas
+- [x] Criar tabela de conversas (conversations)
+- [x] Criar tabela de mensagens (messages)
+- [x] Criar procedures para criar conversa
+- [x] Criar procedures para enviar mensagem
+- [x] Criar procedures para listar conversas do usuário
+- [x] Criar procedures para buscar mensagens de uma conversa
+- [x] Criar procedures para marcar mensagens como lidas
+- [x] Integrar notificações em tempo real via WebSocket
+- [x] Criar página de Mensagens com lista de conversas
+- [x] Criar componente de chat com histórico
+- [x] Implementar envio de mensagens em tempo real
+- [x] Adicionar indicador de mensagens não lidas
+- [x] Adicionar timestamp e status de leitura
+- [x] Adicionar link de Mensagens no menu
+- [x] Implementar polling de mensagens a cada 3s
+- [ ] Criar testes para funcionalidades de mensagens
+
+## Calendário de Eventos do Box
+- [x] Criar tabela de eventos (eventos_box)
+- [x] Criar tabela de RSVPs (evento_rsvps)
+- [x] Criar procedures para criar evento
+- [x] Criar procedures para listar eventos
+- [x] Criar procedures para confirmar presença (RSVP)
+- [x] Criar procedures para cancelar presença
+- [x] Criar procedures para buscar participantes do evento
+- [x] Criar página de Calendário de Eventos
+- [x] Implementar visualização de calendário mensal com navegação
+- [x] Criar modal de detalhes do evento
+- [x] Implementar sistema de RSVP com contador
+- [x] Adicionar cores por tipo de evento
+- [x] Adicionar link de Eventos no menu
+- [x] Implementar formulário de criação de evento
+- [ ] Criar testes para funcionalidades de eventos

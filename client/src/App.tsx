@@ -33,6 +33,8 @@ import AnalisePerformance from "./pages/AnalisePerformance";
 import RealtimeNotifications from "./components/RealtimeNotifications";
 import DashboardCoach from "./pages/DashboardCoach";
 import ComparacaoAtletas from "./pages/ComparacaoAtletas";
+import Mensagens from "./pages/Mensagens";
+import CalendarioEventos from "./pages/CalendarioEventos";
 
 function Router() {
   return (
@@ -65,6 +67,8 @@ function Router() {
       <Route path={"/analise-performance"} component={AnalisePerformance} />
       <Route path={"/dashboard-coach"} component={DashboardCoach} />
       <Route path={"/comparacao"} component={ComparacaoAtletas} />
+      <Route path={"/mensagens"} component={Mensagens} />
+      <Route path={"/calendario-eventos"} component={CalendarioEventos} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

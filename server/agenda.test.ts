@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { getDb } from "./db";
+import { sql } from "drizzle-orm";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -109,10 +111,11 @@ describe("Reservas de Aulas", () => {
     const schedule = schedules.find((s: any) => s.horario === "18:00");
 
     if (schedule) {
-      // Usar data única para evitar conflito com reservas anteriores
+      // Usar data bem no futuro e timestamp para garantir unicidade
       const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 100) + 50);
-      futureDate.setHours(18, 0, 0, 0);
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 365));
+      futureDate.setHours(18, 0, 0, Date.now() % 1000);
 
       const result = await caller.reservas.create({
         agendaAulaId: schedule.id,

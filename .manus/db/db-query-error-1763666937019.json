@@ -1,0 +1,11 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS conversations (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  user1_id INT NOT NULL,\n  user2_id INT NOT NULL,\n  last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  UNIQUE KEY unique_conversation (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)),\n  INDEX idx_user1 (user1_id),\n  INDEX idx_user2 (user2_id)\n);\n\nCREATE TABLE IF NOT EXISTS messages (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  conversation_id INT NOT NULL,\n  sender_id INT NOT NULL,\n  content TEXT NOT NULL,\n  is_read BOOLEAN DEFAULT FALSE,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_conversation (conversation_id),\n  INDEX idx_sender (sender_id),\n  INDEX idx_created_at (created_at),\n  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute CREATE TABLE IF NOT EXISTS conversations (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  user1_id INT NOT NULL,\n  user2_id INT NOT NULL,\n  last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  UNIQUE KEY unique_conversation (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)),\n  INDEX idx_user1 (user1_id),\n  INDEX idx_user2 (user2_id)\n);\n\nCREATE TABLE IF NOT EXISTS messages (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  conversation_id INT NOT NULL,\n  sender_id INT NOT NULL,\n  content TEXT NOT NULL,\n  is_read BOOLEAN DEFAULT FALSE,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_conversation (conversation_id),\n  INDEX idx_sender (sender_id),\n  INDEX idx_created_at (created_at),\n  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE\n);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 7 column 49 near \"user1_id, user2_id), GREATEST(user1_id, user2_id)),",
+    "  INDEX idx_user1 (user1_id),",
+    "  INDEX idx_user2 (user2_id)",
+    ")\""
+  ]
+}
