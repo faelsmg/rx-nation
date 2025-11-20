@@ -472,7 +472,7 @@ export const planilhasTreinoRelations = relations(planilhasTreino, ({ one }) => 
 export const notificacoes = mysqlTable("notificacoes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral"]).notNull(),
+  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista"]).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   mensagem: text("mensagem").notNull(),
   lida: boolean("lida").default(false).notNull(),

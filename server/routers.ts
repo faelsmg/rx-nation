@@ -315,7 +315,7 @@ export const appRouter = router({
         const isNewPr = !latestPr || input.carga > latestPr.carga;
 
         // Criar PR
-        const result = await db.createPr({
+        const result = await db.createPR({
           userId: ctx.user.id,
           ...input,
         });
@@ -1199,6 +1199,92 @@ export const appRouter = router({
     atualizar: protectedProcedure
       .mutation(async ({ ctx }) => {
         return db.atualizarStreak(ctx.user.id);
+      }),
+  }),
+
+  // ===== LEADERBOARD DE EQUIPES =====
+  leaderboard: router({
+    getEquipes: protectedProcedure
+      .input(z.object({ 
+        boxId: z.number(),
+        periodo: z.enum(['semana', 'mes', 'temporada']).optional()
+      }))
+      .query(async ({ input }) => {
+        return db.getLeaderboardEquipes(input.boxId, input.periodo || 'mes');
+      }),
+
+    getEvolucaoMensal: protectedProcedure
+      .input(z.object({ teamId: z.number(), meses: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getEvolucaoMensalEquipe(input.teamId, input.meses || 6);
+      }),
+
+    getRankingHistorico: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getRankingHistoricoEquipe(input.teamId);
+      }),
+
+    getAtividadesRecentes: protectedProcedure
+      .input(z.object({ teamId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getAtividadesRecentesEquipe(input.teamId, input.limit || 10);
+      }),
+  }),
+
+  // ===== CONQUISTAS SEMANAIS =====
+  conquistas: router({
+    getAtivas: protectedProcedure
+      .query(async () => {
+        return db.getConquistasSemanaisAtivas();
+      }),
+
+    getProgresso: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getProgressoConquistasUsuario(ctx.user.id);
+      }),
+
+    getHistorico: protectedProcedure
+      .input(z.object({ limite: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getHistoricoConquistas(ctx.user.id, input.limite || 10);
+      }),
+  }),
+
+  // ===== ANÁLISE DE PERFORMANCE =====
+  performance: router({
+    getMovimentos: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getMovimentosUsuario(ctx.user.id);
+      }),
+
+    getEvolucao: protectedProcedure
+      .input(z.object({ movimento: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return db.getEvolucaoPorMovimento(ctx.user.id, input.movimento);
+      }),
+
+    getComparacaoBox: protectedProcedure
+      .input(z.object({ movimento: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoMediaBox(ctx.user.id, input.movimento, ctx.user.boxId || 0);
+      }),
+
+    getProgresso: protectedProcedure
+      .input(z.object({ movimento: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return db.getProgressoPercentual(ctx.user.id, input.movimento);
+      }),
+
+    getSugestoes: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getSugestoesTreino(ctx.user.id, ctx.user.boxId || 0);
+      }),
+
+    getHistoricoMelhorias: protectedProcedure
+      .input(z.object({ limite: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getHistoricoMelhorias(ctx.user.id, input.limite || 10);
       }),
   }),
 });

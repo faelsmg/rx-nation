@@ -1,0 +1,1 @@
+ALTER TABLE `notificacoes` MODIFY COLUMN `tipo` enum('wod','comunicado','aula','badge','geral','conquista') NOT NULL;

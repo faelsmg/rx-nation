@@ -27,6 +27,9 @@ import Desafios from "./pages/Desafios";
 import DesafioDetalhes from "./pages/DesafioDetalhes";
 import Equipes from "./pages/Equipes";
 import EquipeDetalhes from "./pages/EquipeDetalhes";
+import LeaderboardEquipes from "./pages/LeaderboardEquipes";
+import Conquistas from "./pages/Conquistas";
+import AnalisePerformance from "./pages/AnalisePerformance";
 
 function Router() {
   return (
@@ -54,6 +57,9 @@ function Router() {
       <Route path={"/desafios/:id"} component={DesafioDetalhes} />
       <Route path={"/equipes"} component={Equipes} />
       <Route path={"/equipes/:id"} component={EquipeDetalhes} />
+      <Route path={"/leaderboard-equipes"} component={LeaderboardEquipes} />
+      <Route path={"/conquistas"} component={Conquistas} />
+      <Route path={"/analise-performance"} component={AnalisePerformance} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

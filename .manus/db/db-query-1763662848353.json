@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE notificacoes MODIFY COLUMN tipo ENUM('wod', 'comunicado', 'aula', 'badge', 'geral', 'conquista') NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute ALTER TABLE notificacoes MODIFY COLUMN tipo ENUM('wod', 'comunicado', 'aula', 'badge', 'geral', 'conquista') NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 174
+}

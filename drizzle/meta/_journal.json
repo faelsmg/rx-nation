@@ -64,6 +64,13 @@
       "when": 1763660929734,
       "tag": "0008_striped_wrecker",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1763663270838,
+      "tag": "0009_gifted_pyro",
+      "breakpoints": true
     }
   ]
 }

@@ -609,3 +609,48 @@
 - [x] Criar componente StreakIndicator com progresso visual
 - [x] Adicionar notificações de badges conquistados
 - [ ] Criar testes para cálculo de streak
+
+
+## Leaderboard de Equipes em Tempo Real
+- [x] Criar procedures para buscar ranking de equipes
+- [x] Criar procedures para evolução mensal de equipes
+- [x] Criar página de Leaderboard de Equipes
+- [x] Implementar ranking ao vivo com atualização automática (30s)
+- [x] Adicionar gráficos de evolução mensal por equipe
+- [x] Implementar troféus para top 3 equipes
+- [x] Adicionar filtros por período (semana, mês, temporada)
+- [x] Criar indicadores de subida/descida no ranking
+- [x] Adicionar link de Leaderboard no menu
+- [x] Adicionar atividades recentes por equipe
+- [ ] Criar testes para funcionalidades de leaderboard
+
+## Sistema de Conquistas Semanais
+- [x] Criar tabela de conquistas semanais
+- [x] Criar tabela de progresso de conquistas
+- [x] Criar conquistas automáticas (5 WODs, 3 PRs, 7 check-ins, 500 pontos, 10 WODs)
+- [x] Criar procedures para verificar progresso de conquistas
+- [x] Criar procedures para conceder recompensas
+- [x] Implementar cálculo automático de progresso
+- [x] Criar página de Conquistas Semanais
+- [x] Adicionar barra de progresso visual
+- [x] Implementar notificações de conquistas completadas
+- [x] Integrar atualização de progresso em treinos, PRs e check-ins
+- [x] Adicionar histórico de conquistas anteriores
+- [x] Adicionar link de Conquistas no menu
+- [ ] Criar testes para funcionalidades de conquistas
+
+## Análise de Performance por Movimento
+- [x] Criar procedures para buscar histórico de PRs por movimento
+- [x] Criar procedures para calcular evolução por movimento
+- [x] Criar procedures para comparar com média do box
+- [x] Criar página de Análise de Performance
+- [x] Implementar gráficos de evolução por exercício
+- [x] Adicionar comparação com PRs anteriores
+- [x] Implementar comparação com média do box
+- [x] Adicionar seletor de movimento
+- [x] Criar indicadores de progresso percentual
+- [x] Adicionar sugestões de treino baseadas em performance
+- [x] Adicionar histórico de melhorias recentes
+- [x] Mostrar posição no ranking do box
+- [x] Substituir link "Meus PRs" por "Análise de Performance" no menu
+- [ ] Criar testes para cálculos de performance

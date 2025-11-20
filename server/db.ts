@@ -373,9 +373,10 @@ export async function createCheckin(data: InsertCheckin) {
 
   const result = await db.insert(checkins).values(data);
   
-  // Atualizar streak após check-in
+  // Atualizar streak e conquistas após check-in
   if (data.userId) {
     await atualizarStreak(data.userId);
+    await atualizarProgressoConquista(data.userId, 'checkins');
   }
   
   return result;
@@ -413,6 +414,13 @@ export async function createResultadoTreino(data: InsertResultadoTreino) {
   if (!db) return undefined;
 
   const result = await db.insert(resultadosTreinos).values(data);
+  
+  // Atualizar progresso de conquistas
+  if (data.userId) {
+    await atualizarProgressoConquista(data.userId, 'treinos');
+    await atualizarProgressoConquista(data.userId, 'pontos');
+  }
+  
   return result;
 }
 
@@ -452,11 +460,18 @@ export async function getResultadosByWod(wodId: number) {
 
 // ===== PRs =====
 
-export async function createPr(data: InsertPr) {
+export async function createPR(data: InsertPr) {
   const db = await getDb();
   if (!db) return undefined;
 
   const result = await db.insert(prs).values(data);
+  
+  // Atualizar progresso de conquistas
+  if (data.userId) {
+    await atualizarProgressoConquista(data.userId, 'prs');
+    await atualizarProgressoConquista(data.userId, 'pontos');
+  }
+  
   return result;
 }
 
@@ -792,7 +807,7 @@ export async function marcarTodasComoLidas(userId: number) {
 // Helper para criar notificações
 export async function createNotification(data: {
   userId: number;
-  tipo: "wod" | "comunicado" | "aula" | "badge" | "geral";
+  tipo: "wod" | "comunicado" | "aula" | "badge" | "geral" | "conquista";
   titulo: string;
   mensagem: string;
   link?: string;
@@ -2914,4 +2929,511 @@ export async function getStreakInfo(userId: number) {
 
   const rows = (result as any)[0];
   return rows && rows.length > 0 ? rows[0] : null;
+}
+
+
+// ==================== LEADERBOARD DE EQUIPES ====================
+
+export async function getLeaderboardEquipes(boxId: number, periodo: 'semana' | 'mes' | 'temporada' = 'mes') {
+  const db = await getDb();
+  if (!db) return [];
+
+  let dataInicio: string;
+  
+  switch (periodo) {
+    case 'semana':
+      dataInicio = 'DATE_SUB(CURDATE(), INTERVAL 1 WEEK)';
+      break;
+    case 'mes':
+      dataInicio = 'DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
+      break;
+    case 'temporada':
+      dataInicio = 'DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
+      break;
+  }
+
+  const result = await db.execute(sql`
+    SELECT 
+      t.id,
+      t.nome,
+      t.cor,
+      t.pontos_totais,
+      COUNT(DISTINCT tm.id) as total_membros,
+      u.name as capitao_nome,
+      -- Pontos do período
+      COALESCE(SUM(CASE 
+        WHEN p.createdAt >= ${sql.raw(dataInicio)} THEN p.pontos 
+        ELSE 0 
+      END), 0) as pontos_periodo,
+      -- Atividades do período
+      (SELECT COUNT(*) FROM resultados_treinos rt
+       INNER JOIN team_members tm2 ON rt.user_id = tm2.user_id
+       WHERE tm2.team_id = t.id 
+         AND rt.data_treino >= ${sql.raw(dataInicio)}) as treinos_periodo,
+      (SELECT COUNT(*) FROM prs pr
+       INNER JOIN team_members tm3 ON pr.user_id = tm3.user_id
+       WHERE tm3.team_id = t.id 
+         AND pr.data >= ${sql.raw(dataInicio)}) as prs_periodo
+    FROM teams t
+    LEFT JOIN users u ON t.capitao_id = u.id
+    LEFT JOIN team_members tm ON t.id = tm.team_id
+    LEFT JOIN users um ON tm.user_id = um.id
+    LEFT JOIN pontuacoes p ON um.id = p.userId
+    WHERE t.box_id = ${boxId}
+    GROUP BY t.id
+    ORDER BY t.pontos_totais DESC, t.created_at ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getEvolucaoMensalEquipe(teamId: number, meses: number = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      DATE_FORMAT(p.createdAt, '%Y-%m') as mes,
+      SUM(p.pontos) as pontos_mes,
+      COUNT(DISTINCT rt.id) as treinos_mes,
+      COUNT(DISTINCT pr.id) as prs_mes
+    FROM team_members tm
+    LEFT JOIN pontuacoes p ON tm.user_id = p.userId
+    LEFT JOIN resultados_treinos rt ON tm.user_id = rt.user_id 
+      AND DATE_FORMAT(rt.data_treino, '%Y-%m') = DATE_FORMAT(p.createdAt, '%Y-%m')
+    LEFT JOIN prs pr ON tm.user_id = pr.user_id 
+      AND DATE_FORMAT(pr.data, '%Y-%m') = DATE_FORMAT(p.createdAt, '%Y-%m')
+    WHERE tm.team_id = ${teamId}
+      AND p.createdAt >= DATE_SUB(CURDATE(), INTERVAL ${meses} MONTH)
+    GROUP BY DATE_FORMAT(p.createdAt, '%Y-%m')
+    ORDER BY mes DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getRankingHistoricoEquipe(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Buscar histórico de posições no ranking (últimos 12 meses)
+  const result = await db.execute(sql`
+    SELECT 
+      DATE_FORMAT(p.createdAt, '%Y-%m') as mes,
+      t.pontos_totais,
+      (SELECT COUNT(DISTINCT t2.id) 
+       FROM teams t2 
+       WHERE t2.box_id = t.box_id 
+         AND t2.pontos_totais > t.pontos_totais) + 1 as posicao
+    FROM teams t
+    LEFT JOIN team_members tm ON t.id = tm.team_id
+    LEFT JOIN pontuacoes p ON tm.user_id = p.userId
+    WHERE t.id = ${teamId}
+      AND p.createdAt >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+    GROUP BY DATE_FORMAT(p.createdAt, '%Y-%m')
+    ORDER BY mes DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getAtividadesRecentesEquipe(teamId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      'treino' as tipo,
+      u.name as atleta_nome,
+      w.titulo as descricao,
+      rt.data_treino as data,
+      rt.valor_numerico as valor,
+      rt.tipo_resultado as unidade
+    FROM resultados_treinos rt
+    INNER JOIN team_members tm ON rt.user_id = tm.user_id
+    INNER JOIN users u ON rt.user_id = u.id
+    LEFT JOIN wods w ON rt.wod_id = w.id
+    WHERE tm.team_id = ${teamId}
+    
+    UNION ALL
+    
+    SELECT 
+      'pr' as tipo,
+      u.name as atleta_nome,
+      pr.movimento as descricao,
+      pr.data as data,
+      pr.valor as valor,
+      pr.tipo as unidade
+    FROM prs pr
+    INNER JOIN team_members tm ON pr.user_id = tm.user_id
+    INNER JOIN users u ON pr.user_id = u.id
+    WHERE tm.team_id = ${teamId}
+    
+    ORDER BY data DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0] || [];
+}
+
+
+// ==================== CONQUISTAS SEMANAIS ====================
+
+export async function getConquistasSemanaisAtivas() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM conquistas_semanais
+    WHERE ativa = TRUE
+    ORDER BY recompensa_pontos DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getProgressoConquistasUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Semana atual no formato YYYY-WW
+  const semanaAtual = new Date().toISOString().slice(0, 4) + '-' + 
+    String(Math.ceil((new Date().getDate() + new Date().getDay()) / 7)).padStart(2, '0');
+
+  const result = await db.execute(sql`
+    SELECT 
+      c.*,
+      COALESCE(p.progresso_atual, 0) as progresso_atual,
+      COALESCE(p.completada, FALSE) as completada,
+      p.data_completada
+    FROM conquistas_semanais c
+    LEFT JOIN user_conquistas_progresso p 
+      ON c.id = p.conquista_id 
+      AND p.user_id = ${userId}
+      AND p.semana_ano = ${semanaAtual}
+    WHERE c.ativa = TRUE
+    ORDER BY p.completada ASC, c.recompensa_pontos DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function atualizarProgressoConquista(
+  userId: number,
+  tipo: 'treinos' | 'prs' | 'checkins' | 'pontos'
+) {
+  const db = await getDb();
+  if (!db) return;
+
+  const semanaAtual = new Date().toISOString().slice(0, 4) + '-' + 
+    String(Math.ceil((new Date().getDate() + new Date().getDay()) / 7)).padStart(2, '0');
+
+  // Buscar conquistas ativas do tipo
+  const conquistasResult = await db.execute(sql`
+    SELECT id, meta_valor, recompensa_pontos, badge_id, titulo
+    FROM conquistas_semanais
+    WHERE tipo = ${tipo} AND ativa = TRUE
+  `);
+
+  const conquistas = (conquistasResult as any)[0] || [];
+
+  for (const conquista of conquistas) {
+    // Calcular progresso atual baseado no tipo
+    let progressoAtual = 0;
+
+    switch (tipo) {
+      case 'treinos':
+        const treinosResult = await db.execute(sql`
+          SELECT COUNT(*) as total
+          FROM resultados_treinos
+          WHERE user_id = ${userId}
+            AND YEARWEEK(data_treino, 1) = YEARWEEK(CURDATE(), 1)
+        `);
+        progressoAtual = ((treinosResult as any)[0]?.[0]?.total || 0);
+        break;
+
+      case 'prs':
+        const prsResult = await db.execute(sql`
+          SELECT COUNT(*) as total
+          FROM prs
+          WHERE user_id = ${userId}
+            AND YEARWEEK(data, 1) = YEARWEEK(CURDATE(), 1)
+        `);
+        progressoAtual = ((prsResult as any)[0]?.[0]?.total || 0);
+        break;
+
+      case 'checkins':
+        const checkinsResult = await db.execute(sql`
+          SELECT COUNT(DISTINCT DATE(data)) as total
+          FROM checkins
+          WHERE user_id = ${userId}
+            AND YEARWEEK(data, 1) = YEARWEEK(CURDATE(), 1)
+        `);
+        progressoAtual = ((checkinsResult as any)[0]?.[0]?.total || 0);
+        break;
+
+      case 'pontos':
+        const pontosResult = await db.execute(sql`
+          SELECT SUM(pontos) as total
+          FROM pontuacoes
+          WHERE userId = ${userId}
+            AND YEARWEEK(createdAt, 1) = YEARWEEK(CURDATE(), 1)
+        `);
+        progressoAtual = ((pontosResult as any)[0]?.[0]?.total || 0);
+        break;
+    }
+
+    const completada = progressoAtual >= conquista.meta_valor;
+
+    // Inserir ou atualizar progresso
+    await db.execute(sql`
+      INSERT INTO user_conquistas_progresso 
+        (user_id, conquista_id, semana_ano, progresso_atual, completada, data_completada)
+      VALUES 
+        (${userId}, ${conquista.id}, ${semanaAtual}, ${progressoAtual}, ${completada}, 
+         ${completada ? sql`NOW()` : sql`NULL`})
+      ON DUPLICATE KEY UPDATE
+        progresso_atual = ${progressoAtual},
+        completada = ${completada},
+        data_completada = CASE WHEN ${completada} AND data_completada IS NULL THEN NOW() ELSE data_completada END
+    `);
+
+    // Se completou agora, conceder recompensas
+    if (completada) {
+      const jaCompletouResult = await db.execute(sql`
+        SELECT completada FROM user_conquistas_progresso
+        WHERE user_id = ${userId} 
+          AND conquista_id = ${conquista.id}
+          AND semana_ano = ${semanaAtual}
+          AND data_completada IS NOT NULL
+        LIMIT 1
+      `);
+
+      const jaCompletou = ((jaCompletouResult as any)[0]?.length || 0) > 0;
+
+      if (!jaCompletou) {
+        // Conceder pontos
+        await db.execute(sql`
+          INSERT INTO pontuacoes (userId, atividade, pontos)
+          VALUES (${userId}, 'conquista_semanal', ${conquista.recompensa_pontos})
+        `);
+
+        // Conceder badge se houver
+        if (conquista.badge_id) {
+          await db.execute(sql`
+            INSERT IGNORE INTO users_badges (user_id, badge_id)
+            VALUES (${userId}, ${conquista.badge_id})
+          `);
+        }
+
+        // Notificar usuário
+        await createNotification({
+          userId,
+          tipo: 'conquista',
+          titulo: 'Conquista Semanal Completada! 🎉',
+          mensagem: `Você completou: ${conquista.titulo} (+${conquista.recompensa_pontos} pontos)`,
+          link: '/conquistas',
+        });
+      }
+    }
+  }
+}
+
+export async function getHistoricoConquistas(userId: number, limite: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      c.titulo,
+      c.icone,
+      c.recompensa_pontos,
+      p.data_completada,
+      p.semana_ano
+    FROM user_conquistas_progresso p
+    INNER JOIN conquistas_semanais c ON p.conquista_id = c.id
+    WHERE p.user_id = ${userId}
+      AND p.completada = TRUE
+    ORDER BY p.data_completada DESC
+    LIMIT ${limite}
+  `);
+
+  return (result as any)[0] || [];
+}
+
+
+// ==================== ANÁLISE DE PERFORMANCE POR MOVIMENTO ====================
+
+export async function getMovimentosUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT DISTINCT movimento
+    FROM prs
+    WHERE user_id = ${userId}
+    ORDER BY movimento ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getEvolucaoPorMovimento(userId: number, movimento: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      id,
+      movimento,
+      carga as valor,
+      tipo,
+      data,
+      createdAt
+    FROM prs
+    WHERE user_id = ${userId}
+      AND movimento = ${movimento}
+    ORDER BY data ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoMediaBox(userId: number, movimento: string, boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      -- PR do usuário
+      (SELECT MAX(carga) FROM prs 
+       WHERE user_id = ${userId} AND movimento = ${movimento}) as pr_usuario,
+      
+      -- Média do box
+      AVG(latest_prs.max_carga) as media_box,
+      
+      -- Melhor PR do box
+      MAX(latest_prs.max_carga) as melhor_box,
+      
+      -- Posição do usuário no ranking
+      (SELECT COUNT(DISTINCT p2.user_id) 
+       FROM prs p2
+       INNER JOIN users u2 ON p2.user_id = u2.id
+       WHERE u2.box_id = ${boxId}
+         AND p2.movimento = ${movimento}
+         AND p2.carga > (SELECT MAX(carga) FROM prs WHERE user_id = ${userId} AND movimento = ${movimento})
+      ) + 1 as posicao_ranking,
+      
+      -- Total de atletas que têm PR neste movimento
+      COUNT(DISTINCT latest_prs.user_id) as total_atletas
+    FROM (
+      SELECT 
+        p.user_id,
+        MAX(p.carga) as max_carga
+      FROM prs p
+      INNER JOIN users u ON p.user_id = u.id
+      WHERE u.box_id = ${boxId}
+        AND p.movimento = ${movimento}
+      GROUP BY p.user_id
+    ) as latest_prs
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getProgressoPercentual(userId: number, movimento: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      MIN(carga) as primeiro_pr,
+      MAX(carga) as ultimo_pr,
+      COUNT(*) as total_prs,
+      DATEDIFF(MAX(data), MIN(data)) as dias_evolucao
+    FROM prs
+    WHERE user_id = ${userId}
+      AND movimento = ${movimento}
+  `);
+
+  const rows = (result as any)[0];
+  if (!rows || rows.length === 0) return null;
+
+  const data = rows[0];
+  const progresso_percentual = data.primeiro_pr > 0 
+    ? ((data.ultimo_pr - data.primeiro_pr) / data.primeiro_pr) * 100 
+    : 0;
+
+  return {
+    ...data,
+    progresso_percentual: Math.round(progresso_percentual * 10) / 10,
+  };
+}
+
+export async function getSugestoesTreino(userId: number, boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Buscar movimentos que o usuário não tem PR ou está abaixo da média
+  const result = await db.execute(sql`
+    SELECT 
+      all_movements.movimento,
+      COALESCE(user_pr.max_carga, 0) as pr_usuario,
+      AVG(box_prs.carga) as media_box,
+      COUNT(DISTINCT box_prs.user_id) as atletas_com_pr
+    FROM (
+      SELECT DISTINCT movimento FROM prs
+      WHERE user_id IN (SELECT id FROM users WHERE box_id = ${boxId})
+    ) as all_movements
+    LEFT JOIN (
+      SELECT movimento, MAX(carga) as max_carga
+      FROM prs
+      WHERE user_id = ${userId}
+      GROUP BY movimento
+    ) as user_pr ON all_movements.movimento = user_pr.movimento
+    LEFT JOIN prs as box_prs ON all_movements.movimento = box_prs.movimento
+      AND box_prs.user_id IN (SELECT id FROM users WHERE box_id = ${boxId})
+    GROUP BY all_movements.movimento
+    HAVING pr_usuario = 0 OR pr_usuario < media_box * 0.8
+    ORDER BY atletas_com_pr DESC, media_box DESC
+    LIMIT 5
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getHistoricoMelhorias(userId: number, limite: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      p1.movimento,
+      p1.carga as carga_nova,
+      p2.carga as carga_anterior,
+      p1.carga - p2.carga as melhoria_absoluta,
+      ROUND(((p1.carga - p2.carga) / p2.carga) * 100, 1) as melhoria_percentual,
+      p1.data,
+      DATEDIFF(p1.data, p2.data) as dias_entre_prs
+    FROM prs p1
+    INNER JOIN (
+      SELECT 
+        movimento,
+        MAX(data) as data_anterior
+      FROM prs
+      WHERE user_id = ${userId}
+        AND data < (SELECT MAX(data) FROM prs WHERE user_id = ${userId})
+      GROUP BY movimento
+    ) as prev ON p1.movimento = prev.movimento
+    LEFT JOIN prs p2 ON p2.user_id = ${userId}
+      AND p2.movimento = p1.movimento
+      AND p2.data = prev.data_anterior
+    WHERE p1.user_id = ${userId}
+      AND p1.carga > p2.carga
+    ORDER BY p1.data DESC
+    LIMIT ${limite}
+  `);
+
+  return (result as any)[0] || [];
 }
