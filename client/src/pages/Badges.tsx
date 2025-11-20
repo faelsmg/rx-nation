@@ -1,12 +1,35 @@
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Award, Lock } from "lucide-react";
+import { Award, Lock, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { gerarCertificadoBadge } from "@/lib/pdfGenerator";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 export default function Badges() {
   const { data: userBadges } = trpc.badges.getUserBadges.useQuery();
   const { data: allBadges } = trpc.badges.getAll.useQuery();
+  const { data: user } = trpc.auth.me.useQuery();
+
+  const handleExportarCertificado = (badge: any, dataConquista: string) => {
+    if (!user) return;
+
+    const doc = gerarCertificadoBadge(
+      {
+        nome: user.name || "Atleta",
+        email: user.email || "",
+      },
+      {
+        nome: badge.nome,
+        descricao: badge.descricao,
+        dataConquista,
+      }
+    );
+
+    doc.save(`certificado-${badge.nome.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+    toast.success("Certificado gerado com sucesso!");
+  };
   
   const unlockedBadgeIds = new Set(userBadges?.map(ub => ub.badge?.id) || []);
 
@@ -39,6 +62,15 @@ export default function Badges() {
                     <p className="text-xs text-muted-foreground">
                       {new Date(ub.dataConquista).toLocaleDateString('pt-BR')}
                     </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExportarCertificado(ub.badge, ub.dataConquista.toString())}
+                      className="mt-2"
+                    >
+                      <FileDown className="mr-2 h-3 w-3" />
+                      Exportar Certificado
+                    </Button>
                   </CardContent>
                 </Card>
               ))}

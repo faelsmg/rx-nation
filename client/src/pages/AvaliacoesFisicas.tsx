@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { Plus, TrendingUp, TrendingDown, Activity, Calendar } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Activity, Calendar, FileDown } from "lucide-react";
+import { gerarPDFAvaliacaoFisica } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
@@ -29,6 +30,37 @@ export default function AvaliacoesFisicas() {
   const { data: evolucao } = trpc.avaliacoesFisicas.evolucao.useQuery({});
   const createAvaliacao = trpc.avaliacoesFisicas.create.useMutation();
   const { data: user } = trpc.auth.me.useQuery();
+
+  const handleExportarPDF = () => {
+    if (!user || !avaliacoes || avaliacoes.length === 0) {
+      toast.error("Nenhuma avaliação para exportar");
+      return;
+    }
+
+    const avaliacoesFormatadas = avaliacoes.map((av: any) => ({
+      data: av.data,
+      peso: av.peso || 0,
+      altura: av.altura || 0,
+      percentualGordura: av.percentualGordura,
+      imc: av.imc || 0,
+      cintura: av.circCintura,
+      quadril: av.circQuadril,
+      braco: av.circBracoDireito,
+      perna: av.circPernaDireita,
+      observacoes: av.observacoes,
+    }));
+
+    const doc = gerarPDFAvaliacaoFisica(
+      {
+        nome: user.name || "Atleta",
+        email: user.email || "",
+      },
+      avaliacoesFormatadas
+    );
+
+    doc.save(`avaliacao-fisica-${new Date().toISOString().split("T")[0]}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
 
   const handleCreate = async () => {
     if (!user) return;
@@ -99,13 +131,18 @@ export default function AvaliacoesFisicas() {
             </p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Avaliação
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportarPDF}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar PDF
+            </Button>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Avaliação
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Registrar Avaliação Física</DialogTitle>
@@ -260,6 +297,7 @@ export default function AvaliacoesFisicas() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {chartData.length > 1 && (

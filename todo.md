@@ -1193,22 +1193,18 @@
 - [x] Adicionar toast informativo quando entrar na fila
 - [x] Criar testes unitários para lista de espera
 - [x] Integrar com sistema de notificações existente
-
-## Exportação de Relatórios em PDF
-- [ ] Instalar biblioteca de geração de PDF (jsPDF ou similar)
-- [ ] Criar template de relatório de avaliação física
-- [ ] Criar template de relatório de evolução
-- [ ] Criar template de certificado de conquista
-- [ ] Implementar procedure para gerar PDF de avaliação
-- [ ] Implementar procedure para gerar PDF de evolução
-- [ ] Implementar procedure para gerar certificado
-- [ ] Adicionar botões de exportação nas páginas relevantes
-- [ ] Criar testes para geração de PDFs
-
-## Chat em Tempo Real
-- [ ] Criar schema de mensagens no banco
-- [ ] Criar schema de conversas (threads)
-- [ ] Implementar eventos Socket.IO para mensagens
+## Exportação de Relatórios em PDF - ✅ CONCLUÍDO
+- [x] Instalar biblioteca de geração de PDF (jsPDF + autoTable)
+- [x] Criar template de relatório de avaliação física
+- [x] Criar template de relatório de evolução
+- [x] Criar template de certificado de conquista (landscape)
+- [x] Criar utilitário pdfGenerator.ts com 3 funções
+- [x] Adicionar botão de exportação na página de Avaliações Físicas
+- [x] Adicionar botão de exportação em cada badge conquistado
+- [x] PDFs com branding (logo, cores do APP_TITLE)
+- [x] Tabelas profissionais com autoTable
+- [x] Footer com data de geração e paginação
+- [ ] Criar testes para geração de PDFocket.IO para mensagens
 - [ ] Implementar evento de "digitando..."
 - [ ] Criar procedures para salvar/carregar mensagens
 - [ ] Criar procedures para listar conversas
