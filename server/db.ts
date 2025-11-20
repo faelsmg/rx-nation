@@ -4095,3 +4095,28 @@ export async function getUserRSVPStatus(eventoId: number, userId: number) {
   const rows = (result as any)[0];
   return rows && rows.length > 0 ? rows[0].status : null;
 }
+
+
+// ===== QR CODE CHECK-IN =====
+
+export async function hasCheckedInToday(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const amanha = new Date(hoje);
+  amanha.setDate(amanha.getDate() + 1);
+
+  const result = await db.execute(sql`
+    SELECT COUNT(*) as count FROM checkins 
+    WHERE user_id = ${userId}
+    AND created_at >= ${hoje}
+    AND created_at < ${amanha}
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 && rows[0].count > 0;
+}
+
+

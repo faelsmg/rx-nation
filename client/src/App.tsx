@@ -35,6 +35,8 @@ import DashboardCoach from "./pages/DashboardCoach";
 import ComparacaoAtletas from "./pages/ComparacaoAtletas";
 import Mensagens from "./pages/Mensagens";
 import CalendarioEventos from "./pages/CalendarioEventos";
+import MeuQRCode from "./pages/MeuQRCode";
+import ScannerQRCode from "./pages/ScannerQRCode";
 
 function Router() {
   return (
@@ -69,6 +71,8 @@ function Router() {
       <Route path={"/comparacao"} component={ComparacaoAtletas} />
       <Route path={"/mensagens"} component={Mensagens} />
       <Route path={"/calendario-eventos"} component={CalendarioEventos} />
+      <Route path={"/meu-qrcode"} component={MeuQRCode} />
+      <Route path={"/scanner-qrcode"} component={ScannerQRCode} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

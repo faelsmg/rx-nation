@@ -735,3 +735,22 @@
 - [x] Adicionar link de Eventos no menu
 - [x] Implementar formulário de criação de evento
 - [ ] Criar testes para funcionalidades de eventos
+
+
+## Sistema de Check-in por QR Code
+- [x] Instalar biblioteca de geração de QR Code (qrcode)
+- [x] Instalar biblioteca de scanner de QR Code (html5-qrcode)
+- [x] Criar procedure para gerar QR Code do atleta
+- [x] Criar página de exibição do QR Code do atleta
+- [x] Criar procedure para processar check-in via QR Code
+- [x] Implementar validação de duplicatas (mesmo dia)
+- [x] Criar página de scanner para recepção
+- [x] Implementar interface de câmera para scanner
+- [x] Adicionar feedback visual de sucesso/erro no scanner
+- [x] Integrar check-in QR Code com sistema de pontos
+- [x] Integrar check-in QR Code com sistema de streak
+- [x] Adicionar função hasCheckedInToday para validação
+- [x] Adicionar link de "Meu QR Code" no menu do atleta
+- [x] Adicionar link de "Scanner Check-in" no menu do box master
+- [x] Implementar botão de download do QR Code
+- [ ] Criar testes para funcionalidades de QR Code

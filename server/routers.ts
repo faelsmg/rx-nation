@@ -1482,6 +1482,86 @@ export const appRouter = router({
         return db.getUserRSVPStatus(input.eventoId, ctx.user.id);
       }),
   }),
+
+  // ===== QR CODE CHECK-IN =====
+  qrcode: router({
+    generate: protectedProcedure
+      .query(async ({ ctx }) => {
+        const QRCode = await import('qrcode');
+        // Gerar QR Code com ID do usuário criptografado
+        const payload = JSON.stringify({
+          userId: ctx.user.id,
+          boxId: ctx.user.boxId,
+          timestamp: Date.now(),
+        });
+        
+        const qrCodeDataUrl = await QRCode.toDataURL(payload, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+        
+        return {
+          qrCode: qrCodeDataUrl,
+          userId: ctx.user.id,
+          userName: ctx.user.name,
+        };
+      }),
+
+    checkin: protectedProcedure
+      .input(z.object({
+        qrData: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const data = JSON.parse(input.qrData);
+          const userId = data.userId;
+          const boxId = data.boxId;
+
+          if (!userId || !boxId) {
+            throw new Error("QR Code inválido");
+          }
+
+          // Verificar se o box corresponde
+          if (ctx.user.boxId && boxId !== ctx.user.boxId) {
+            throw new Error("Este QR Code pertence a outro box");
+          }
+
+          // Verificar se já fez check-in hoje
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+
+          const hasCheckedIn = await db.hasCheckedInToday(userId);
+          if (hasCheckedIn) {
+            throw new Error("Check-in já realizado hoje");
+          }
+
+          // Criar check-in
+          const checkin = await db.createCheckin({
+            userId,
+            boxId: boxId || 0,
+            wodId: 0,
+          });
+
+          // Buscar informações do usuário
+          const user = await db.getUserById(userId);
+
+          return {
+            success: true,
+            checkin,
+            user: {
+              id: user?.id,
+              name: user?.name,
+            },
+          };
+        } catch (error: any) {
+          throw new Error(error.message || "Erro ao processar QR Code");
+        }
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
