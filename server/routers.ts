@@ -680,7 +680,9 @@ export const appRouter = router({
         const agendaAula = agenda.find(a => a.id === input.agendaAulaId);
         
         if (agendaAula && reservas.length >= agendaAula.capacidade) {
-          throw new Error("Aula lotada. Capacidade máxima atingida.");
+          // Aula lotada - adicionar na lista de espera
+          const { posicao } = await db.adicionarNaListaDeEspera(input.agendaAulaId, ctx.user.id);
+          return { waitlist: true, posicao };
         }
 
         return db.createReservaAula({
@@ -698,8 +700,18 @@ export const appRouter = router({
 
     cancel: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        return db.cancelReservaAula(input.id);
+      .mutation(async ({ ctx, input }) => {
+        // Buscar dados da reserva antes de cancelar
+        const reserva = await db.getReservaById(input.id);
+        if (!reserva) throw new Error("Reserva não encontrada");
+        
+        // Cancelar reserva
+        await db.cancelReservaAula(input.id);
+        
+        // Promover primeiro da fila se houver
+        const promovido = await db.promoverPrimeiroDaFila(reserva.agendaAulaId);
+        
+        return { success: true, promovido: !!promovido };
       }),
 
     getByAgendaAndDate: publicProcedure
@@ -712,6 +724,32 @@ export const appRouter = router({
       .input(z.object({ reservaId: z.number() }))
       .query(async ({ input }) => {
         return db.generateICSForReserva(input.reservaId);
+      }),
+
+    // Lista de Espera
+    getWaitlist: publicProcedure
+      .input(z.object({ aulaId: z.number() }))
+      .query(async ({ input }) => {
+        return db.listarListaDeEspera(input.aulaId);
+      }),
+
+    getMyPosition: protectedProcedure
+      .input(z.object({ aulaId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getPosicaoNaFila(input.aulaId, ctx.user.id);
+      }),
+
+    removeFromWaitlist: protectedProcedure
+      .input(z.object({ aulaId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.removerDaListaDeEspera(input.aulaId, ctx.user.id);
+        return { success: true };
+      }),
+
+    countWaitlist: publicProcedure
+      .input(z.object({ aulaId: z.number() }))
+      .query(async ({ input }) => {
+        return db.contarPessoasNaFila(input.aulaId);
       }),
   }),
 

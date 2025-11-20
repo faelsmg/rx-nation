@@ -358,6 +358,14 @@ export async function hasUserReservedClass(userId: number, agendaAulaId: number,
   return result.length > 0;
 }
 
+export async function getReservaById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(reservasAulas).where(eq(reservasAulas.id, id)).limit(1);
+  return result[0];
+}
+
 export async function cancelReservaAula(id: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -6458,3 +6466,149 @@ export async function getTotalEmCaixa(boxId: number) {
 
 
 // ============================================
+
+
+// ============================================
+// FUNÇÕES DE LISTA DE ESPERA
+// ============================================
+
+export async function adicionarNaListaDeEspera(aulaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar próxima posição na fila
+  const [rows] = await db.execute(
+    `SELECT COALESCE(MAX(posicao), 0) + 1 as proxima_posicao 
+     FROM aulas_waitlist 
+     WHERE aula_id = ${aulaId}`
+  ) as any;
+
+  const posicao = rows[0]?.proxima_posicao || 1;
+
+  // Adicionar na lista de espera
+  await db.execute(
+    `INSERT INTO aulas_waitlist (aula_id, user_id, posicao)
+     VALUES (${aulaId}, ${userId}, ${posicao})`
+  );
+
+  return { posicao };
+}
+
+export async function removerDaListaDeEspera(aulaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar posição atual
+  const [rows] = await db.execute(
+    `SELECT posicao FROM aulas_waitlist 
+     WHERE aula_id = ${aulaId} AND user_id = ${userId}`
+  ) as any;
+
+  const posicaoRemovida = rows[0]?.posicao;
+
+  // Remover da lista
+  await db.execute(
+    `DELETE FROM aulas_waitlist 
+     WHERE aula_id = ${aulaId} AND user_id = ${userId}`
+  );
+
+  // Atualizar posições dos que estavam depois
+  if (posicaoRemovida) {
+    await db.execute(
+      `UPDATE aulas_waitlist 
+       SET posicao = posicao - 1 
+       WHERE aula_id = ${aulaId} AND posicao > ${posicaoRemovida}`
+    );
+  }
+}
+
+export async function promoverPrimeiroDaFila(aulaId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar primeiro da fila
+  const [rows] = await db.execute(
+    `SELECT w.*, u.name, u.email 
+     FROM aulas_waitlist w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.aula_id = ${aulaId}
+     ORDER BY w.posicao ASC
+     LIMIT 1`
+  ) as any;
+
+  if (rows.length === 0) return null;
+
+  const primeiro = rows[0];
+
+  // Criar reserva para o primeiro da fila
+  await db.execute(
+    `INSERT INTO reservas_aulas (aula_id, user_id, status)
+     VALUES (${aulaId}, ${primeiro.user_id}, 'confirmada')`
+  );
+
+  // Remover da lista de espera
+  await removerDaListaDeEspera(aulaId, primeiro.user_id);
+
+  // Criar notificação
+  const [aula] = await db.execute(
+    `SELECT a.*, b.nome as box_nome 
+     FROM agenda_aulas a
+     JOIN boxes b ON a.box_id = b.id
+     WHERE a.id = ${aulaId}`
+  ) as any;
+
+  if (aula.length > 0) {
+    await db.execute(
+      `INSERT INTO notificacoes (user_id, box_id, tipo, titulo, mensagem, link)
+       VALUES (
+         ${primeiro.user_id},
+         ${aula[0].box_id},
+         'aula',
+         'Vaga Disponível!',
+         'Uma vaga abriu na aula de ${aula[0].dia_semana} às ${aula[0].horario}. Sua reserva foi confirmada automaticamente!',
+         '/agenda'
+       )`
+    );
+  }
+
+  return primeiro;
+}
+
+export async function listarListaDeEspera(aulaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const [rows] = await db.execute(
+    `SELECT w.*, u.name, u.email 
+     FROM aulas_waitlist w
+     JOIN users u ON w.user_id = u.id
+     WHERE w.aula_id = ${aulaId}
+     ORDER BY w.posicao ASC`
+  ) as any;
+
+  return rows;
+}
+
+export async function getPosicaoNaFila(aulaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [rows] = await db.execute(
+    `SELECT posicao FROM aulas_waitlist 
+     WHERE aula_id = ${aulaId} AND user_id = ${userId}`
+  ) as any;
+
+  return rows[0]?.posicao || null;
+}
+
+export async function contarPessoasNaFila(aulaId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const [rows] = await db.execute(
+    `SELECT COUNT(*) as total FROM aulas_waitlist 
+     WHERE aula_id = ${aulaId}`
+  ) as any;
+
+  return rows[0]?.total || 0;
+}

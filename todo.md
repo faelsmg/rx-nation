@@ -1178,3 +1178,42 @@
 - [ ] Criar procedures para marcar como lido
 - [ ] Adicionar badge de não lidos
 - [ ] Implementar filtro de lidos/não lidos
+
+
+## Sistema de Lista de Espera para Aulas - ✅ CONCLUÍDO
+- [x] Criar tabela de lista de espera (waitlist)
+- [x] Adicionar migration para tabela de waitlist
+- [x] Criar procedure para adicionar à lista de espera
+- [x] Criar procedure para promover primeiro da fila
+- [x] Criar procedure para remover da fila
+- [x] Criar procedure para listar posição na fila
+- [x] Modificar lógica de reserva para verificar capacidade
+- [x] Implementar notificação automática quando vaga abrir
+- [x] Criar interface com feedback de posição na fila
+- [x] Adicionar toast informativo quando entrar na fila
+- [x] Criar testes unitários para lista de espera
+- [x] Integrar com sistema de notificações existente
+
+## Exportação de Relatórios em PDF
+- [ ] Instalar biblioteca de geração de PDF (jsPDF ou similar)
+- [ ] Criar template de relatório de avaliação física
+- [ ] Criar template de relatório de evolução
+- [ ] Criar template de certificado de conquista
+- [ ] Implementar procedure para gerar PDF de avaliação
+- [ ] Implementar procedure para gerar PDF de evolução
+- [ ] Implementar procedure para gerar certificado
+- [ ] Adicionar botões de exportação nas páginas relevantes
+- [ ] Criar testes para geração de PDFs
+
+## Chat em Tempo Real
+- [ ] Criar schema de mensagens no banco
+- [ ] Criar schema de conversas (threads)
+- [ ] Implementar eventos Socket.IO para mensagens
+- [ ] Implementar evento de "digitando..."
+- [ ] Criar procedures para salvar/carregar mensagens
+- [ ] Criar procedures para listar conversas
+- [ ] Criar componente de Chat com lista de conversas
+- [ ] Criar componente de janela de mensagens
+- [ ] Implementar notificações de novas mensagens
+- [ ] Adicionar indicador de mensagens não lidas
+- [ ] Criar testes para chat em tempo real

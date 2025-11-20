@@ -35,8 +35,12 @@ export default function Agenda() {
   );
 
   const reservarMutation = trpc.reservas.create.useMutation({
-    onSuccess: () => {
-      toast.success("Reserva confirmada!");
+    onSuccess: (data: any) => {
+      if (data.waitlist) {
+        toast.info(`Aula lotada! Você foi adicionado à lista de espera na posição ${data.posicao}`);
+      } else {
+        toast.success("Reserva confirmada!");
+      }
       utils.reservas.getByUser.invalidate();
     },
     onError: (error: any) => {
