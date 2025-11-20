@@ -514,3 +514,32 @@ export const notificationPreferencesRelations = relations(notificationPreference
     references: [users.id],
   }),
 }));
+
+
+/**
+ * Metas Personalizadas dos Usuários
+ */
+export const metas = mysqlTable("metas", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  tipo: mysqlEnum("tipo", ["wods", "prs", "frequencia", "peso"]).notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  valorAlvo: int("valorAlvo").notNull(), // Valor a ser atingido
+  valorAtual: int("valorAtual").default(0).notNull(), // Progresso atual
+  dataInicio: timestamp("dataInicio").defaultNow().notNull(),
+  dataFim: timestamp("dataFim").notNull(), // Prazo da meta
+  concluida: boolean("concluida").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Meta = typeof metas.$inferSelect;
+export type InsertMeta = typeof metas.$inferInsert;
+
+export const metasRelations = relations(metas, ({ one }) => ({
+  user: one(users, {
+    fields: [metas.userId],
+    references: [users.id],
+  }),
+}));

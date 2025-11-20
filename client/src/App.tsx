@@ -19,6 +19,7 @@ import Agenda from "./pages/Agenda";
 import Franqueado from "./pages/Franqueado";
 import Preferencias from "./pages/Preferencias";
 import Notificacoes from "./pages/Notificacoes";
+import PerfilPublico from "./pages/PerfilPublico";
 
 function Router() {
   return (
@@ -38,6 +39,7 @@ function Router() {
       <Route path={"/franqueado"} component={Franqueado} />
       <Route path={"/preferencias"} component={Preferencias} />
       <Route path={"/notificacoes"} component={Notificacoes} />
+      <Route path={"/atleta/:id"} component={PerfilPublico} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

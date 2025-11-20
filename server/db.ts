@@ -35,6 +35,8 @@ import {
   InsertReservaAula,
   notificationPreferences,
   InsertNotificationPreference,
+  metas,
+  InsertMeta,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1577,4 +1579,321 @@ export async function getNotificacoesComFiltros(
     .orderBy(desc(notificacoes.createdAt))
     .limit(filtros.limit || 50)
     .offset(filtros.offset || 0);
+}
+
+
+// ============================================================================
+// Verificação Automática de Badges em Cadeia
+// ============================================================================
+
+// Verificar e atribuir badges em cadeia para um usuário
+export async function checkAndAssignChainBadges(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const assignedBadges: string[] = [];
+
+  // Buscar badges em cadeia (que têm criterio em JSON)
+  const chainBadges = await db
+    .select()
+    .from(badges)
+    .where(
+      sql`${badges.criterio} LIKE '%wods%' AND ${badges.criterio} LIKE '%prs%'`
+    );
+
+  for (const badge of chainBadges) {
+    try {
+      // Parse criterio
+      const criterio = JSON.parse(badge.criterio);
+      
+      // Verificar se já tem o badge
+      const existing = await db
+        .select()
+        .from(userBadges)
+        .where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)))
+        .limit(1);
+
+      if (existing.length > 0) continue; // Já tem
+
+      // Contar WODs completados
+      const wodsCount = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(resultadosTreinos)
+        .where(eq(resultadosTreinos.userId, userId));
+
+      const totalWods = wodsCount[0]?.count || 0;
+
+      // Contar PRs registrados
+      const prsCount = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(prs)
+        .where(eq(prs.userId, userId));
+
+      const totalPrs = prsCount[0]?.count || 0;
+
+      // Calcular dias consecutivos (simplificado: últimos 30 dias com pelo menos 1 WOD)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const recentWods = await db
+        .select({ data: resultadosTreinos.dataRegistro })
+        .from(resultadosTreinos)
+        .where(
+          and(
+            eq(resultadosTreinos.userId, userId),
+            sql`${resultadosTreinos.dataRegistro} >= ${thirtyDaysAgo}`
+          )
+        )
+        .orderBy(desc(resultadosTreinos.dataRegistro));
+
+      // Contar dias únicos
+      const uniqueDays = new Set(
+        recentWods.map((r) => new Date(r.data).toDateString())
+      );
+      const diasConsecutivos = uniqueDays.size;
+
+      // Verificar se atende todos os requisitos
+      const meetsRequirements =
+        totalWods >= (criterio.wods || 0) &&
+        totalPrs >= (criterio.prs || 0) &&
+        diasConsecutivos >= (criterio.diasConsecutivos || 0);
+
+      if (meetsRequirements) {
+        // Atribuir badge
+        await assignBadgeToUser({ badgeId: badge.id, userId });
+        
+        // Criar notificação especial
+        await createNotification({
+          userId,
+          tipo: "badge",
+          titulo: "🎉 Badge Especial Desbloqueado!",
+          mensagem: `Parabéns! Você conquistou o badge "${badge.nome}" por completar múltiplas conquistas!`,
+          link: "/badges",
+        });
+
+        assignedBadges.push(badge.nome);
+      }
+    } catch (error) {
+      console.error(`Erro ao verificar badge ${badge.nome}:`, error);
+    }
+  }
+
+  return assignedBadges;
+}
+
+
+// ============================================================================
+// Perfil Público do Atleta
+// ============================================================================
+
+export async function getPublicProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar informações básicas do usuário
+  const user = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      boxId: users.boxId,
+      categoria: users.categoria,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (user.length === 0) return null;
+
+  // Buscar badges do atleta
+  const userBadgesData = await db
+    .select({
+      badge: badges,
+      dataConquista: userBadges.dataConquista,
+    })
+    .from(userBadges)
+    .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+    .where(eq(userBadges.userId, userId))
+    .orderBy(desc(userBadges.dataConquista));
+
+  // Buscar PRs do atleta
+  const userPrs = await db
+    .select()
+    .from(prs)
+    .where(eq(prs.userId, userId))
+    .orderBy(desc(prs.data))
+    .limit(10);
+
+  // Estatísticas
+  const totalWods = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.userId, userId));
+
+  const totalPontos = await db
+    .select({ sum: sql<number>`COALESCE(SUM(${pontuacoes.pontos}), 0)` })
+    .from(pontuacoes)
+    .where(eq(pontuacoes.userId, userId));
+
+  // Histórico recente de WODs (últimos 10)
+  const recentWods = await db
+    .select({
+      id: resultadosTreinos.id,
+      wodId: resultadosTreinos.wodId,
+      tempo: resultadosTreinos.tempo,
+      reps: resultadosTreinos.reps,
+      carga: resultadosTreinos.carga,
+      rxOuScale: resultadosTreinos.rxOuScale,
+      dataRegistro: resultadosTreinos.dataRegistro,
+      wodTitulo: wods.titulo,
+      wodTipo: wods.tipo,
+    })
+    .from(resultadosTreinos)
+    .leftJoin(wods, eq(resultadosTreinos.wodId, wods.id))
+    .where(eq(resultadosTreinos.userId, userId))
+    .orderBy(desc(resultadosTreinos.dataRegistro))
+    .limit(10);
+
+  return {
+    user: user[0],
+    badges: userBadgesData,
+    prs: userPrs,
+    stats: {
+      totalWods: totalWods[0]?.count || 0,
+      totalPontos: totalPontos[0]?.sum || 0,
+      totalBadges: userBadgesData.length,
+      totalPrs: userPrs.length,
+    },
+    recentWods,
+  };
+}
+
+
+// ============================================================================
+// Metas Personalizadas
+// ============================================================================
+
+export async function createMeta(data: InsertMeta) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(metas).values(data);
+  return result;
+}
+
+export async function getMetasByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(metas)
+    .where(eq(metas.userId, userId))
+    .orderBy(desc(metas.createdAt));
+}
+
+export async function updateMetaProgress(metaId: number, valorAtual: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  // Buscar meta para verificar se atingiu o alvo
+  const meta = await db
+    .select()
+    .from(metas)
+    .where(eq(metas.id, metaId))
+    .limit(1);
+
+  if (meta.length === 0) return undefined;
+
+  const concluida = valorAtual >= meta[0].valorAlvo;
+
+  return db
+    .update(metas)
+    .set({ valorAtual, concluida, updatedAt: new Date() })
+    .where(eq(metas.id, metaId));
+}
+
+export async function checkAndUpdateGoals(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const userMetas = await getMetasByUser(userId);
+  const notifiedGoals: string[] = [];
+
+  for (const meta of userMetas) {
+    if (meta.concluida) continue;
+
+    let currentValue = 0;
+
+    // Calcular progresso baseado no tipo
+    switch (meta.tipo) {
+      case "wods": {
+        const count = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(resultadosTreinos)
+          .where(
+            and(
+              eq(resultadosTreinos.userId, userId),
+              sql`${resultadosTreinos.dataRegistro} >= ${meta.dataInicio}`
+            )
+          );
+        currentValue = count[0]?.count || 0;
+        break;
+      }
+      case "prs": {
+        const count = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(prs)
+          .where(
+            and(
+              eq(prs.userId, userId),
+              sql`${prs.data} >= ${meta.dataInicio}`
+            )
+          );
+        currentValue = count[0]?.count || 0;
+        break;
+      }
+      case "frequencia": {
+        // Contar dias únicos com atividade
+        const activities = await db
+          .select({ data: resultadosTreinos.dataRegistro })
+          .from(resultadosTreinos)
+          .where(
+            and(
+              eq(resultadosTreinos.userId, userId),
+              sql`${resultadosTreinos.dataRegistro} >= ${meta.dataInicio}`
+            )
+          );
+        const uniqueDays = new Set(
+          activities.map((a) => new Date(a.data).toDateString())
+        );
+        currentValue = uniqueDays.size;
+        break;
+      }
+    }
+
+    // Atualizar progresso
+    await updateMetaProgress(meta.id, currentValue);
+
+    // Verificar marcos (25%, 50%, 75%, 100%)
+    const previousProgress = Math.floor((meta.valorAtual / meta.valorAlvo) * 100);
+    const newProgress = Math.floor((currentValue / meta.valorAlvo) * 100);
+
+    const milestones = [25, 50, 75, 100];
+    for (const milestone of milestones) {
+      if (previousProgress < milestone && newProgress >= milestone) {
+        await createNotification({
+          userId,
+          tipo: "geral",
+          titulo: `Meta ${milestone}% Completa! 🎯`,
+          mensagem: `Você atingiu ${milestone}% da meta "${meta.titulo}"!`,
+          link: "/dashboard",
+        });
+        notifiedGoals.push(`${meta.titulo} - ${milestone}%`);
+      }
+    }
+  }
+
+  return notifiedGoals;
 }

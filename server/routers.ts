@@ -57,6 +57,12 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getUsersByBox(input.boxId);
       }),
+
+    getPublicProfile: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPublicProfile(input.userId);
+      }),
   }),
 
   // ===== BOXES =====
@@ -255,6 +261,12 @@ export const appRouter = router({
           });
         }
 
+        // Verificar badges em cadeia
+        await db.checkAndAssignChainBadges(ctx.user.id);
+
+        // Atualizar progresso de metas
+        await db.checkAndUpdateGoals(ctx.user.id);
+
         return result;
       }),
 
@@ -314,6 +326,12 @@ export const appRouter = router({
             link: "/badges",
           });
         }
+
+        // Verificar badges em cadeia
+        await db.checkAndAssignChainBadges(ctx.user.id);
+
+        // Atualizar progresso de metas
+        await db.checkAndUpdateGoals(ctx.user.id);
 
         return result;
       }),
@@ -476,6 +494,15 @@ export const appRouter = router({
         }
 
         return result;
+      }),
+
+    checkChainBadges: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const assignedBadges = await db.checkAndAssignChainBadges(ctx.user.id);
+        return {
+          success: true,
+          assignedBadges,
+        };
       }),
   }),
 
@@ -822,6 +849,38 @@ export const appRouter = router({
       .input(z.object({ boxId: z.number() }))
       .query(async ({ input }) => {
         return db.getBadgeDistribution(input.boxId);
+      }),
+  }),
+
+  // ===== METAS PERSONALIZADAS =====
+  metas: router({
+    create: protectedProcedure
+      .input(z.object({
+        tipo: z.enum(["wods", "prs", "frequencia", "peso"]),
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        valorAlvo: z.number(),
+        dataFim: z.date(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createMeta({
+          userId: ctx.user.id,
+          ...input,
+        });
+      }),
+
+    getByUser: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getMetasByUser(ctx.user.id);
+      }),
+
+    updateProgress: protectedProcedure
+      .input(z.object({
+        metaId: z.number(),
+        valorAtual: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.updateMetaProgress(input.metaId, input.valorAtual);
       }),
   }),
 });

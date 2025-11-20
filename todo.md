@@ -404,3 +404,37 @@
 - [x] Popular badges no banco de dados
 - [ ] Adicionar lógica de verificação automática de múltiplas condições (futuro)
 - [ ] Criar notificações especiais para badges em cadeia (futuro)
+
+
+## Verificação Automática de Badges em Cadeia - ✅ CONCLUÍDO
+- [x] Criar função para verificar requisitos de badges compostos
+- [x] Implementar verificação de total de WODs completados
+- [x] Implementar verificação de total de PRs registrados
+- [x] Implementar verificação de dias consecutivos de treino
+- [x] Criar procedure tRPC para executar verificação manualmente
+- [x] Adicionar trigger após registrar resultado de WOD
+- [x] Adicionar trigger após registrar PR
+- [x] Testar atribuição automática de badges em cadeia
+
+## Perfil Público do Atleta - ✅ CONCLUÍDO
+- [x] Criar página de perfil público (/atleta/:id)
+- [x] Exibir informações básicas do atleta (nome, box, categoria)
+- [x] Mostrar badges conquistados com datas
+- [x] Listar PRs do atleta
+- [x] Exibir estatísticas (total WODs, total badges, total PRs, pontos)
+- [x] Adicionar histórico recente de WODs completados
+- [x] Implementar botão de compartilhamento social
+- [x] Testar perfil público
+
+## Sistema de Metas Personalizadas - ✅ CONCLUÍDO
+- [x] Criar schema de metas personalizadas
+- [x] Adicionar migration para tabela de metas
+- [x] Adicionar tipos de metas (WODs, PRs, frequência, peso)
+- [x] Implementar notificações de marcos (25%, 50%, 75%, 100%)
+- [x] Adicionar queries para calcular progresso de metas
+- [x] Criar procedure para verificar e notificar marcos
+- [x] Adicionar triggers automáticos após WOD e PR
+- [x] Testar sistema de metas completo
+- [ ] Criar página de metas no dashboard do atleta (futuro)
+- [ ] Implementar formulário para criar nova meta (futuro)
+- [ ] Criar barra de progresso para cada meta (futuro)
