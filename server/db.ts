@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -29,6 +29,8 @@ import {
   InsertComunicado,
   agendaAulas,
   InsertAgendaAula,
+  reservasAulas,
+  InsertReservaAula,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -238,6 +240,111 @@ export async function deleteWod(id: number) {
   if (!db) return undefined;
 
   return db.delete(wods).where(eq(wods.id, id));
+}
+
+// ===== AGENDA DE AULAS =====
+
+export async function createAgendaAula(data: InsertAgendaAula) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.insert(agendaAulas).values(data);
+}
+
+export async function getAgendaAulasByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(agendaAulas).where(and(eq(agendaAulas.boxId, boxId), eq(agendaAulas.ativo, true)));
+}
+
+export async function updateAgendaAula(id: number, data: Partial<InsertAgendaAula>) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.update(agendaAulas).set(data).where(eq(agendaAulas.id, id));
+}
+
+export async function deleteAgendaAula(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.update(agendaAulas).set({ ativo: false }).where(eq(agendaAulas.id, id));
+}
+
+// ===== RESERVAS DE AULAS =====
+
+export async function createReservaAula(data: InsertReservaAula) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.insert(reservasAulas).values(data);
+}
+
+export async function getReservasByAgendaAndDate(agendaAulaId: number, data: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const startOfDay = new Date(data);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(data);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  return db.select().from(reservasAulas)
+    .where(
+      and(
+        eq(reservasAulas.agendaAulaId, agendaAulaId),
+        eq(reservasAulas.status, "confirmada"),
+        sql`${reservasAulas.data} >= ${startOfDay} AND ${reservasAulas.data} <= ${endOfDay}`
+      )
+    );
+}
+
+export async function getReservasByUser(userId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select({
+    reserva: reservasAulas,
+    agenda: agendaAulas,
+  })
+  .from(reservasAulas)
+  .leftJoin(agendaAulas, eq(reservasAulas.agendaAulaId, agendaAulas.id))
+  .where(eq(reservasAulas.userId, userId))
+  .orderBy(desc(reservasAulas.data))
+  .limit(limit);
+}
+
+export async function hasUserReservedClass(userId: number, agendaAulaId: number, data: Date) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const startOfDay = new Date(data);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(data);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const result = await db.select().from(reservasAulas)
+    .where(
+      and(
+        eq(reservasAulas.userId, userId),
+        eq(reservasAulas.agendaAulaId, agendaAulaId),
+        eq(reservasAulas.status, "confirmada"),
+        sql`${reservasAulas.data} >= ${startOfDay} AND ${reservasAulas.data} <= ${endOfDay}`
+      )
+    )
+    .limit(1);
+
+  return result.length > 0;
+}
+
+export async function cancelReservaAula(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.update(reservasAulas).set({ status: "cancelada" }).where(eq(reservasAulas.id, id));
 }
 
 // ===== CHECK-INS =====
@@ -499,21 +606,4 @@ export async function getComunicadosGerais(limit = 10) {
   if (!db) return [];
 
   return db.select().from(comunicados).where(sql`${comunicados.boxId} IS NULL`).orderBy(desc(comunicados.dataPub)).limit(limit);
-}
-
-// ===== AGENDA DE AULAS =====
-
-export async function createAgendaAula(data: InsertAgendaAula) {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  const result = await db.insert(agendaAulas).values(data);
-  return result;
-}
-
-export async function getAgendaByBox(boxId: number) {
-  const db = await getDb();
-  if (!db) return [];
-
-  return db.select().from(agendaAulas).where(and(eq(agendaAulas.boxId, boxId), eq(agendaAulas.ativo, true)));
 }

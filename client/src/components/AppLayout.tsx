@@ -51,6 +51,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: TrendingUp, label: "Meus PRs", path: "/prs", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Trophy, label: "Rankings", path: "/rankings", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Award, label: "Badges", path: "/badges", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: Calendar, label: "Agenda", path: "/agenda", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "franqueado", "admin_liga"] },
     { icon: Shield, label: "Admin da Liga", path: "/admin", roles: ["admin_liga"] },

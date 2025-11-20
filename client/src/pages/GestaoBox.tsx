@@ -13,6 +13,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlunosTab } from "@/components/AlunosTab";
+import { AgendaTab } from "@/components/AgendaTab";
 
 export default function GestaoBox() {
   const { user } = useAuth();
@@ -151,9 +152,10 @@ export default function GestaoBox() {
         </div>
 
         <Tabs defaultValue="wods" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="wods">WODs</TabsTrigger>
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
+            <TabsTrigger value="agenda">Agenda</TabsTrigger>
           </TabsList>
 
           <TabsContent value="wods" className="space-y-6">
@@ -340,6 +342,10 @@ export default function GestaoBox() {
 
           <TabsContent value="alunos">
             <AlunosTab boxId={user.boxId} />
+          </TabsContent>
+
+          <TabsContent value="agenda">
+            <AgendaTab boxId={user.boxId} />
           </TabsContent>
         </Tabs>
       </div>

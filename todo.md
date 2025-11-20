@@ -125,3 +125,17 @@
 - [x] Corrigir erro de links aninhados no AppLayout
 - [x] Implementar criação de WODs para Box Masters
 - [x] Implementar gerenciamento de alunos para Box Masters
+
+
+## Sistema de Agenda de Aulas
+- [x] Criar tabela de horários de aulas (agenda)
+- [x] Criar tabela de reservas de aulas
+- [x] Adicionar procedures para criar horários de aulas
+- [x] Adicionar procedures para listar horários disponíveis
+- [x] Adicionar procedures para reservar vaga em aula
+- [x] Adicionar procedures para cancelar reserva
+- [x] Criar interface de gestão de agenda para Box Masters
+- [x] Criar interface de visualização e reserva para atletas
+- [x] Implementar validação de capacidade máxima
+- [ ] Implementar sistema de lista de espera (opcional)
+- [x] Criar testes para funcionalidades de agenda

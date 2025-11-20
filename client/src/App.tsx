@@ -15,6 +15,7 @@ import Campeonatos from "./pages/Campeonatos";
 import Perfil from "./pages/Perfil";
 import GestaoBox from "./pages/GestaoBox";
 import AdminLiga from "./pages/AdminLiga";
+import Agenda from "./pages/Agenda";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
       <Route path={"/perfil"} component={Perfil} />
       <Route path={"/gestao-box"} component={GestaoBox} />
       <Route path={"/admin"} component={AdminLiga} />
+      <Route path={"/agenda"} component={Agenda} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

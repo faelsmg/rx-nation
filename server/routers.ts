@@ -440,7 +440,74 @@ export const appRouter = router({
     getByBox: publicProcedure
       .input(z.object({ boxId: z.number() }))
       .query(async ({ input }) => {
-        return db.getAgendaByBox(input.boxId);
+        return db.getAgendaAulasByBox(input.boxId);
+      }),
+
+    update: boxMasterProcedure
+      .input(z.object({
+        id: z.number(),
+        diaSemana: z.number().min(0).max(6).optional(),
+        horario: z.string().optional(),
+        capacidade: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return db.updateAgendaAula(id, data);
+      }),
+
+    delete: boxMasterProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.deleteAgendaAula(input.id);
+      }),
+  }),
+
+  // ===== RESERVAS DE AULAS =====
+  reservas: router({
+    create: protectedProcedure
+      .input(z.object({
+        agendaAulaId: z.number(),
+        data: z.date(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verificar se já tem reserva
+        const hasReserved = await db.hasUserReservedClass(ctx.user.id, input.agendaAulaId, input.data);
+        if (hasReserved) {
+          throw new Error("Você já reservou esta aula");
+        }
+
+        // Verificar capacidade
+        const reservas = await db.getReservasByAgendaAndDate(input.agendaAulaId, input.data);
+        const agenda = await db.getAgendaAulasByBox(0); // Buscar agenda específica
+        const agendaAula = agenda.find(a => a.id === input.agendaAulaId);
+        
+        if (agendaAula && reservas.length >= agendaAula.capacidade) {
+          throw new Error("Aula lotada. Capacidade máxima atingida.");
+        }
+
+        return db.createReservaAula({
+          agendaAulaId: input.agendaAulaId,
+          userId: ctx.user.id,
+          data: input.data,
+        });
+      }),
+
+    getByUser: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getReservasByUser(ctx.user.id, input.limit);
+      }),
+
+    cancel: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.cancelReservaAula(input.id);
+      }),
+
+    getByAgendaAndDate: publicProcedure
+      .input(z.object({ agendaAulaId: z.number(), data: z.date() }))
+      .query(async ({ input }) => {
+        return db.getReservasByAgendaAndDate(input.agendaAulaId, input.data);
       }),
   }),
 });

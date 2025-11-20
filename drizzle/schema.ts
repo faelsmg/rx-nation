@@ -272,6 +272,22 @@ export type AgendaAula = typeof agendaAulas.$inferSelect;
 export type InsertAgendaAula = typeof agendaAulas.$inferInsert;
 
 /**
+ * Reservas de Aulas
+ */
+export const reservasAulas = mysqlTable("reservas_aulas", {
+  id: int("id").autoincrement().primaryKey(),
+  agendaAulaId: int("agendaAulaId").notNull(), // Horário da aula
+  userId: int("userId").notNull(), // Atleta que reservou
+  data: timestamp("data").notNull(), // Data específica da aula
+  status: mysqlEnum("status", ["confirmada", "cancelada", "presente", "ausente"]).default("confirmada").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReservaAula = typeof reservasAulas.$inferSelect;
+export type InsertReservaAula = typeof reservasAulas.$inferInsert;
+
+/**
  * Planilhas de Treino (para boxes com treino personalizado)
  */
 export const planilhasTreino = mysqlTable("planilhas_treino", {
@@ -422,10 +438,22 @@ export const comunicadosRelations = relations(comunicados, ({ one }) => ({
   }),
 }));
 
-export const agendaAulasRelations = relations(agendaAulas, ({ one }) => ({
+export const agendaAulasRelations = relations(agendaAulas, ({ one, many }) => ({
   box: one(boxes, {
     fields: [agendaAulas.boxId],
     references: [boxes.id],
+  }),
+  reservas: many(reservasAulas),
+}));
+
+export const reservasAulasRelations = relations(reservasAulas, ({ one }) => ({
+  agendaAula: one(agendaAulas, {
+    fields: [reservasAulas.agendaAulaId],
+    references: [agendaAulas.id],
+  }),
+  user: one(users, {
+    fields: [reservasAulas.userId],
+    references: [users.id],
   }),
 }));
 
