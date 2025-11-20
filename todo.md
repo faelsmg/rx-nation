@@ -438,3 +438,28 @@
 - [ ] Criar página de metas no dashboard do atleta (futuro)
 - [ ] Implementar formulário para criar nova meta (futuro)
 - [ ] Criar barra de progresso para cada meta (futuro)
+
+
+## Página de Gerenciamento de Metas - ✅ CONCLUÍDO
+- [x] Criar página /metas para gerenciamento de metas
+- [x] Implementar formulário para criar nova meta
+- [x] Adicionar seletor de tipo de meta (WODs, PRs, frequência, peso)
+- [x] Implementar campo de valor alvo e prazo
+- [x] Criar lista de metas ativas com barras de progresso
+- [x] Implementar visualização de metas concluídas
+- [x] Criar cards visuais para cada meta
+- [x] Adicionar indicadores de marcos (25%, 50%, 75%, 100%)
+- [x] Adicionar link de Metas na navegação
+- [x] Testar criação e visualização de metas
+
+## Gráficos de Evolução de Performance - ✅ CONCLUÍDO
+- [x] Melhorar componente de gráfico de evolução de PRs
+- [x] Implementar filtro por período (30d, 90d, 1a, tudo)
+- [x] Adicionar gráfico de linha com histórico de cargas
+- [x] Adicionar domínio dinâmico no eixo Y
+- [x] Melhorar componente de gráfico de evolução de WODs
+- [x] Implementar filtro por período
+- [x] Adicionar gráfico de tempos/reps ao longo do tempo
+- [x] Integrar gráficos na página de PRs (já existente)
+- [x] Integrar gráficos na página de Histórico (já existente)
+- [x] Testar gráficos com dados reais

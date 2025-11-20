@@ -1,4 +1,13 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+
+const PERIODOS = [
+  { value: "30", label: "Últimos 30 dias" },
+  { value: "90", label: "Últimos 90 dias" },
+  { value: "365", label: "Último ano" },
+  { value: "all", label: "Todo o histórico" },
+];
 
 interface WODEvolutionChartProps {
   data: Array<{
@@ -12,8 +21,21 @@ interface WODEvolutionChartProps {
 }
 
 export default function WODEvolutionChart({ data, wodTitulo, tipo }: WODEvolutionChartProps) {
+  const [periodo, setPeriodo] = useState("365");
+
+  // Filtrar por período
+  const dataLimite = new Date();
+  if (periodo !== "all") {
+    dataLimite.setDate(dataLimite.getDate() - parseInt(periodo));
+  }
+
+  const dataFiltrada = data.filter((resultado) => {
+    if (periodo === "all") return true;
+    return new Date(resultado.data) >= dataLimite;
+  });
+
   // Ordenar por data crescente
-  const sortedData = [...data].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  const sortedData = [...dataFiltrada].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
   
   // Determinar métrica baseada no tipo de WOD
   const isForTime = tipo === 'for_time';
@@ -28,16 +50,32 @@ export default function WODEvolutionChart({ data, wodTitulo, tipo }: WODEvolutio
       valor: isForTime ? (result.tempo! / 60).toFixed(2) : result.reps,
     }));
 
-  if (chartData.length < 2) {
-    return (
-      <div className="text-center text-muted-foreground py-8">
-        Registre mais resultados para ver a evolução
-      </div>
-    );
-  }
+  const maxValor = Math.max(...chartData.map((d) => parseFloat(d.valor as any)), 0);
+  const minValor = Math.min(...chartData.map((d) => parseFloat(d.valor as any)), 0);
 
   return (
-    <div className="w-full h-[300px]">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Evolução de {wodTitulo}</h3>
+        <Select value={periodo} onValueChange={setPeriodo}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PERIODOS.map((per) => (
+              <SelectItem key={per.value} value={per.value}>
+                {per.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {chartData.length < 2 ? (
+        <div className="text-center text-muted-foreground py-8">
+          Registre mais resultados para ver a evolução
+        </div>
+      ) : (
+        <div className="w-full h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -47,6 +85,7 @@ export default function WODEvolutionChart({ data, wodTitulo, tipo }: WODEvolutio
             style={{ fontSize: '12px' }}
           />
           <YAxis 
+            domain={[Math.floor(minValor * 0.9), Math.ceil(maxValor * 1.1)]}
             stroke="hsl(var(--muted-foreground))"
             style={{ fontSize: '12px' }}
             label={{ 
@@ -69,6 +108,7 @@ export default function WODEvolutionChart({ data, wodTitulo, tipo }: WODEvolutio
               metricLabel
             ]}
           />
+          <Legend />
           <Line 
             type="monotone" 
             dataKey="valor" 
@@ -76,9 +116,12 @@ export default function WODEvolutionChart({ data, wodTitulo, tipo }: WODEvolutio
             strokeWidth={3}
             dot={{ fill: 'hsl(var(--primary))', r: 5 }}
             activeDot={{ r: 7 }}
+            name={metricLabel}
           />
         </LineChart>
       </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
