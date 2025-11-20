@@ -152,3 +152,73 @@
 - [x] Criar interface de visualização de comunicados para atletas
 - [ ] Implementar sistema de notificações em tempo real
 - [x] Criar testes para funcionalidades de comunicados
+
+
+## Testes de QA Completos - ✅ CONCLUÍDO
+### Autenticação e Perfis
+- [ ] Testar login com diferentes provedores
+- [ ] Testar logout
+- [ ] Verificar perfis de usuário (atleta, box_master, franqueado, admin_liga)
+- [ ] Validar permissões por role
+
+### CRUD de WODs (Box Master)
+- [ ] Criar novo WOD
+- [ ] Listar WODs criados
+- [ ] Editar WOD existente
+- [ ] Deletar WOD
+- [ ] Validar campos obrigatórios
+- [ ] Testar diferentes tipos de WOD (AMRAP, EMOM, For Time, etc)
+
+### Gestão de Alunos (Box Master)
+- [ ] Visualizar lista de alunos
+- [ ] Filtrar alunos por categoria
+- [ ] Ver estatísticas de alunos
+- [ ] Verificar dados de perfil dos alunos
+
+### Agenda de Aulas (Box Master)
+- [ ] Criar horário de aula
+- [ ] Editar horário existente
+- [ ] Deletar horário
+- [ ] Validar capacidade máxima
+- [ ] Verificar dias da semana
+
+### Reservas de Aulas (Atleta)
+- [ ] Visualizar horários disponíveis
+- [ ] Reservar vaga em aula
+- [ ] Cancelar reserva
+- [ ] Validar limite de capacidade
+- [ ] Verificar duplicatas
+
+### Comunicados (Box Master)
+- [ ] Criar comunicado
+- [ ] Editar comunicado
+- [ ] Deletar comunicado
+- [ ] Visualizar lista de comunicados
+- [ ] Testar diferentes tipos
+
+### Comunicados (Atleta)
+- [ ] Visualizar comunicados no dashboard
+- [ ] Verificar ordenação por data
+- [ ] Validar exibição de conteúdo
+
+### Funcionalidades de Atleta
+- [ ] Ver WOD do dia
+- [ ] Registrar resultado de treino
+- [ ] Ver histórico de treinos
+- [ ] Ver PRs pessoais
+- [ ] Ver badges conquistados
+- [ ] Ver ranking
+
+### Integração e Fluxos
+- [ ] Testar fluxo completo: criar WOD → atleta visualiza → registra resultado
+- [ ] Testar fluxo: criar horário → atleta reserva → verificar lista
+- [ ] Testar fluxo: criar comunicado → atleta visualiza no dashboard
+- [ ] Validar dados entre módulos
+- [ ] Verificar performance de queries
+
+### UI/UX
+- [ ] Testar responsividade mobile
+- [ ] Verificar estados de loading
+- [ ] Validar mensagens de erro
+- [ ] Testar toasts de sucesso
+- [ ] Verificar navegação entre páginas
