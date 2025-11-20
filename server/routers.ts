@@ -63,6 +63,11 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getPublicProfile(input.userId);
       }),
+
+    completeOnboarding: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        return db.completeOnboarding(ctx.user.id);
+      }),
   }),
 
   // ===== BOXES =====
@@ -930,6 +935,28 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return db.curtirAtividade(input.atividadeId);
       }),
+
+    addComentario: protectedProcedure
+      .input(z.object({ atividadeId: z.number(), comentario: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.addComentarioFeed({
+          atividadeId: input.atividadeId,
+          userId: ctx.user.id,
+          comentario: input.comentario,
+        });
+      }),
+
+    getComentarios: protectedProcedure
+      .input(z.object({ atividadeId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getComentariosByAtividade(input.atividadeId);
+      }),
+
+    deleteComentario: protectedProcedure
+      .input(z.object({ comentarioId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.deleteComentarioFeed(input.comentarioId, ctx.user.id);
+      }),
   }),
 
   // ===== COMPARAÇÃO DE ATLETAS =====
@@ -938,6 +965,100 @@ export const appRouter = router({
       .input(z.object({ userId1: z.number(), userId2: z.number() }))
       .query(async ({ input }) => {
         return db.compareAtletas(input.userId1, input.userId2);
+      }),
+  }),
+
+  // ===== DESAFIOS =====
+  desafios: router({
+    create: protectedProcedure
+      .input(z.object({
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        tipo: z.enum(["wod", "pr", "frequencia", "custom"]),
+        movimento: z.string().optional(),
+        wodId: z.number().optional(),
+        metaValor: z.number().optional(),
+        metaUnidade: z.string().optional(),
+        dataInicio: z.date(),
+        dataFim: z.date(),
+        participantesIds: z.array(z.number()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createDesafio({
+          ...input,
+          criadorId: ctx.user.id,
+          boxId: ctx.user.boxId!,
+        });
+      }),
+
+    getByBox: protectedProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDesafiosByBox(input.boxId);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDesafioById(input.desafioId);
+      }),
+
+    getParticipantes: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDesafioParticipantes(input.desafioId);
+      }),
+
+    aceitar: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.aceitarDesafio(input.desafioId, ctx.user.id);
+      }),
+
+    recusar: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.recusarDesafio(input.desafioId, ctx.user.id);
+      }),
+
+    atualizarProgresso: protectedProcedure
+      .input(z.object({
+        desafioId: z.number(),
+        valor: z.number(),
+        unidade: z.string(),
+        observacao: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.atualizarProgressoDesafio({
+          desafioId: input.desafioId,
+          userId: ctx.user.id,
+          valor: input.valor,
+          unidade: input.unidade,
+          observacao: input.observacao,
+        });
+      }),
+
+    completar: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.completarDesafio(input.desafioId, ctx.user.id);
+      }),
+
+    getAtualizacoes: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getDesafioAtualizacoes(input.desafioId);
+      }),
+
+    cancelar: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.cancelarDesafio(input.desafioId, ctx.user.id);
+      }),
+
+    getByUser: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getDesafiosByUser(ctx.user.id);
       }),
   }),
 });

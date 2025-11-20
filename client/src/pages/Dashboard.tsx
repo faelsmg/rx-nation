@@ -5,9 +5,12 @@ import { trpc } from "@/lib/trpc";
 import { Trophy, TrendingUp, Calendar, Award, Dumbbell, Flame, Megaphone } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { data: pontuacaoTotal } = trpc.pontuacoes.getTotalByUser.useQuery();
   const { data: badges } = trpc.badges.getUserBadges.useQuery();
   const { data: wodHoje } = trpc.wods.getToday.useQuery();
@@ -16,8 +19,16 @@ export default function Dashboard() {
     { enabled: !!user?.boxId }
   );
 
+  useEffect(() => {
+    // Mostrar onboarding apenas para atletas que nunca completaram
+    if (user && user.role === "atleta" && !(user as any).onboarding_completed) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+
   return (
     <AppLayout>
+      {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
       <div className="p-6 lg:p-8 space-y-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">
@@ -28,7 +39,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-onboarding="dashboard-stats">
           <Card className="card-impacto">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">

@@ -492,3 +492,79 @@
 - [x] Criar visualização lado a lado com cards
 - [x] Implementar tabela de PRs lado a lado
 - [x] Testar comparação de atletas
+
+
+## Sistema de Comentários no Feed - EM ANDAMENTO
+- [ ] Criar schema de comentários
+- [ ] Adicionar migration para tabela de comentários
+- [ ] Criar funções para adicionar, listar e deletar comentários
+- [ ] Adicionar procedures tRPC para comentários
+- [ ] Implementar seção de comentários nos cards do feed
+- [ ] Adicionar campo de texto para novo comentário
+- [ ] Implementar listagem de comentários com avatar e nome
+- [ ] Adicionar botão de deletar comentário (apenas autor)
+- [ ] Criar notificação quando alguém comenta em sua conquista
+- [ ] Testar sistema de comentários completo
+
+## Sistema de Desafios entre Atletas - EM ANDAMENTO
+- [ ] Criar schema de desafios
+- [ ] Adicionar migration para tabela de desafios
+- [ ] Criar schema de participações em desafios
+- [ ] Implementar funções para criar, listar e participar de desafios
+- [ ] Adicionar procedures tRPC para desafios
+- [ ] Criar página de Desafios (/desafios)
+- [ ] Implementar formulário para criar novo desafio
+- [ ] Adicionar listagem de desafios ativos
+- [ ] Criar placar ao vivo de participantes
+- [ ] Implementar botão de participar do desafio
+- [ ] Adicionar notificações de novos desafios
+- [ ] Adicionar link de Desafios na navegação
+- [ ] Testar sistema de desafios completo
+
+## Onboarding para Novos Atletas - EM ANDAMENTO
+- [ ] Criar componente de tour guiado (Onboarding)
+- [ ] Implementar detecção de primeiro acesso
+- [ ] Adicionar step 1: Bem-vindo ao Impacto Pro League
+- [ ] Adicionar step 2: WOD do Dia - Como registrar resultados
+- [ ] Adicionar step 3: PRs - Como registrar recordes pessoais
+- [ ] Adicionar step 4: Badges - Como conquistar badges
+- [ ] Adicionar step 5: Feed - Como interagir com a comunidade
+- [ ] Adicionar botões de navegação (Próximo, Anterior, Pular)
+- [ ] Salvar flag de onboarding completo no perfil
+- [ ] Testar onboarding completo
+
+
+## Sistema de Comentários no Feed
+- [x] Criar tabela de comentários do feed
+- [x] Criar procedures para adicionar comentário
+- [x] Criar procedures para listar comentários por atividade
+- [x] Criar procedures para deletar comentário
+- [x] Criar componente FeedComentarios
+- [x] Integrar comentários nos cards do feed
+- [x] Implementar contador de comentários
+- [x] Implementar notificação ao autor da atividade
+
+## Sistema de Desafios Entre Atletas
+- [x] Criar tabelas de desafios (desafios, desafio_participantes, desafio_atualizacoes)
+- [x] Criar procedures para criar desafio
+- [x] Criar procedures para listar desafios do box
+- [x] Criar procedures para aceitar/recusar convite
+- [x] Criar procedures para atualizar progresso
+- [x] Criar procedures para completar desafio
+- [x] Criar procedures para cancelar desafio
+- [x] Criar página de listagem de desafios
+- [x] Criar página de detalhes do desafio com scoreboard
+- [x] Implementar atualização automática do scoreboard (10s)
+- [x] Implementar notificações de convites e conclusões
+- [x] Adicionar link de Desafios no menu
+- [ ] Criar testes para funcionalidades de desafios
+
+## Sistema de Onboarding para Novos Atletas
+- [x] Criar campo onboarding_completed no schema de users
+- [x] Criar componente de tour guiado
+- [x] Implementar steps do onboarding (Dashboard, WOD, PRs, Badges, Feed, Desafios)
+- [x] Adicionar tooltips e overlays
+- [x] Implementar lógica de exibição apenas no primeiro login
+- [x] Criar procedure para marcar onboarding como completo
+- [x] Integrar OnboardingTour no Dashboard
+- [x] Adicionar barra de progresso e navegação

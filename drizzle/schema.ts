@@ -573,3 +573,28 @@ export const feedAtividadesRelations = relations(feedAtividades, ({ one }) => ({
     references: [boxes.id],
   }),
 }));
+
+
+// ==================== COMENTÁRIOS DO FEED ====================
+
+export const comentariosFeed = mysqlTable("comentarios_feed", {
+  id: int("id").autoincrement().primaryKey(),
+  atividadeId: int("atividade_id").notNull().references(() => feedAtividades.id, { onDelete: "cascade" }),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  comentario: text("comentario").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ComentarioFeed = typeof comentariosFeed.$inferSelect;
+export type InsertComentarioFeed = typeof comentariosFeed.$inferInsert;
+
+export const comentariosFeedRelations = relations(comentariosFeed, ({ one }) => ({
+  atividade: one(feedAtividades, {
+    fields: [comentariosFeed.atividadeId],
+    references: [feedAtividades.id],
+  }),
+  user: one(users, {
+    fields: [comentariosFeed.userId],
+    references: [users.id],
+  }),
+}));

@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { Heart, Share2, Trophy, Dumbbell, Award, Instagram } from "lucide-react";
+import { FeedComentarios } from "@/components/FeedComentarios";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -158,34 +159,37 @@ export default function Feed() {
                       <p className="text-lg font-semibold">{atividade.descricao}</p>
                     </CardContent>
                   )}
-                  <CardFooter className="flex items-center gap-2 pt-4 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCurtir(atividade.id)}
-                      className="gap-2"
-                    >
-                      <Heart className="w-4 h-4" />
-                      <span>{atividade.curtidas}</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCompartilhar(atividade)}
-                      className="gap-2"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      Compartilhar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCompartilharInstagram(atividade)}
-                      className="gap-2"
-                    >
-                      <Instagram className="w-4 h-4" />
-                      Instagram
-                    </Button>
+                  <CardFooter className="flex flex-col items-stretch gap-2 pt-4">
+                    <div className="flex items-center gap-2 border-b pb-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCurtir(atividade.id)}
+                        className="gap-2"
+                      >
+                        <Heart className="w-4 h-4" />
+                        <span>{atividade.curtidas}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCompartilhar(atividade)}
+                        className="gap-2"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        Compartilhar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCompartilharInstagram(atividade)}
+                        className="gap-2"
+                      >
+                        <Instagram className="w-4 h-4" />
+                        Instagram
+                      </Button>
+                    </div>
+                    <FeedComentarios atividadeId={atividade.id} />
                   </CardFooter>
                 </Card>
               );

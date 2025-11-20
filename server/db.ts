@@ -39,6 +39,8 @@ import {
   InsertMeta,
   feedAtividades,
   InsertFeedAtividade,
+  comentariosFeed,
+  InsertComentarioFeed,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -154,6 +156,14 @@ export async function updateUserProfile(userId: number, data: {
 
   await db.update(users).set(data).where(eq(users.id, userId));
   return getUserById(userId);
+}
+
+export async function completeOnboarding(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`UPDATE users SET onboarding_completed = true WHERE id = ${userId}`);
+  return true;
 }
 
 // ===== BOXES =====
@@ -2050,4 +2060,311 @@ export async function compareAtletas(userId1: number, userId2: number) {
       badges: badges2,
     },
   };
+}
+
+
+// ==================== COMENTÁRIOS DO FEED ====================
+
+export async function addComentarioFeed(data: InsertComentarioFeed) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [comentario] = await db.insert(comentariosFeed).values(data).$returningId();
+  
+  // Buscar autor da atividade para notificar
+  const atividade = await db.select().from(feedAtividades).where(eq(feedAtividades.id, data.atividadeId)).limit(1);
+  
+  if (atividade[0] && atividade[0].userId !== data.userId) {
+    // Notificar autor da atividade (exceto se comentou em sua própria conquista)
+    await createNotification({
+      userId: atividade[0].userId,
+      tipo: "comentario" as any,
+      titulo: "Novo comentário",
+      mensagem: "Alguém comentou em sua conquista!",
+      link: "/feed",
+    });
+  }
+  
+  return comentario;
+}
+
+export async function getComentariosByAtividade(atividadeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const comentarios = await db
+    .select({
+      id: comentariosFeed.id,
+      comentario: comentariosFeed.comentario,
+      createdAt: comentariosFeed.createdAt,
+      userId: comentariosFeed.userId,
+      userName: users.name,
+    })
+    .from(comentariosFeed)
+    .leftJoin(users, eq(comentariosFeed.userId, users.id))
+    .where(eq(comentariosFeed.atividadeId, atividadeId))
+    .orderBy(comentariosFeed.createdAt);
+
+  return comentarios;
+}
+
+export async function deleteComentarioFeed(comentarioId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Verificar se o usuário é o autor do comentário
+  const comentario = await db.select().from(comentariosFeed).where(eq(comentariosFeed.id, comentarioId)).limit(1);
+  
+  if (!comentario[0] || comentario[0].userId !== userId) {
+    return false;
+  }
+
+  await db.delete(comentariosFeed).where(eq(comentariosFeed.id, comentarioId));
+  return true;
+}
+
+
+// ==================== DESAFIOS ====================
+
+export async function createDesafio(data: {
+  titulo: string;
+  descricao?: string;
+  tipo: "wod" | "pr" | "frequencia" | "custom";
+  movimento?: string;
+  wodId?: number;
+  metaValor?: number;
+  metaUnidade?: string;
+  dataInicio: Date;
+  dataFim: Date;
+  criadorId: number;
+  boxId: number;
+  participantesIds: number[];
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Criar desafio
+  const [desafio] = await db.execute(sql`
+    INSERT INTO desafios (titulo, descricao, tipo, movimento, wod_id, meta_valor, meta_unidade, data_inicio, data_fim, criador_id, box_id, status)
+    VALUES (${data.titulo}, ${data.descricao || null}, ${data.tipo}, ${data.movimento || null}, ${data.wodId || null}, ${data.metaValor || null}, ${data.metaUnidade || null}, ${data.dataInicio}, ${data.dataFim}, ${data.criadorId}, ${data.boxId}, 'ativo')
+  `);
+
+  const desafioId = (desafio as any).insertId;
+
+  // Adicionar participantes
+  for (const userId of data.participantesIds) {
+    await db.execute(sql`
+      INSERT INTO desafio_participantes (desafio_id, user_id, status)
+      VALUES (${desafioId}, ${userId}, 'pendente')
+    `);
+
+    // Notificar participante
+    await createNotification({
+      userId,
+      tipo: "geral",
+      titulo: "Novo Desafio!",
+      mensagem: `Você foi convidado para o desafio: ${data.titulo}`,
+      link: `/desafios/${desafioId}`,
+    });
+  }
+
+  return desafioId;
+}
+
+export async function getDesafiosByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      d.*,
+      u.name as criador_nome,
+      COUNT(DISTINCT dp.id) as total_participantes,
+      COUNT(DISTINCT CASE WHEN dp.completado = true THEN dp.id END) as participantes_completados
+    FROM desafios d
+    LEFT JOIN users u ON d.criador_id = u.id
+    LEFT JOIN desafio_participantes dp ON d.id = dp.desafio_id
+    WHERE d.box_id = ${boxId}
+    GROUP BY d.id
+    ORDER BY d.created_at DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getDesafioById(desafioId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      d.*,
+      u.name as criador_nome,
+      w.titulo as wod_titulo
+    FROM desafios d
+    LEFT JOIN users u ON d.criador_id = u.id
+    LEFT JOIN wods w ON d.wod_id = w.id
+    WHERE d.id = ${desafioId}
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getDesafioParticipantes(desafioId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      dp.*,
+      u.name as user_name,
+      u.categoria
+    FROM desafio_participantes dp
+    LEFT JOIN users u ON dp.user_id = u.id
+    WHERE dp.desafio_id = ${desafioId}
+    ORDER BY dp.resultado_valor DESC, dp.completado_em ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function aceitarDesafio(desafioId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    UPDATE desafio_participantes
+    SET status = 'aceito'
+    WHERE desafio_id = ${desafioId} AND user_id = ${userId}
+  `);
+
+  return true;
+}
+
+export async function recusarDesafio(desafioId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    UPDATE desafio_participantes
+    SET status = 'recusado'
+    WHERE desafio_id = ${desafioId} AND user_id = ${userId}
+  `);
+
+  return true;
+}
+
+export async function atualizarProgressoDesafio(data: {
+  desafioId: number;
+  userId: number;
+  valor: number;
+  unidade: string;
+  observacao?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Adicionar atualização
+  await db.execute(sql`
+    INSERT INTO desafio_atualizacoes (desafio_id, user_id, valor, unidade, observacao)
+    VALUES (${data.desafioId}, ${data.userId}, ${data.valor}, ${data.unidade}, ${data.observacao || null})
+  `);
+
+  // Atualizar melhor resultado do participante
+  await db.execute(sql`
+    UPDATE desafio_participantes
+    SET resultado_valor = ${data.valor}, resultado_unidade = ${data.unidade}
+    WHERE desafio_id = ${data.desafioId} AND user_id = ${data.userId}
+  `);
+
+  return true;
+}
+
+export async function completarDesafio(desafioId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    UPDATE desafio_participantes
+    SET completado = true, completado_em = NOW()
+    WHERE desafio_id = ${desafioId} AND user_id = ${userId}
+  `);
+
+  // Buscar informações do desafio para notificação
+  const desafio = await getDesafioById(desafioId);
+  
+  if (desafio) {
+    // Notificar criador do desafio
+    await createNotification({
+      userId: desafio.criador_id,
+      tipo: "geral",
+      titulo: "Desafio Completado!",
+      mensagem: `Um participante completou o desafio: ${desafio.titulo}`,
+      link: `/desafios/${desafioId}`,
+    });
+  }
+
+  return true;
+}
+
+export async function getDesafioAtualizacoes(desafioId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      da.*,
+      u.name as user_name
+    FROM desafio_atualizacoes da
+    LEFT JOIN users u ON da.user_id = u.id
+    WHERE da.desafio_id = ${desafioId}
+    ORDER BY da.created_at DESC
+    LIMIT 50
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function cancelarDesafio(desafioId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Verificar se o usuário é o criador
+  const desafio = await getDesafioById(desafioId);
+  
+  if (!desafio || desafio.criador_id !== userId) {
+    return false;
+  }
+
+  await db.execute(sql`
+    UPDATE desafios
+    SET status = 'cancelado'
+    WHERE id = ${desafioId}
+  `);
+
+  return true;
+}
+
+export async function getDesafiosByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      d.*,
+      dp.status as participante_status,
+      dp.completado,
+      dp.resultado_valor,
+      dp.resultado_unidade,
+      u.name as criador_nome
+    FROM desafios d
+    INNER JOIN desafio_participantes dp ON d.id = dp.desafio_id
+    LEFT JOIN users u ON d.criador_id = u.id
+    WHERE dp.user_id = ${userId}
+    ORDER BY d.created_at DESC
+  `);
+
+  return (result as any)[0] || [];
 }
