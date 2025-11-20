@@ -222,3 +222,9 @@
 - [ ] Validar mensagens de erro
 - [ ] Testar toasts de sucesso
 - [ ] Verificar navegação entre páginas
+
+
+## Correção de Bug - DialogTitle
+- [x] Localizar componente Dialog sem DialogTitle no Dashboard
+- [x] Adicionar DialogTitle para acessibilidade
+- [x] Testar correção

@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -53,18 +54,23 @@ export function ManusDialog({
       onOpenChange={handleOpenChange}
     >
       <DialogContent className="py-5 bg-[#f8f8f7] rounded-[20px] w-[400px] shadow-[0px_4px_11px_0px_rgba(0,0,0,0.08)] border border-[rgba(0,0,0,0.08)] backdrop-blur-2xl p-0 gap-0 text-center">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>Please login with Manus to continue</DialogDescription>
+        </DialogHeader>
+        
         <div className="flex flex-col items-center gap-2 p-5 pt-12">
           <div className="w-16 h-16 bg-white rounded-xl border border-[rgba(0,0,0,0.08)] flex items-center justify-center">
             <img src={logo} alt="App icon" className="w-10 h-10 rounded-md" />
           </div>
 
-          {/* Title and subtitle */}
-          <DialogTitle className="text-xl font-semibold text-[#34322d] leading-[26px] tracking-[-0.44px]">
+          {/* Visual title and subtitle (DialogTitle is in DialogHeader above for accessibility) */}
+          <div className="text-xl font-semibold text-[#34322d] leading-[26px] tracking-[-0.44px]">
             {title}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-[#858481] leading-5 tracking-[-0.154px]">
+          </div>
+          <div className="text-sm text-[#858481] leading-5 tracking-[-0.154px]">
             Please login with Manus to continue
-          </DialogDescription>
+          </div>
         </div>
 
         <DialogFooter className="px-5 py-5">
