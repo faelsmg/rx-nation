@@ -17,6 +17,8 @@ import GestaoBox from "./pages/GestaoBox";
 import AdminLiga from "./pages/AdminLiga";
 import Agenda from "./pages/Agenda";
 import Franqueado from "./pages/Franqueado";
+import Preferencias from "./pages/Preferencias";
+import Notificacoes from "./pages/Notificacoes";
 
 function Router() {
   return (
@@ -34,6 +36,8 @@ function Router() {
       <Route path={"/admin"} component={AdminLiga} />
       <Route path={"/agenda"} component={Agenda} />
       <Route path={"/franqueado"} component={Franqueado} />
+      <Route path={"/preferencias"} component={Preferencias} />
+      <Route path={"/notificacoes"} component={Notificacoes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

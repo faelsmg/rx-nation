@@ -160,11 +160,19 @@ export function NotificationCenter() {
               className="justify-center text-sm text-primary cursor-pointer"
               onClick={() => {
                 setOpen(false);
-                // Futura página de todas as notificações
-                toast.info("Página de notificações em desenvolvimento");
+                setLocation("/notificacoes");
               }}
             >
-              Ver todas as notificações
+              Ver histórico completo
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="justify-center text-sm text-muted-foreground cursor-pointer"
+              onClick={() => {
+                setOpen(false);
+                setLocation("/preferencias");
+              }}
+            >
+              Preferências de notificações
             </DropdownMenuItem>
           </>
         )}

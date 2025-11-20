@@ -489,3 +489,28 @@ export const notificacoesRelations = relations(notificacoes, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+
+/**
+ * Preferências de Notificações dos Usuários
+ */
+export const notificationPreferences = mysqlTable("notification_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  wods: boolean("wods").default(true).notNull(), // Notificações de novos WODs
+  comunicados: boolean("comunicados").default(true).notNull(), // Notificações de comunicados
+  lembretes: boolean("lembretes").default(true).notNull(), // Lembretes de aulas
+  badges: boolean("badges").default(true).notNull(), // Notificações de badges desbloqueados
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));

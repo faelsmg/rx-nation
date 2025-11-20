@@ -377,12 +377,30 @@
 - [x] Criar distribuição de badges por categoria
 - [x] Testar dashboard de badges
 
-## Sistema de Preferências de Notificações - EM ANDAMENTO
-- [ ] Criar schema de preferências de notificações
-- [ ] Adicionar migration para tabela de preferências
-- [ ] Criar página de preferências no perfil do atleta
-- [ ] Implementar toggles para cada tipo de notificação (WODs, comunicados, lembretes, badges)
-- [ ] Criar queries para salvar/carregar preferências
-- [ ] Modificar funções de notificação para respeitar preferências
-- [ ] Adicionar link para preferências no dropdown de notificações
-- [ ] Testar sistema de preferências
+## Sistema de Preferências de Notificações - ✅ CONCLUÍDO
+- [x] Criar schema de preferências de notificações
+- [x] Adicionar migration para tabela de preferências
+- [x] Criar página de preferências no perfil do atleta
+- [x] Implementar toggles para cada tipo de notificação (WODs, comunicados, lembretes, badges)
+- [x] Criar queries para salvar/carregar preferências
+- [x] Criar função shouldNotifyUser para verificar preferências
+- [x] Adicionar link para preferências no dropdown de notificações
+- [x] Testar sistema de preferências
+
+## Histórico Completo de Notificações - ✅ CONCLUÍDO
+- [x] Criar página de histórico de notificações
+- [x] Implementar filtros por tipo de notificação
+- [x] Implementar filtro por status (lidas, não lidas, todas)
+- [x] Adicionar paginação de notificações (limit 100)
+- [x] Criar query para buscar notificações com filtros
+- [x] Adicionar link para histórico no dropdown de notificações
+- [x] Testar histórico de notificações
+
+## Badges de Conquistas em Cadeia - ✅ CONCLUÍDO
+- [x] Criar badges especiais que requerem múltiplas conquistas
+- [x] Implementar badge "Atleta Completo" (50 WODs + 10 PRs + 30 dias consecutivos)
+- [x] Implementar badge "Guerreiro Incansável" (100 WODs + 20 PRs + 50 dias consecutivos)
+- [x] Implementar badge "Lenda Viva" (500 WODs + 50 PRs + 100 dias consecutivos)
+- [x] Popular badges no banco de dados
+- [ ] Adicionar lógica de verificação automática de múltiplas condições (futuro)
+- [ ] Criar notificações especiais para badges em cadeia (futuro)

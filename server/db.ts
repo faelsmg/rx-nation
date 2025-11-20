@@ -33,6 +33,8 @@ import {
   InsertAgendaAula,
   reservasAulas,
   InsertReservaAula,
+  notificationPreferences,
+  InsertNotificationPreference,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1456,4 +1458,123 @@ export async function getBadgeDistribution(boxId: number) {
     { categoria: "Personal Records", count: categories.prs },
     { categoria: "Outros", count: categories.outros },
   ];
+}
+
+
+// ============================================================================
+// Preferências de Notificações
+// ============================================================================
+
+// Buscar ou criar preferências do usuário
+export async function getUserNotificationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar preferências existentes
+  const prefs = await db
+    .select()
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.userId, userId))
+    .limit(1);
+
+  // Se não existir, criar com valores padrão
+  if (prefs.length === 0) {
+    await db.insert(notificationPreferences).values({
+      userId,
+      wods: true,
+      comunicados: true,
+      lembretes: true,
+      badges: true,
+    });
+
+    return {
+      userId,
+      wods: true,
+      comunicados: true,
+      lembretes: true,
+      badges: true,
+    };
+  }
+
+  return prefs[0];
+}
+
+// Atualizar preferências do usuário
+export async function updateNotificationPreferences(
+  userId: number,
+  preferences: {
+    wods?: boolean;
+    comunicados?: boolean;
+    lembretes?: boolean;
+    badges?: boolean;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Garantir que preferências existem
+  await getUserNotificationPreferences(userId);
+
+  // Atualizar
+  await db
+    .update(notificationPreferences)
+    .set(preferences)
+    .where(eq(notificationPreferences.userId, userId));
+
+  return getUserNotificationPreferences(userId);
+}
+
+// Verificar se usuário aceita tipo de notificação
+export async function shouldNotifyUser(
+  userId: number,
+  tipo: "wod" | "comunicado" | "aula" | "badge"
+): Promise<boolean> {
+  const prefs = await getUserNotificationPreferences(userId);
+  if (!prefs) return true; // Se não tem preferências, notifica
+
+  switch (tipo) {
+    case "wod":
+      return prefs.wods;
+    case "comunicado":
+      return prefs.comunicados;
+    case "aula":
+      return prefs.lembretes;
+    case "badge":
+      return prefs.badges;
+    default:
+      return true;
+  }
+}
+
+
+// Buscar notificações com filtros (para histórico)
+export async function getNotificacoesComFiltros(
+  userId: number,
+  filtros: {
+    limit?: number;
+    offset?: number;
+    tipo?: "wod" | "comunicado" | "aula" | "badge" | "geral";
+    lida?: boolean;
+  }
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(notificacoes.userId, userId)];
+
+  if (filtros.tipo) {
+    conditions.push(eq(notificacoes.tipo, filtros.tipo));
+  }
+
+  if (filtros.lida !== undefined) {
+    conditions.push(eq(notificacoes.lida, filtros.lida));
+  }
+
+  return db
+    .select()
+    .from(notificacoes)
+    .where(and(...conditions))
+    .orderBy(desc(notificacoes.createdAt))
+    .limit(filtros.limit || 50)
+    .offset(filtros.offset || 0);
 }

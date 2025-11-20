@@ -718,6 +718,36 @@ export const appRouter = router({
     marcarTodasLidas: protectedProcedure.mutation(async ({ ctx }) => {
       return await marcarTodasComoLidas(ctx.user.id);
     }),
+
+    // Listar com filtros (para histórico)
+    list: protectedProcedure
+      .input(z.object({
+        limit: z.number().optional().default(50),
+        offset: z.number().optional().default(0),
+        tipo: z.enum(["wod", "comunicado", "aula", "badge", "geral"]).optional(),
+        lida: z.boolean().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return await db.getNotificacoesComFiltros(ctx.user.id, input);
+      }),
+  }),
+
+  // ===== PREFERÊNCIAS DE NOTIFICAÇÕES =====
+  preferences: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserNotificationPreferences(ctx.user.id);
+    }),
+
+    update: protectedProcedure
+      .input(z.object({
+        wods: z.boolean().optional(),
+        comunicados: z.boolean().optional(),
+        lembretes: z.boolean().optional(),
+        badges: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await db.updateNotificationPreferences(ctx.user.id, input);
+      }),
   }),
 
   // ===== ANALYTICS PARA BOX MASTERS =====
