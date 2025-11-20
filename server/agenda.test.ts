@@ -111,7 +111,8 @@ describe("Reservas de Aulas", () => {
     if (schedule) {
       // Usar data única para evitar conflito com reservas anteriores
       const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 30) + 10);
+      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 100) + 50);
+      futureDate.setHours(18, 0, 0, 0);
 
       const result = await caller.reservas.create({
         agendaAulaId: schedule.id,

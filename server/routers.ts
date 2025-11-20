@@ -104,7 +104,17 @@ export const appRouter = router({
         oficial: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        return db.createWod(input);
+        const wod = await db.createWod(input);
+        
+        // Notificar todos os alunos do box sobre o novo WOD
+        await db.notifyBoxStudents(input.boxId, {
+          tipo: "wod",
+          titulo: "Novo WOD Disponível!",
+          mensagem: `${input.titulo} - ${input.tipo.toUpperCase()} foi publicado para ${new Date(input.data).toLocaleDateString('pt-BR')}`,
+          link: "/wod-do-dia",
+        });
+        
+        return wod;
       }),
 
     getById: publicProcedure
@@ -435,10 +445,22 @@ export const appRouter = router({
         tipo: z.enum(["geral", "box", "campeonato"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        return db.createComunicado({
+        const comunicado = await db.createComunicado({
           autorId: ctx.user.id,
           ...input,
         });
+        
+        // Notificar todos os alunos do box sobre o novo comunicado
+        if (input.boxId) {
+          await db.notifyBoxStudents(input.boxId, {
+            tipo: "comunicado",
+            titulo: "Novo Comunicado!",
+            mensagem: input.titulo,
+            link: "/dashboard",
+          });
+        }
+        
+        return comunicado;
       }),
 
     getByBox: publicProcedure

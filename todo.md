@@ -303,3 +303,18 @@
 - [x] Criar métricas de engajamento (check-ins, resultados registrados)
 - [x] Adicionar aba de Analytics na Gestão do Box
 - [x] Criar testes para dashboard analítico
+
+
+## Sistema Completo de Notificações - ✅ CONCLUÍDO
+- [x] Criar função helper para criar notificações (createNotification)
+- [x] Implementar trigger: notificação ao criar novo WOD
+- [x] Implementar trigger: notificação ao criar novo comunicado
+- [ ] Implementar trigger: notificação ao desbloquear badge (futuro)
+- [x] Criar componente NotificationCenter com dropdown
+- [x] Adicionar ícone de sino no header com contador de não lidas
+- [x] Implementar listagem de notificações no dropdown
+- [x] Implementar marcar como lida ao clicar
+- [x] Implementar botão "Marcar todas como lidas"
+- [x] Integrar NotificationCenter no AppLayout
+- [x] Testar fluxo completo de notificações
+- [x] Criar testes para triggers de notificações

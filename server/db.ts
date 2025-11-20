@@ -759,6 +759,61 @@ export async function marcarTodasComoLidas(userId: number) {
 }
 
 
+// Helper para criar notificações
+export async function createNotification(data: {
+  userId: number;
+  tipo: "wod" | "comunicado" | "aula" | "badge" | "geral";
+  titulo: string;
+  mensagem: string;
+  link?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.insert(notificacoes).values({
+    userId: data.userId,
+    tipo: data.tipo,
+    titulo: data.titulo,
+    mensagem: data.mensagem,
+    link: data.link || null,
+    lida: false,
+  });
+  
+  return result;
+}
+
+// Helper para notificar todos os alunos de um box
+export async function notifyBoxStudents(boxId: number, notification: {
+  tipo: "wod" | "comunicado" | "aula" | "badge" | "geral";
+  titulo: string;
+  mensagem: string;
+  link?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar todos os atletas do box
+  const students = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(
+      eq(users.boxId, boxId),
+      eq(users.role, 'atleta')
+    ));
+  
+  // Criar notificação para cada aluno
+  const notifications = [];
+  for (const student of students) {
+    const result = await createNotification({
+      userId: student.id,
+      ...notification,
+    });
+    if (result) notifications.push(result);
+  }
+  
+  return notifications;
+}
+
 // ============================================================================
 // Analytics para Box Masters
 // ============================================================================

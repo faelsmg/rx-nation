@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -142,7 +143,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <span className="font-bold text-primary">IMPACTO PRO LEAGUE</span>
           </div>
           
-          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="w-6 h-6" />
@@ -152,6 +155,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <SidebarContent />
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </div>
 

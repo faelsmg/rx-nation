@@ -434,7 +434,8 @@ describe("QA: Fluxos Integrados", () => {
     // Atleta reserva vaga no primeiro horário disponível
     if (horarios.length > 0) {
       const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 30) + 80);
+      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 200) + 200);
+      futureDate.setHours(18, 0, 0, 0);
 
       const reserva = await atletaCaller.reservas.create({
         agendaAulaId: horarios[0].id,
