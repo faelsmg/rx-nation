@@ -203,3 +203,90 @@ body {
   @apply border-primary/60 shadow-lg;
   box-shadow: 0 10px 30px oklch(0.8 0.15 85 / 0.2);
 }
+
+/* PWA & Mobile Optimizations */
+@supports (padding: max(0px)) {
+  body {
+    /* Safe area insets for notched devices */
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better touch targets for mobile */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Disable pull-to-refresh on Chrome mobile */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Better tap highlighting */
+* {
+  -webkit-tap-highlight-color: oklch(0.8 0.15 85 / 0.1);
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* PWA Standalone mode adjustments */
+@media (display-mode: standalone) {
+  body {
+    /* Add extra padding for status bar on iOS */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Hide elements that don't make sense in standalone */
+  .hide-in-standalone {
+    display: none !important;
+  }
+}
+
+/* Loading skeleton animation */
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    oklch(0.2 0 0) 0%,
+    oklch(0.25 0 0) 50%,
+    oklch(0.2 0 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}

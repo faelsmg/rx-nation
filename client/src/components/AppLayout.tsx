@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { PWAInstallButton, PWAOfflineIndicator } from "@/components/PWAInstallButton";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -184,6 +185,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
           
           <div className="flex items-center gap-2">
+            <PWAInstallButton />
             <NotificationCenter />
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
@@ -208,6 +210,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <main className="lg:ml-72 pt-16 lg:pt-0">
         {children}
       </main>
+
+      {/* PWA Offline Indicator */}
+      <PWAOfflineIndicator />
     </div>
   );
 }

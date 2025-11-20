@@ -1026,3 +1026,22 @@
 - [x] Registro de medidas corporais completo
 - [x] Cálculo automático de IMC
 - [x] Histórico de avaliações com comparação
+
+
+### PWA - Progressive Web App - ✅ CONCLUÍDO
+- [x] Criar manifest.json com identidade do app
+- [x] Adicionar ícones em múltiplos tamanhos (192x192, 512x512)
+- [x] Configurar modo standalone e cores do tema
+- [x] Criar Service Worker para cache offline
+- [x] Implementar estratégias de cache (Cache First para assets, Network First para API)
+- [x] Adicionar botão "Instalar App" no header
+- [x] Criar dialog customizado de instalação com benefícios
+- [x] Implementar detecção de instalação (beforeinstallprompt)
+- [x] Configurar suporte a notificações push no Service Worker
+- [x] Adicionar shortcuts no manifest (WOD, Feed, Rankings)
+- [x] Implementar indicador de modo offline
+- [x] Otimizar viewport para mobile (safe-area-insets)
+- [x] Adicionar otimizações de touch (tap-highlight, touch targets)
+- [x] Prevenir zoom indesejado em inputs mobile
+- [x] Implementar smooth scrolling
+- [x] Criar hook usePWA para gerenciar funcionalidades
