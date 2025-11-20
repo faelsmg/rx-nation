@@ -1,6 +1,35 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, 
+  users, 
+  boxes, 
+  InsertBox,
+  wods,
+  InsertWod,
+  checkins,
+  InsertCheckin,
+  resultadosTreinos,
+  InsertResultadoTreino,
+  prs,
+  InsertPr,
+  campeonatos,
+  InsertCampeonato,
+  inscricoesCampeonatos,
+  InsertInscricaoCampeonato,
+  pontuacoes,
+  InsertPontuacao,
+  badges,
+  InsertBadge,
+  userBadges,
+  InsertUserBadge,
+  rankings,
+  InsertRanking,
+  comunicados,
+  InsertComunicado,
+  agendaAulas,
+  InsertAgendaAula,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -56,8 +85,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = user.role;
       updateSet.role = user.role;
     } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+      values.role = 'admin_liga';
+      updateSet.role = 'admin_liga';
     }
 
     if (!values.lastSignedIn) {
@@ -89,4 +118,381 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUserProfile(userId: number, data: {
+  name?: string;
+  boxId?: number | null;
+  categoria?: "iniciante" | "intermediario" | "avancado" | "elite" | null;
+  faixaEtaria?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  await db.update(users).set(data).where(eq(users.id, userId));
+  return getUserById(userId);
+}
+
+// ===== BOXES =====
+
+export async function createBox(data: InsertBox) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(boxes).values(data);
+  return result;
+}
+
+export async function getBoxById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(boxes).where(eq(boxes.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAllBoxes() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(boxes).where(eq(boxes.ativo, true));
+}
+
+export async function getBoxesByType(tipo: "proprio" | "parceiro") {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(boxes).where(and(eq(boxes.tipo, tipo), eq(boxes.ativo, true)));
+}
+
+// ===== WODs =====
+
+export async function createWod(data: InsertWod) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(wods).values(data);
+  return result;
+}
+
+export async function getWodById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(wods).where(eq(wods.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getWodsByBox(boxId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(wods).where(eq(wods.boxId, boxId)).orderBy(desc(wods.data)).limit(limit);
+}
+
+export async function getWodByBoxAndDate(boxId: number, date: Date) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  // Normalize date to start of day
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const result = await db.select().from(wods)
+    .where(
+      and(
+        eq(wods.boxId, boxId),
+        sql`${wods.data} >= ${startOfDay} AND ${wods.data} <= ${endOfDay}`
+      )
+    )
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ===== CHECK-INS =====
+
+export async function createCheckin(data: InsertCheckin) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(checkins).values(data);
+  return result;
+}
+
+export async function getCheckinsByUser(userId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(checkins).where(eq(checkins.userId, userId)).orderBy(desc(checkins.dataHora)).limit(limit);
+}
+
+export async function getCheckinsByWod(wodId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(checkins).where(eq(checkins.wodId, wodId));
+}
+
+export async function hasUserCheckedIn(userId: number, wodId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db.select().from(checkins)
+    .where(and(eq(checkins.userId, userId), eq(checkins.wodId, wodId)))
+    .limit(1);
+
+  return result.length > 0;
+}
+
+// ===== RESULTADOS DE TREINOS =====
+
+export async function createResultadoTreino(data: InsertResultadoTreino) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(resultadosTreinos).values(data);
+  return result;
+}
+
+export async function getResultadosByUser(userId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(resultadosTreinos).where(eq(resultadosTreinos.userId, userId)).orderBy(desc(resultadosTreinos.dataRegistro)).limit(limit);
+}
+
+export async function getResultadosByWod(wodId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(resultadosTreinos).where(eq(resultadosTreinos.wodId, wodId));
+}
+
+// ===== PRs =====
+
+export async function createPr(data: InsertPr) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(prs).values(data);
+  return result;
+}
+
+export async function getPrsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(prs).where(eq(prs.userId, userId)).orderBy(desc(prs.data));
+}
+
+export async function getLatestPrByUserAndMovement(userId: number, movimento: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(prs)
+    .where(and(eq(prs.userId, userId), eq(prs.movimento, movimento)))
+    .orderBy(desc(prs.data))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ===== CAMPEONATOS =====
+
+export async function createCampeonato(data: InsertCampeonato) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(campeonatos).values(data);
+  return result;
+}
+
+export async function getCampeonatoById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(campeonatos).where(eq(campeonatos.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAllCampeonatos() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(campeonatos).orderBy(desc(campeonatos.dataInicio));
+}
+
+export async function getCampeonatosAbertos() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(campeonatos).where(eq(campeonatos.inscricoesAbertas, true)).orderBy(desc(campeonatos.dataInicio));
+}
+
+// ===== INSCRIÇÕES EM CAMPEONATOS =====
+
+export async function createInscricaoCampeonato(data: InsertInscricaoCampeonato) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(inscricoesCampeonatos).values(data);
+  return result;
+}
+
+export async function getInscricoesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(inscricoesCampeonatos).where(eq(inscricoesCampeonatos.userId, userId));
+}
+
+export async function getInscricoesByCampeonato(campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(inscricoesCampeonatos).where(eq(inscricoesCampeonatos.campeonatoId, campeonatoId));
+}
+
+// ===== PONTUAÇÕES =====
+
+export async function createPontuacao(data: InsertPontuacao) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(pontuacoes).values(data);
+  return result;
+}
+
+export async function getPontuacoesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(pontuacoes).where(eq(pontuacoes.userId, userId)).orderBy(desc(pontuacoes.data));
+}
+
+export async function getTotalPontosByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db.select({ total: sql<number>`SUM(${pontuacoes.pontos})` })
+    .from(pontuacoes)
+    .where(eq(pontuacoes.userId, userId));
+
+  return result[0]?.total || 0;
+}
+
+// ===== BADGES =====
+
+export async function createBadge(data: InsertBadge) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(badges).values(data);
+  return result;
+}
+
+export async function getAllBadges() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(badges);
+}
+
+export async function assignBadgeToUser(data: InsertUserBadge) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(userBadges).values(data);
+  return result;
+}
+
+export async function getUserBadges(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select({
+    id: userBadges.id,
+    dataConquista: userBadges.dataConquista,
+    badge: badges,
+  })
+  .from(userBadges)
+  .leftJoin(badges, eq(userBadges.badgeId, badges.id))
+  .where(eq(userBadges.userId, userId));
+}
+
+// ===== RANKINGS =====
+
+export async function createRanking(data: InsertRanking) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(rankings).values(data);
+  return result;
+}
+
+export async function getRankingsByTipoAndPeriodo(tipo: "semanal" | "mensal" | "temporada" | "box" | "geral", periodo: string, boxId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [
+    eq(rankings.tipo, tipo),
+    eq(rankings.periodo, periodo),
+  ];
+
+  if (boxId) {
+    conditions.push(eq(rankings.boxId, boxId));
+  }
+
+  return db.select().from(rankings).where(and(...conditions)).orderBy(rankings.posicao);
+}
+
+// ===== COMUNICADOS =====
+
+export async function createComunicado(data: InsertComunicado) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(comunicados).values(data);
+  return result;
+}
+
+export async function getComunicadosByBox(boxId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(comunicados).where(eq(comunicados.boxId, boxId)).orderBy(desc(comunicados.dataPub)).limit(limit);
+}
+
+export async function getComunicadosGerais(limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(comunicados).where(sql`${comunicados.boxId} IS NULL`).orderBy(desc(comunicados.dataPub)).limit(limit);
+}
+
+// ===== AGENDA DE AULAS =====
+
+export async function createAgendaAula(data: InsertAgendaAula) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(agendaAulas).values(data);
+  return result;
+}
+
+export async function getAgendaByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(agendaAulas).where(and(eq(agendaAulas.boxId, boxId), eq(agendaAulas.ativo, true)));
+}
