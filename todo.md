@@ -984,3 +984,45 @@
 - [x] Implementar sistema de pontos (check-in +10, WOD +20, PR +30)
 - [x] Implementar badges automáticos com notificações
 - [ ] Criar testes para funcionalidades de atletas
+
+
+### Sistema de Campeonatos Completo - ✅ CONCLUÍDO
+- [x] Verificar schema de campeonatos existente
+- [x] Criar procedures para CRUD de campeonatos
+- [x] Criar procedures para inscrições de atletas
+- [x] Criar procedures para gestão de baterias
+- [x] Criar procedures para leaderboard de campeonatos
+- [x] Criar procedures para sistema de pontuação
+- [x] Melhorar página de listagem de campeonatos
+- [x] Adicionar dialog de detalhes do campeonato
+- [x] Implementar formulário de inscrição com +50 pontos
+- [x] Adicionar badges de tipo e status
+- [x] Implementar validação de inscrições abertas
+- [x] Adicionar informações de capacidade e local
+
+### Feed Social - ✅ CONCLUÍDO
+- [x] Verificar schema de feed existente
+- [x] Criar procedures para listar atividades do feed
+- [x] Criar procedures para curtidas
+- [x] Criar procedures para comentários
+- [x] Página de Feed já existe e está completa
+- [x] Cards de atividade com ícones e cores (WOD, PR, Badge)
+- [x] Sistema de curtidas implementado
+- [x] Sistema de comentários com componente FeedComentarios
+- [x] Filtros por tipo de atividade (Select)
+- [x] Compartilhamento (incluindo Instagram!)
+- [x] Formatação de tempo relativo (Xm atrás, Xh atrás)
+
+### Gestão de Alunos Completa - ✅ CONCLUÍDO
+- [x] Verificar schema de avaliações físicas existente
+- [x] Criar procedures para registrar avaliações físicas
+- [x] Criar procedures para histórico de avaliações
+- [x] Criar procedures para relatório de evolução
+- [x] Página GestaoBox já existe com componente AlunosTab
+- [x] Listagem completa de alunos com busca e filtros
+- [x] Badges de categoria (iniciante, intermediário, avançado, elite)
+- [x] Página de Avaliações Físicas completa
+- [x] Gráficos de evolução (Peso, % Gordura, IMC)
+- [x] Registro de medidas corporais completo
+- [x] Cálculo automático de IMC
+- [x] Histórico de avaliações com comparação
