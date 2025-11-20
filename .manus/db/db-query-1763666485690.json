@@ -1,0 +1,28 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'checkins';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'checkins';",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "COLUMN_NAME": "wodId"
+    },
+    {
+      "COLUMN_NAME": "boxId"
+    },
+    {
+      "COLUMN_NAME": "dataHora"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nuserId\nwodId\nboxId\ndataHora\ncreatedAt\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

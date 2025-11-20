@@ -1060,67 +1060,7 @@ export async function getTaxaOcupacaoPorHorario(boxId: number) {
   }));
 }
 
-export async function getMetricasEngajamento(boxId: number) {
-  const db = await getDb();
-  if (!db) return { totalAlunos: 0, alunosAtivos: 0, mediaResultadosMes: 0, mediaPRsMes: 0 };
-  
-  // Total de alunos
-  const alunos = await db
-    .select()
-    .from(users)
-    .where(and(
-      eq(users.boxId, boxId),
-      eq(users.role, 'atleta')
-    ));
-  
-  const totalAlunos = alunos.length;
-  
-  // Alunos ativos (com atividade nos últimos 30 dias)
-  const dataLimite = new Date();
-  dataLimite.setDate(dataLimite.getDate() - 30);
-  
-  const alunosComAtividade = await db
-    .selectDistinct({ userId: resultadosTreinos.userId })
-    .from(resultadosTreinos)
-    .innerJoin(users, eq(resultadosTreinos.userId, users.id))
-    .where(and(
-      eq(users.boxId, boxId),
-      sql`${resultadosTreinos.dataRegistro} >= ${dataLimite}`
-    ));
-  
-  const alunosAtivos = alunosComAtividade.length;
-  
-  // Média de resultados registrados por aluno no mês
-  const resultadosMes = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(resultadosTreinos)
-    .innerJoin(users, eq(resultadosTreinos.userId, users.id))
-    .where(and(
-      eq(users.boxId, boxId),
-      sql`${resultadosTreinos.dataRegistro} >= ${dataLimite}`
-    ));
-  
-  const mediaResultadosMes = totalAlunos > 0 ? (resultadosMes[0]?.count || 0) / totalAlunos : 0;
-  
-  // Média de PRs registrados por aluno no mês
-  const prsMes = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(prs)
-    .innerJoin(users, eq(prs.userId, users.id))
-    .where(and(
-      eq(users.boxId, boxId),
-      sql`${prs.data} >= ${dataLimite}`
-    ));
-  
-  const mediaPRsMes = totalAlunos > 0 ? (prsMes[0]?.count || 0) / totalAlunos : 0;
-  
-  return {
-    totalAlunos,
-    alunosAtivos,
-    mediaResultadosMes: Math.round(mediaResultadosMes * 10) / 10,
-    mediaPRsMes: Math.round(mediaPRsMes * 10) / 10,
-  };
-}
+// Função getMetricasEngajamento movida para seção DASHBOARD DO COACH/BOX MASTER
 
 export async function getRetencaoAlunos(boxId: number) {
   const db = await getDb();
@@ -3234,6 +3174,14 @@ export async function atualizarProgressoConquista(
           mensagem: `Você completou: ${conquista.titulo} (+${conquista.recompensa_pontos} pontos)`,
           link: '/conquistas',
         });
+
+        // Notificação em tempo real via WebSocket
+        try {
+          const { notifyConquista } = await import('./_core/socket');
+          notifyConquista(userId, conquista);
+        } catch (error) {
+          console.error('[WebSocket] Failed to send realtime notification:', error);
+        }
       }
     }
   }
@@ -3433,6 +3381,410 @@ export async function getHistoricoMelhorias(userId: number, limite: number = 10)
       AND p1.carga > p2.carga
     ORDER BY p1.data DESC
     LIMIT ${limite}
+  `);
+
+  return (result as any)[0] || [];
+}
+
+
+// ==================== DASHBOARD DO COACH/BOX MASTER ====================
+
+export async function getMetricasEngajamento(boxId: number, periodo: 'semana' | 'mes' | 'trimestre' = 'mes') {
+  const db = await getDb();
+  if (!db) return null;
+
+  const diasPeriodo = periodo === 'semana' ? 7 : periodo === 'mes' ? 30 : 90;
+
+  const result = await db.execute(sql`
+    SELECT 
+      -- Total de atletas do box
+      (SELECT COUNT(*) FROM users WHERE boxId = ${boxId}) as total_atletas,
+      
+      -- Atletas ativos (com check-in no período)
+      COUNT(DISTINCT CASE 
+        WHEN c.dataHora >= DATE_SUB(NOW(), INTERVAL ${diasPeriodo} DAY) 
+        THEN c.userId 
+      END) as atletas_ativos,
+      
+      -- Total de check-ins no período
+      COUNT(CASE 
+        WHEN c.dataHora >= DATE_SUB(NOW(), INTERVAL ${diasPeriodo} DAY) 
+        THEN 1 
+      END) as total_checkins,
+      
+      -- Total de WODs completados no período
+      (SELECT COUNT(*) 
+       FROM resultados_treinos rt
+       INNER JOIN users u ON rt.userId = u.id
+       WHERE u.boxId = ${boxId}
+         AND rt.dataRegistro >= DATE_SUB(NOW(), INTERVAL ${diasPeriodo} DAY)
+      ) as wods_completados,
+      
+      -- Total de PRs no período
+      (SELECT COUNT(*) 
+       FROM prs p
+       INNER JOIN users u ON p.userId = u.id
+       WHERE u.boxId = ${boxId}
+         AND p.data >= DATE_SUB(NOW(), INTERVAL ${diasPeriodo} DAY)
+      ) as prs_conquistados,
+      
+      -- Média de check-ins por atleta ativo
+      ROUND(COUNT(CASE 
+        WHEN c.dataHora >= DATE_SUB(NOW(), INTERVAL ${diasPeriodo} DAY) 
+        THEN 1 
+      END) / NULLIF(COUNT(DISTINCT CASE 
+        WHEN c.dataHora >= DATE_SUB(NOW(), INTERVAL ${diasPeriodo} DAY) 
+        THEN c.userId 
+      END), 0), 1) as media_checkins_por_atleta
+      
+    FROM users u
+    LEFT JOIN checkins c ON u.id = c.userId
+    WHERE u.boxId = ${boxId}
+  `);
+
+  const rows = (result as any)[0];
+  if (!rows || rows.length === 0) return null;
+
+  const data = rows[0];
+  
+  return {
+    ...data,
+    taxa_engajamento: data.total_atletas > 0 
+      ? Math.round((data.atletas_ativos / data.total_atletas) * 100) 
+      : 0,
+  };
+}
+
+export async function getAtletasEmRisco(boxId: number, diasSemCheckin: number = 7) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      MAX(c.data) as ultimo_checkin,
+      DATEDIFF(NOW(), MAX(c.data)) as dias_sem_checkin,
+      COUNT(c.id) as total_checkins_historico
+    FROM users u
+    LEFT JOIN checkins c ON u.id = c.user_id
+    WHERE u.box_id = ${boxId}
+    GROUP BY u.id, u.name, u.email
+    HAVING dias_sem_checkin >= ${diasSemCheckin} OR ultimo_checkin IS NULL
+    ORDER BY dias_sem_checkin DESC
+    LIMIT 20
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getFrequenciaDiariaBox(boxId: number, dias: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      DATE(c.data) as data,
+      COUNT(DISTINCT c.user_id) as atletas,
+      COUNT(c.id) as checkins
+    FROM checkins c
+    INNER JOIN users u ON c.user_id = u.id
+    WHERE u.box_id = ${boxId}
+      AND c.data >= DATE_SUB(NOW(), INTERVAL ${dias} DAY)
+    GROUP BY DATE(c.data)
+    ORDER BY data ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getDistribuicaoHorarios(boxId: number, dias: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      HOUR(c.data) as hora,
+      COUNT(c.id) as total_checkins,
+      COUNT(DISTINCT c.user_id) as atletas_unicos
+    FROM checkins c
+    INNER JOIN users u ON c.user_id = u.id
+    WHERE u.box_id = ${boxId}
+      AND c.data >= DATE_SUB(NOW(), INTERVAL ${dias} DAY)
+    GROUP BY HOUR(c.data)
+    ORDER BY hora ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getTopAtletasBox(boxId: number, limite: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.name,
+      COUNT(DISTINCT c.id) as total_checkins,
+      COUNT(DISTINCT rt.id) as wods_completados,
+      COUNT(DISTINCT p.id) as prs_conquistados,
+      COALESCE(SUM(pt.pontos), 0) as pontos_totais,
+      u.streak_atual
+    FROM users u
+    LEFT JOIN checkins c ON u.id = c.user_id 
+      AND c.data >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    LEFT JOIN resultados_treinos rt ON u.id = rt.user_id 
+      AND rt.data_treino >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    LEFT JOIN prs p ON u.id = p.user_id 
+      AND p.data >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    LEFT JOIN pontuacoes pt ON u.id = pt.userId 
+      AND pt.createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    WHERE u.box_id = ${boxId}
+    GROUP BY u.id, u.name, u.streak_atual
+    ORDER BY pontos_totais DESC, total_checkins DESC
+    LIMIT ${limite}
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getEstatisticasConquistas(boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      COUNT(DISTINCT ucp.user_id) as atletas_com_conquistas,
+      COUNT(DISTINCT CASE WHEN ucp.completada = TRUE THEN ucp.user_id END) as atletas_completaram,
+      SUM(CASE WHEN ucp.completada = TRUE THEN 1 ELSE 0 END) as total_conquistas_completadas,
+      AVG(CASE WHEN ucp.completada = FALSE THEN ucp.progresso_atual END) as media_progresso
+    FROM user_conquistas_progresso ucp
+    INNER JOIN users u ON ucp.user_id = u.id
+    WHERE u.box_id = ${boxId}
+      AND ucp.semana_ano = CONCAT(YEAR(NOW()), '-', LPAD(WEEK(NOW(), 1), 2, '0'))
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getEvolucaoPRsBox(boxId: number, meses: number = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      DATE_FORMAT(p.data, '%Y-%m') as mes,
+      COUNT(p.id) as total_prs,
+      COUNT(DISTINCT p.user_id) as atletas_com_prs,
+      AVG(p.carga) as media_carga
+    FROM prs p
+    INNER JOIN users u ON p.user_id = u.id
+    WHERE u.box_id = ${boxId}
+      AND p.data >= DATE_SUB(NOW(), INTERVAL ${meses} MONTH)
+    GROUP BY DATE_FORMAT(p.data, '%Y-%m')
+    ORDER BY mes ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getResumoSemanal(boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      -- Esta semana
+      COUNT(DISTINCT CASE 
+        WHEN c.data >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+        THEN c.user_id 
+      END) as atletas_semana_atual,
+      
+      COUNT(CASE 
+        WHEN c.data >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+        THEN 1 
+      END) as checkins_semana_atual,
+      
+      -- Semana passada
+      COUNT(DISTINCT CASE 
+        WHEN c.data >= DATE_SUB(NOW(), INTERVAL 14 DAY) 
+        AND c.data < DATE_SUB(NOW(), INTERVAL 7 DAY)
+        THEN c.user_id 
+      END) as atletas_semana_passada,
+      
+      COUNT(CASE 
+        WHEN c.data >= DATE_SUB(NOW(), INTERVAL 14 DAY) 
+        AND c.data < DATE_SUB(NOW(), INTERVAL 7 DAY)
+        THEN 1 
+      END) as checkins_semana_passada
+      
+    FROM checkins c
+    INNER JOIN users u ON c.user_id = u.id
+    WHERE u.box_id = ${boxId}
+  `);
+
+  const rows = (result as any)[0];
+  if (!rows || rows.length === 0) return null;
+
+  const data = rows[0];
+  
+  return {
+    ...data,
+    variacao_atletas: data.atletas_semana_passada > 0
+      ? Math.round(((data.atletas_semana_atual - data.atletas_semana_passada) / data.atletas_semana_passada) * 100)
+      : 0,
+    variacao_checkins: data.checkins_semana_passada > 0
+      ? Math.round(((data.checkins_semana_atual - data.checkins_semana_passada) / data.checkins_semana_passada) * 100)
+      : 0,
+  };
+}
+
+
+// ==================== COMPARAÇÃO ENTRE ATLETAS ====================
+
+export async function getAtletasBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      id,
+      name,
+      email
+    FROM users
+    WHERE box_id = ${boxId}
+      AND role = 'atleta'
+    ORDER BY name ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoAtletas(atletasIds: number[]) {
+  const db = await getDb();
+  if (!db || atletasIds.length === 0) return [];
+
+  const idsPlaceholder = atletasIds.map(() => '?').join(',');
+
+  const result = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      u.streak_atual,
+      u.streak_recorde,
+      
+      -- Check-ins (últimos 30 dias)
+      COUNT(DISTINCT c.id) as total_checkins_30d,
+      
+      -- WODs completados (últimos 30 dias)
+      COUNT(DISTINCT rt.id) as wods_completados_30d,
+      
+      -- PRs conquistados (total)
+      COUNT(DISTINCT p.id) as total_prs,
+      
+      -- Pontos totais (últimos 30 dias)
+      COALESCE(SUM(pt.pontos), 0) as pontos_30d,
+      
+      -- Badges conquistados
+      COUNT(DISTINCT ub.badge_id) as total_badges
+      
+    FROM users u
+    LEFT JOIN checkins c ON u.id = c.user_id 
+      AND c.data >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    LEFT JOIN resultados_treinos rt ON u.id = rt.user_id 
+      AND rt.data_treino >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    LEFT JOIN prs p ON u.id = p.user_id
+    LEFT JOIN pontuacoes pt ON u.id = pt.userId 
+      AND pt.createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    LEFT JOIN users_badges ub ON u.id = ub.user_id
+    WHERE u.id IN (${sql.raw(atletasIds.join(','))})
+    GROUP BY u.id, u.name, u.email, u.streak_atual, u.streak_recorde
+    ORDER BY FIELD(u.id, ${sql.raw(atletasIds.join(','))})
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoPRs(atletasIds: number[]) {
+  const db = await getDb();
+  if (!db || atletasIds.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      p.user_id,
+      p.movimento,
+      MAX(p.carga) as melhor_carga,
+      COUNT(p.id) as total_tentativas,
+      MAX(p.data) as data_ultimo_pr
+    FROM prs p
+    WHERE p.user_id IN (${sql.raw(atletasIds.join(','))})
+    GROUP BY p.user_id, p.movimento
+    ORDER BY p.movimento ASC, melhor_carga DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoFrequencia(atletasIds: number[], dias: number = 30) {
+  const db = await getDb();
+  if (!db || atletasIds.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      u.id as user_id,
+      DATE(c.data) as data,
+      COUNT(c.id) as checkins
+    FROM users u
+    LEFT JOIN checkins c ON u.id = c.user_id 
+      AND c.data >= DATE_SUB(NOW(), INTERVAL ${dias} DAY)
+    WHERE u.id IN (${sql.raw(atletasIds.join(','))})
+    GROUP BY u.id, DATE(c.data)
+    ORDER BY data ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoBadges(atletasIds: number[]) {
+  const db = await getDb();
+  if (!db || atletasIds.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      ub.user_id,
+      b.id as badge_id,
+      b.nome,
+      b.icone,
+      b.descricao,
+      ub.data_conquista
+    FROM users_badges ub
+    INNER JOIN badges b ON ub.badge_id = b.id
+    WHERE ub.user_id IN (${sql.raw(atletasIds.join(','))})
+    ORDER BY ub.data_conquista DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoEvolucao(atletasIds: number[], meses: number = 6) {
+  const db = await getDb();
+  if (!db || atletasIds.length === 0) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      p.user_id,
+      DATE_FORMAT(p.data, '%Y-%m') as mes,
+      COUNT(p.id) as total_prs,
+      AVG(p.carga) as media_carga
+    FROM prs p
+    WHERE p.user_id IN (${sql.raw(atletasIds.join(','))})
+      AND p.data >= DATE_SUB(NOW(), INTERVAL ${meses} MONTH)
+    GROUP BY p.user_id, DATE_FORMAT(p.data, '%Y-%m')
+    ORDER BY mes ASC
   `);
 
   return (result as any)[0] || [];

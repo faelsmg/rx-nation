@@ -960,14 +960,6 @@ export const appRouter = router({
   }),
 
   // ===== COMPARAÇÃO DE ATLETAS =====
-  comparacao: router({
-    compareAtletas: protectedProcedure
-      .input(z.object({ userId1: z.number(), userId2: z.number() }))
-      .query(async ({ input }) => {
-        return db.compareAtletas(input.userId1, input.userId2);
-      }),
-  }),
-
   // ===== DESAFIOS =====
   desafios: router({
     create: protectedProcedure
@@ -1285,6 +1277,99 @@ export const appRouter = router({
       .input(z.object({ limite: z.number().optional() }))
       .query(async ({ ctx, input }) => {
         return db.getHistoricoMelhorias(ctx.user.id, input.limite || 10);
+      }),
+  }),
+
+  // ===== DASHBOARD DO COACH/BOX MASTER =====
+  coach: router({
+    getMetricas: protectedProcedure
+      .input(z.object({ periodo: z.enum(['semana', 'mes', 'trimestre']).optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getMetricasEngajamento(ctx.user.boxId || 0, input.periodo || 'mes');
+      }),
+
+    getAtletasEmRisco: protectedProcedure
+      .input(z.object({ diasSemCheckin: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getAtletasEmRisco(ctx.user.boxId || 0, input.diasSemCheckin || 7);
+      }),
+
+    getFrequenciaDiaria: protectedProcedure
+      .input(z.object({ dias: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getFrequenciaDiariaBox(ctx.user.boxId || 0, input.dias || 30);
+      }),
+
+    getDistribuicaoHorarios: protectedProcedure
+      .input(z.object({ dias: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getDistribuicaoHorarios(ctx.user.boxId || 0, input.dias || 30);
+      }),
+
+    getTopAtletas: protectedProcedure
+      .input(z.object({ limite: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getTopAtletasBox(ctx.user.boxId || 0, input.limite || 10);
+      }),
+
+    getEstatisticasConquistas: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getEstatisticasConquistas(ctx.user.boxId || 0);
+      }),
+
+    getEvolucaoPRs: protectedProcedure
+      .input(z.object({ meses: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getEvolucaoPRsBox(ctx.user.boxId || 0, input.meses || 6);
+      }),
+
+    getResumoSemanal: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getResumoSemanal(ctx.user.boxId || 0);
+      }),
+  }),
+
+  // ===== COMPARAÇÃO ENTRE ATLETAS =====
+  comparacao: router({
+    getAtletasBox: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getAtletasBox(ctx.user.boxId || 0);
+      }),
+
+    getComparacao: protectedProcedure
+      .input(z.object({ atletasIds: z.array(z.number()).min(2).max(4) }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoAtletas(input.atletasIds);
+      }),
+
+    getPRs: protectedProcedure
+      .input(z.object({ atletasIds: z.array(z.number()).min(2).max(4) }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoPRs(input.atletasIds);
+      }),
+
+    getFrequencia: protectedProcedure
+      .input(z.object({ 
+        atletasIds: z.array(z.number()).min(2).max(4),
+        dias: z.number().optional()
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoFrequencia(input.atletasIds, input.dias || 30);
+      }),
+
+    getBadges: protectedProcedure
+      .input(z.object({ atletasIds: z.array(z.number()).min(2).max(4) }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoBadges(input.atletasIds);
+      }),
+
+    getEvolucao: protectedProcedure
+      .input(z.object({ 
+        atletasIds: z.array(z.number()).min(2).max(4),
+        meses: z.number().optional()
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoEvolucao(input.atletasIds, input.meses || 6);
       }),
   }),
 });

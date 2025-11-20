@@ -654,3 +654,48 @@
 - [x] Mostrar posição no ranking do box
 - [x] Substituir link "Meus PRs" por "Análise de Performance" no menu
 - [ ] Criar testes para cálculos de performance
+
+
+## Sistema de Notificações Push em Tempo Real
+- [x] Configurar Socket.IO no servidor Express
+- [x] Criar gerenciador de conexões WebSocket
+- [x] Implementar autenticação de conexões WebSocket
+- [x] Criar eventos de notificação em tempo real
+- [x] Integrar notificações com sistema de conquistas
+- [x] Integrar notificações com sistema de desafios
+- [x] Integrar notificações com feed de atividades
+- [x] Criar hook useRealtimeNotifications no frontend
+- [x] Implementar componente de toast para notificações
+- [x] Implementar sistema de reconexão automática
+- [x] Adicionar componente RealtimeNotifications no App.tsx
+- [ ] Criar testes para funcionalidades de WebSocket
+
+## Dashboard do Coach/Box Master
+- [x] Criar procedures para métricas de engajamento
+- [x] Criar procedures para identificar atletas em risco
+- [x] Criar procedures para relatórios de progresso coletivo
+- [x] Criar procedures para estatísticas do box
+- [x] Criar página de Dashboard do Coach
+- [x] Implementar gráficos de frequência geral do box
+- [x] Implementar gráficos de evolução de PRs coletivos
+- [x] Adicionar lista de atletas em risco de abandono
+- [x] Implementar alertas de atletas sem check-in há 7+ dias
+- [x] Adicionar estatísticas de conquistas completadas
+- [x] Implementar filtros por período (semana, mês, trimestre)
+- [x] Adicionar resumo semanal com variações
+- [x] Adicionar link de Dashboard Coach no menu
+- [ ] Criar testes para funcionalidades do dashboard
+
+## Comparação entre Atletas
+- [x] Criar procedures para buscar dados comparativos
+- [x] Criar procedures para comparar PRs entre atletas
+- [x] Criar procedures para comparar frequência
+- [x] Criar procedures para comparar badges
+- [x] Criar página de Comparação de Atletas
+- [x] Implementar seletor de atletas (2-4 atletas)
+- [x] Criar visualização lado a lado de estatísticas
+- [x] Implementar gráficos de comparação de PRs
+- [x] Adicionar comparação de badges conquistados
+- [x] Adicionar indicadores de vantagem/desvantagem (coroa para melhor)
+- [x] Adicionar link de Comparar Atletas no menu
+- [ ] Criar testes para funcionalidades de comparação

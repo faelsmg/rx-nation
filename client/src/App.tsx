@@ -22,7 +22,7 @@ import Notificacoes from "./pages/Notificacoes";
 import PerfilPublico from "./pages/PerfilPublico";
 import Metas from "./pages/Metas";
 import Feed from "./pages/Feed";
-import Comparar from "./pages/Comparar";
+
 import Desafios from "./pages/Desafios";
 import DesafioDetalhes from "./pages/DesafioDetalhes";
 import Equipes from "./pages/Equipes";
@@ -30,6 +30,9 @@ import EquipeDetalhes from "./pages/EquipeDetalhes";
 import LeaderboardEquipes from "./pages/LeaderboardEquipes";
 import Conquistas from "./pages/Conquistas";
 import AnalisePerformance from "./pages/AnalisePerformance";
+import RealtimeNotifications from "./components/RealtimeNotifications";
+import DashboardCoach from "./pages/DashboardCoach";
+import ComparacaoAtletas from "./pages/ComparacaoAtletas";
 
 function Router() {
   return (
@@ -52,7 +55,7 @@ function Router() {
       <Route path={"/atleta/:id"} component={PerfilPublico} />
       <Route path={"/metas"} component={Metas} />
       <Route path={"/feed"} component={Feed} />
-      <Route path={"/comparar"} component={Comparar} />
+
       <Route path={"/desafios"} component={Desafios} />
       <Route path={"/desafios/:id"} component={DesafioDetalhes} />
       <Route path={"/equipes"} component={Equipes} />
@@ -60,6 +63,8 @@ function Router() {
       <Route path={"/leaderboard-equipes"} component={LeaderboardEquipes} />
       <Route path={"/conquistas"} component={Conquistas} />
       <Route path={"/analise-performance"} component={AnalisePerformance} />
+      <Route path={"/dashboard-coach"} component={DashboardCoach} />
+      <Route path={"/comparacao"} component={ComparacaoAtletas} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -72,6 +77,7 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
+          <RealtimeNotifications />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

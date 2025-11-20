@@ -20,6 +20,7 @@ import {
   Building2,
   Target,
   Swords,
+  Activity,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
@@ -61,8 +62,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: Users, label: "Equipes", path: "/equipes", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Trophy, label: "Leaderboard Equipes", path: "/leaderboard-equipes", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Target, label: "Conquistas", path: "/conquistas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: Users, label: "Comparar Atletas", path: "/comparacao", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Calendar, label: "Agenda", path: "/agenda", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: Activity, label: "Dashboard Coach", path: "/dashboard-coach", roles: ["box_master", "admin_liga"] },
     { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "admin_liga"] },
     { icon: Building2, label: "Painel Franqueado", path: "/franqueado", roles: ["franqueado"] },
     { icon: Shield, label: "Admin da Liga", path: "/admin", roles: ["admin_liga"] },

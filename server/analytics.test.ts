@@ -145,16 +145,16 @@ describe("Analytics para Box Masters", () => {
     const { ctx } = createBoxMasterContext(testBoxId);
     const caller = appRouter.createCaller(ctx);
 
-    const result = await caller.analytics.getMetricasEngajamento({
-      boxId: testBoxId,
+    const result = await caller.coach.getMetricas({
+      periodo: 'mes',
     });
 
     expect(result).toBeDefined();
-    expect(result).toHaveProperty("totalAlunos");
-    expect(result).toHaveProperty("alunosAtivos");
-    expect(result).toHaveProperty("mediaResultadosMes");
-    expect(result).toHaveProperty("mediaPRsMes");
-    expect(result.totalAlunos).toBeGreaterThanOrEqual(1);
+    expect(result).toHaveProperty("total_atletas");
+    expect(result).toHaveProperty("atletas_ativos");
+    expect(result).toHaveProperty("total_checkins");
+    expect(result).toHaveProperty("taxa_engajamento");
+    expect(result.total_atletas).toBeGreaterThanOrEqual(1);
   });
 
   it("deve buscar dados de retenção de alunos", async () => {
