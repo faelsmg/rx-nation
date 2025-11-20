@@ -464,3 +464,28 @@ export const planilhasTreinoRelations = relations(planilhasTreino, ({ one }) => 
     references: [boxes.id],
   }),
 }));
+
+
+/**
+ * Notificações
+ */
+export const notificacoes = mysqlTable("notificacoes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral"]).notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  mensagem: text("mensagem").notNull(),
+  lida: boolean("lida").default(false).notNull(),
+  link: varchar("link", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notificacao = typeof notificacoes.$inferSelect;
+export type InsertNotificacao = typeof notificacoes.$inferInsert;
+
+export const notificacoesRelations = relations(notificacoes, ({ one }) => ({
+  user: one(users, {
+    fields: [notificacoes.userId],
+    references: [users.id],
+  }),
+}));

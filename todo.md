@@ -280,3 +280,26 @@
 - [x] Adicionar gráficos de evolução de PRs ao longo do tempo
 - [x] Adicionar gráficos de evolução de tempos em WODs
 - [x] Criar testes para rankings (48/49 passando)
+
+
+## Sistema de Notificações Push
+- [x] Criar schema de notificações no banco
+- [x] Criar procedures para listar notificações
+- [x] Criar procedures para marcar como lida
+- [ ] Implementar notificação de novo WOD criado
+- [ ] Implementar notificação de novo comunicado
+- [ ] Implementar lembrete de aula reservada (1h antes)
+- [ ] Implementar notificação de badge desbloqueado
+- [ ] Criar interface de gerenciamento de notificações
+- [ ] Adicionar preferências de notificação no perfil
+
+## Dashboard Analítico para Box Masters
+- [x] Criar procedures para métricas de frequência
+- [x] Criar procedures para taxa de ocupação de aulas
+- [x] Criar procedures para análise de retenção
+- [x] Criar gráfico de frequência mensal dos alunos
+- [x] Criar gráfico de taxa de ocupação por horário
+- [x] Criar gráfico de novos alunos vs cancelamentos
+- [x] Criar métricas de engajamento (check-ins, resultados registrados)
+- [x] Adicionar aba de Analytics na Gestão do Box
+- [x] Criar testes para dashboard analítico

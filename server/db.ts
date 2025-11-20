@@ -28,6 +28,8 @@ import {
   comunicados,
   InsertComunicado,
   agendaAulas,
+  notificacoes,
+  InsertNotificacao,
   InsertAgendaAula,
   reservasAulas,
   InsertReservaAula,
@@ -684,4 +686,246 @@ export async function getPRsByMovimento(movimento: string, categoria?: string | 
   .limit(50);
   
   return results;
+}
+
+
+// ============================================================================
+// Notificações
+// ============================================================================
+
+export async function createNotificacao(data: InsertNotificacao) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(notificacoes).values(data);
+  return result;
+}
+
+export async function getNotificacoesByUser(userId: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select()
+    .from(notificacoes)
+    .where(eq(notificacoes.userId, userId))
+    .orderBy(desc(notificacoes.createdAt))
+    .limit(limit);
+  
+  return results;
+}
+
+export async function getNotificacoesNaoLidas(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select()
+    .from(notificacoes)
+    .where(and(
+      eq(notificacoes.userId, userId),
+      eq(notificacoes.lida, false)
+    ))
+    .orderBy(desc(notificacoes.createdAt));
+  
+  return results;
+}
+
+export async function marcarNotificacaoComoLida(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db
+    .update(notificacoes)
+    .set({ lida: true })
+    .where(eq(notificacoes.id, id));
+  
+  return { success: true };
+}
+
+export async function marcarTodasComoLidas(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  await db
+    .update(notificacoes)
+    .set({ lida: true })
+    .where(and(
+      eq(notificacoes.userId, userId),
+      eq(notificacoes.lida, false)
+    ));
+  
+  return { success: true };
+}
+
+
+// ============================================================================
+// Analytics para Box Masters
+// ============================================================================
+
+export async function getFrequenciaMensal(boxId: number, mes: number, ano: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar reservas do mês
+  const startDate = new Date(ano, mes - 1, 1);
+  const endDate = new Date(ano, mes, 0, 23, 59, 59);
+  
+  const reservas = await db
+    .select({
+      dia: sql<number>`DAY(${reservasAulas.data})`,
+      total: sql<number>`COUNT(*)`,
+    })
+    .from(reservasAulas)
+    .innerJoin(agendaAulas, eq(reservasAulas.agendaAulaId, agendaAulas.id))
+    .where(
+      and(
+        eq(agendaAulas.boxId, boxId),
+        sql`${reservasAulas.data} >= ${startDate}`,
+        sql`${reservasAulas.data} <= ${endDate}`
+      )
+    )
+    .groupBy(sql`DAY(${reservasAulas.data})`);
+  
+  return reservas;
+}
+
+export async function getTaxaOcupacaoPorHorario(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar horários e suas reservas dos últimos 30 dias
+  const dataLimite = new Date();
+  dataLimite.setDate(dataLimite.getDate() - 30);
+  
+  const horarios = await db
+    .select({
+      diaSemana: agendaAulas.diaSemana,
+      horario: agendaAulas.horario,
+      capacidade: agendaAulas.capacidade,
+      totalReservas: sql<number>`COUNT(${reservasAulas.id})`,
+    })
+    .from(agendaAulas)
+    .leftJoin(
+      reservasAulas,
+      and(
+        eq(reservasAulas.agendaAulaId, agendaAulas.id),
+        sql`${reservasAulas.data} >= ${dataLimite}`
+      )
+    )
+    .where(eq(agendaAulas.boxId, boxId))
+    .groupBy(agendaAulas.id, agendaAulas.diaSemana, agendaAulas.horario, agendaAulas.capacidade);
+  
+  return horarios.map(h => ({
+    ...h,
+    taxaOcupacao: h.capacidade > 0 ? (h.totalReservas / h.capacidade) * 100 : 0,
+  }));
+}
+
+export async function getMetricasEngajamento(boxId: number) {
+  const db = await getDb();
+  if (!db) return { totalAlunos: 0, alunosAtivos: 0, mediaResultadosMes: 0, mediaPRsMes: 0 };
+  
+  // Total de alunos
+  const alunos = await db
+    .select()
+    .from(users)
+    .where(and(
+      eq(users.boxId, boxId),
+      eq(users.role, 'atleta')
+    ));
+  
+  const totalAlunos = alunos.length;
+  
+  // Alunos ativos (com atividade nos últimos 30 dias)
+  const dataLimite = new Date();
+  dataLimite.setDate(dataLimite.getDate() - 30);
+  
+  const alunosComAtividade = await db
+    .selectDistinct({ userId: resultadosTreinos.userId })
+    .from(resultadosTreinos)
+    .innerJoin(users, eq(resultadosTreinos.userId, users.id))
+    .where(and(
+      eq(users.boxId, boxId),
+      sql`${resultadosTreinos.dataRegistro} >= ${dataLimite}`
+    ));
+  
+  const alunosAtivos = alunosComAtividade.length;
+  
+  // Média de resultados registrados por aluno no mês
+  const resultadosMes = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .innerJoin(users, eq(resultadosTreinos.userId, users.id))
+    .where(and(
+      eq(users.boxId, boxId),
+      sql`${resultadosTreinos.dataRegistro} >= ${dataLimite}`
+    ));
+  
+  const mediaResultadosMes = totalAlunos > 0 ? (resultadosMes[0]?.count || 0) / totalAlunos : 0;
+  
+  // Média de PRs registrados por aluno no mês
+  const prsMes = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prs)
+    .innerJoin(users, eq(prs.userId, users.id))
+    .where(and(
+      eq(users.boxId, boxId),
+      sql`${prs.data} >= ${dataLimite}`
+    ));
+  
+  const mediaPRsMes = totalAlunos > 0 ? (prsMes[0]?.count || 0) / totalAlunos : 0;
+  
+  return {
+    totalAlunos,
+    alunosAtivos,
+    mediaResultadosMes: Math.round(mediaResultadosMes * 10) / 10,
+    mediaPRsMes: Math.round(mediaPRsMes * 10) / 10,
+  };
+}
+
+export async function getRetencaoAlunos(boxId: number) {
+  const db = await getDb();
+  if (!db) return { novosAlunos: 0, alunosInativos: 0, taxaRetencao: 0 };
+  
+  // Novos alunos nos últimos 30 dias
+  const dataLimite30 = new Date();
+  dataLimite30.setDate(dataLimite30.getDate() - 30);
+  
+  const novosAlunos = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(users)
+    .where(and(
+      eq(users.boxId, boxId),
+      eq(users.role, 'atleta'),
+      sql`${users.createdAt} >= ${dataLimite30}`
+    ));
+  
+  // Alunos inativos (sem atividade nos últimos 30 dias)
+  const alunosComAtividade = await db
+    .selectDistinct({ userId: resultadosTreinos.userId })
+    .from(resultadosTreinos)
+    .innerJoin(users, eq(resultadosTreinos.userId, users.id))
+    .where(and(
+      eq(users.boxId, boxId),
+      sql`${resultadosTreinos.dataRegistro} >= ${dataLimite30}`
+    ));
+  
+  const totalAlunos = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(users)
+    .where(and(
+      eq(users.boxId, boxId),
+      eq(users.role, 'atleta')
+    ));
+  
+  const alunosInativos = (totalAlunos[0]?.count || 0) - alunosComAtividade.length;
+  const taxaRetencao = totalAlunos[0]?.count ? 
+    ((alunosComAtividade.length / totalAlunos[0].count) * 100) : 0;
+  
+  return {
+    novosAlunos: novosAlunos[0]?.count || 0,
+    alunosInativos,
+    taxaRetencao: Math.round(taxaRetencao * 10) / 10,
+  };
 }

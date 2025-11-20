@@ -4,6 +4,12 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { 
+  getNotificacoesByUser, 
+  getNotificacoesNaoLidas, 
+  marcarNotificacaoComoLida, 
+  marcarTodasComoLidas 
+} from "./db";
 import { eq, and, sql } from "drizzle-orm";
 import { users, boxes } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -601,6 +607,67 @@ export const appRouter = router({
         boxes: myBoxes,
       };
     }),
+  }),
+
+  notificacoes: router({
+    // Listar notificações do usuário
+    getByUser: protectedProcedure
+      .input(z.object({ limit: z.number().optional().default(20) }))
+      .query(async ({ ctx, input }) => {
+        return await getNotificacoesByUser(ctx.user.id, input.limit);
+      }),
+    
+    // Buscar não lidas
+    getNaoLidas: protectedProcedure.query(async ({ ctx }) => {
+      return await getNotificacoesNaoLidas(ctx.user.id);
+    }),
+    
+    // Marcar como lida
+    marcarLida: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await marcarNotificacaoComoLida(input.id);
+      }),
+    
+    // Marcar todas como lidas
+    marcarTodasLidas: protectedProcedure.mutation(async ({ ctx }) => {
+      return await marcarTodasComoLidas(ctx.user.id);
+    }),
+  }),
+
+  // ===== ANALYTICS PARA BOX MASTERS =====
+  analytics: router({
+    // Frequência mensal de reservas
+    getFrequenciaMensal: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number(),
+        mes: z.number().min(1).max(12),
+        ano: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getFrequenciaMensal(input.boxId, input.mes, input.ano);
+      }),
+    
+    // Taxa de ocupação por horário
+    getTaxaOcupacao: boxMasterProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTaxaOcupacaoPorHorario(input.boxId);
+      }),
+    
+    // Métricas de engajamento
+    getMetricasEngajamento: boxMasterProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getMetricasEngajamento(input.boxId);
+      }),
+    
+    // Retenção de alunos
+    getRetencao: boxMasterProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getRetencaoAlunos(input.boxId);
+      }),
   }),
 });
 

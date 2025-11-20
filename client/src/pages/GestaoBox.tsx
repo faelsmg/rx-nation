@@ -15,6 +15,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { AlunosTab } from "@/components/AlunosTab";
 import { AgendaTab } from "@/components/AgendaTab";
 import { ComunicadosTab } from "@/components/ComunicadosTab";
+import { AnalyticsTab } from "@/components/AnalyticsTab";
 
 export default function GestaoBox() {
   const { user } = useAuth();
@@ -153,11 +154,12 @@ export default function GestaoBox() {
         </div>
 
         <Tabs defaultValue="wods" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="wods">WODs</TabsTrigger>
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="comunicados">Comunicados</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="wods" className="space-y-6">
@@ -352,6 +354,10 @@ export default function GestaoBox() {
 
           <TabsContent value="comunicados">
             <ComunicadosTab boxId={user.boxId} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsTab boxId={user.boxId} />
           </TabsContent>
         </Tabs>
       </div>
