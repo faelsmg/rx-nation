@@ -396,7 +396,27 @@ export async function getResultadosByUser(userId: number, limit = 30) {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(resultadosTreinos).where(eq(resultadosTreinos.userId, userId)).orderBy(desc(resultadosTreinos.dataRegistro)).limit(limit);
+  const results = await db.select({
+    id: resultadosTreinos.id,
+    userId: resultadosTreinos.userId,
+    wodId: resultadosTreinos.wodId,
+    tempo: resultadosTreinos.tempo,
+    reps: resultadosTreinos.reps,
+    carga: resultadosTreinos.carga,
+    rxOuScale: resultadosTreinos.rxOuScale,
+    observacoes: resultadosTreinos.observacoes,
+    dataRegistro: resultadosTreinos.dataRegistro,
+    createdAt: resultadosTreinos.createdAt,
+    updatedAt: resultadosTreinos.updatedAt,
+    wod: wods,
+  })
+  .from(resultadosTreinos)
+  .leftJoin(wods, eq(resultadosTreinos.wodId, wods.id))
+  .where(eq(resultadosTreinos.userId, userId))
+  .orderBy(desc(resultadosTreinos.dataRegistro))
+  .limit(limit);
+  
+  return results;
 }
 
 export async function getResultadosByWod(wodId: number) {
@@ -628,4 +648,40 @@ export async function getComunicadoById(id: number) {
 
   const result = await db.select().from(comunicados).where(eq(comunicados.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// Adicionar funções faltantes de PRs
+export async function updatePR(id: number, carga: number, data: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(prs).set({ carga, data }).where(eq(prs.id, id));
+  return { success: true };
+}
+
+export async function getPRsByMovimento(movimento: string, categoria?: string | null, faixaEtaria?: string | null) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Construir condições de filtro
+  const conditions: any[] = [eq(prs.movimento, movimento)];
+  
+  if (categoria) {
+    conditions.push(eq(users.categoria, categoria as any));
+  }
+  if (faixaEtaria) {
+    conditions.push(eq(users.faixaEtaria, faixaEtaria as any));
+  }
+  
+  // Buscar PRs com informações do usuário
+  const results = await db.select({
+    pr: prs,
+    user: users,
+  })
+  .from(prs)
+  .innerJoin(users, eq(prs.userId, users.id))
+  .where(and(...conditions))
+  .orderBy(desc(prs.carga))
+  .limit(50);
+  
+  return results;
 }

@@ -283,6 +283,26 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         return db.getLatestPrByUserAndMovement(ctx.user.id, input.movimento);
       }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        carga: z.number(),
+        data: z.date(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.updatePR(input.id, input.carga, input.data);
+      }),
+    
+    getRankingByMovimento: publicProcedure
+      .input(z.object({
+        movimento: z.string(),
+        categoria: z.string().nullable().optional(),
+        faixaEtaria: z.string().nullable().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getPRsByMovimento(input.movimento, input.categoria, input.faixaEtaria);
+      }),
   }),
 
   // ===== CAMPEONATOS =====

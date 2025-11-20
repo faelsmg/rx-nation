@@ -247,3 +247,27 @@
 - [x] Criar página de Dashboard do Franqueado
 - [x] Implementar visualização de múltiplos boxes
 - [x] Criar testes para funcionalidades de Franqueado
+
+
+## Sistema de Registro de Resultados de Treino
+- [x] Verificar schema de resultados_treinos (já existe)
+- [x] Criar procedures para registrar resultado de WOD (já existe)
+- [x] Criar procedures para listar histórico de resultados (já existe)
+- [x] Criar procedures para buscar resultados por WOD (já existe)
+- [x] Criar interface de registro de resultado no WOD do Dia
+- [x] Criar página de Histórico com lista de resultados
+- [ ] Adicionar gráficos de evolução de performance
+- [ ] Criar testes para funcionalidades de resultados
+
+## Sistema de PRs (Personal Records)
+- [x] Verificar schema de PRs (já existe)
+- [x] Definir lista de movimentos padrão (Squat, Deadlift, Clean, Snatch, etc)
+- [x] Criar procedures para registrar PR (já existe)
+- [x] Criar procedures para listar PRs do atleta (já existe)
+- [x] Criar procedures para atualizar PR
+- [x] Criar procedures para rankings por categoria
+- [x] Criar interface de registro de PRs
+- [x] Criar página de visualização de PRs com histórico
+- [ ] Criar página de Rankings com filtros por movimento e categoria
+- [ ] Adicionar gráficos de evolução de PRs
+- [ ] Criar testes para funcionalidades de PRs
