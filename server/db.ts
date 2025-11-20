@@ -874,6 +874,92 @@ export async function sendClassReminders() {
   return { sent, errors };
 }
 
+// Helper para gerar arquivo .ics (iCalendar) para reserva de aula
+export async function generateICSForReserva(reservaId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar detalhes da reserva com joins
+  const reserva = await db
+    .select({
+      reservaId: reservasAulas.id,
+      data: reservasAulas.data,
+      horario: agendaAulas.horario,
+      boxNome: boxes.nome,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(reservasAulas)
+    .leftJoin(agendaAulas, eq(reservasAulas.agendaAulaId, agendaAulas.id))
+    .leftJoin(boxes, eq(agendaAulas.boxId, boxes.id))
+    .leftJoin(users, eq(reservasAulas.userId, users.id))
+    .where(eq(reservasAulas.id, reservaId))
+    .limit(1);
+
+  if (reserva.length === 0) return null;
+
+  const { data, horario, boxNome, userName, userEmail } = reserva[0];
+  
+  if (!horario || !boxNome) return null;
+  
+  // Parsear horário (formato "HH:MM")
+  const [hours, minutes] = horario.split(":").map(Number);
+  
+  // Criar data/hora de início
+  const startDate = new Date(data);
+  startDate.setHours(hours, minutes, 0, 0);
+  
+  // Aula dura 1 hora (padrão CrossFit)
+  const endDate = new Date(startDate);
+  endDate.setHours(startDate.getHours() + 1);
+  
+  // Formatar datas no formato iCalendar (YYYYMMDDTHHMMSS)
+  const formatICSDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hour = String(date.getHours()).padStart(2, "0");
+    const minute = String(date.getMinutes()).padStart(2, "0");
+    const second = String(date.getSeconds()).padStart(2, "0");
+    return `${year}${month}${day}T${hour}${minute}${second}`;
+  };
+  
+  const now = new Date();
+  const uid = `reserva-${reservaId}-${now.getTime()}@impactopro.com`;
+  
+  // Gerar conteúdo .ics
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Impacto Pro League//Reserva de Aula//PT",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${formatICSDate(now)}`,
+    `DTSTART:${formatICSDate(startDate)}`,
+    `DTEND:${formatICSDate(endDate)}`,
+    `SUMMARY:Aula no ${boxNome}`,
+    `DESCRIPTION:Aula reservada por ${userName || userEmail}`,
+    `LOCATION:${boxNome}`,
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Lembrete: Sua aula começa em 1 hora",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  
+  return {
+    filename: `aula-${boxNome.replace(/\s+/g, "-").toLowerCase()}-${formatICSDate(startDate)}.ics`,
+    content: icsContent,
+    mimeType: "text/calendar",
+  };
+}
+
 // ============================================================================
 // Analytics para Box Masters
 // ============================================================================

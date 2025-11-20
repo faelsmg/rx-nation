@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Calendar, Clock, Users, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Clock, Users, CheckCircle, XCircle, CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -62,6 +62,33 @@ export default function Agenda() {
     if (confirm("Tem certeza que deseja cancelar esta reserva?")) {
       cancelarMutation.mutate({ id: reservaId });
     }
+  };
+
+  const handleAddToCalendar = (reservaId: number) => {
+    // Fazer fetch manual da procedure
+    utils.client.reservas.generateICS.query({ reservaId })
+      .then((icsData) => {
+        if (!icsData) {
+          toast.error("Erro ao gerar arquivo de calendário");
+          return;
+        }
+
+        // Criar blob e fazer download
+        const blob = new Blob([icsData.content], { type: icsData.mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = icsData.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast.success("Arquivo de calendário baixado! Importe no Google Calendar ou iOS.");
+      })
+      .catch((error) => {
+        toast.error("Erro ao gerar arquivo de calendário");
+      });
   };
 
   // Verificar se já tem reserva para um horário específico
@@ -164,14 +191,24 @@ export default function Agenda() {
                                 </p>
                               </div>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCancelar(r.reserva.id)}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Cancelar
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddToCalendar(r.reserva.id)}
+                              >
+                                <CalendarPlus className="w-4 h-4 mr-2" />
+                                Adicionar ao Calendário
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCancelar(r.reserva.id)}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Cancelar
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

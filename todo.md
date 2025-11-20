@@ -330,3 +330,26 @@
 - [x] Testar fluxo completo de lembretes de aulas
 - [x] Criar testes unitários para triggers de badges
 - [x] Criar testes unitários para lembretes de aulas
+
+
+## Interface de Atribuição de Badges e Integração com Calendários - ✅ CONCLUÍDO
+- [x] Criar aba "Badges" na Gestão do Box
+- [x] Implementar busca/filtro de atletas do box
+- [x] Criar seletor de badges disponíveis
+- [x] Adicionar botão de atribuir badge
+- [x] Mostrar histórico de badges atribuídos
+- [x] Criar função para gerar arquivo .ics de aula
+- [x] Adicionar botão "Adicionar ao Calendário" nas reservas
+- [x] Implementar download de .ics com detalhes da aula
+- [x] Testar atribuição de badges via interface
+- [x] Testar download e importação de .ics
+- [x] Criar testes unitários para badges e calendário
+
+## Funcionalidades Futuras (Não Implementadas)
+- [ ] Criar schema de preferências de notificações
+- [ ] Adicionar página de preferências no perfil do atleta
+- [ ] Implementar toggles para cada tipo de notificação
+- [ ] Respeitar preferências ao enviar notificações
+- [ ] Adicionar integração com serviço de email
+- [ ] Criar templates de email para lembretes
+- [ ] Implementar envio de email em paralelo às notificações in-app

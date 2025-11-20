@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Users, Dumbbell, Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Users, Dumbbell, Plus, Edit, Trash2, Calendar, Award } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -16,6 +16,7 @@ import { AlunosTab } from "@/components/AlunosTab";
 import { AgendaTab } from "@/components/AgendaTab";
 import { ComunicadosTab } from "@/components/ComunicadosTab";
 import { AnalyticsTab } from "@/components/AnalyticsTab";
+import { BadgesTab } from "@/components/BadgesTab";
 
 export default function GestaoBox() {
   const { user } = useAuth();
@@ -154,11 +155,12 @@ export default function GestaoBox() {
         </div>
 
         <Tabs defaultValue="wods" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="wods">WODs</TabsTrigger>
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="comunicados">Comunicados</TabsTrigger>
+            <TabsTrigger value="badges">Badges</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -354,6 +356,10 @@ export default function GestaoBox() {
 
           <TabsContent value="comunicados">
             <ComunicadosTab boxId={user.boxId} />
+          </TabsContent>
+
+          <TabsContent value="badges">
+            <BadgesTab boxId={user.boxId} />
           </TabsContent>
 
           <TabsContent value="analytics">

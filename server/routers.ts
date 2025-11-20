@@ -614,6 +614,12 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getReservasByAgendaAndDate(input.agendaAulaId, input.data);
       }),
+
+    generateICS: protectedProcedure
+      .input(z.object({ reservaId: z.number() }))
+      .query(async ({ input }) => {
+        return db.generateICSForReserva(input.reservaId);
+      }),
   }),
 
   franqueado: router({
