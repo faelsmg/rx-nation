@@ -5301,11 +5301,11 @@ export async function createFornecedor(data: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.execute(
-    `INSERT INTO fornecedores (box_id, nome, razao_social, cnpj, email, telefone, endereco, observacoes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [data.boxId, data.nome, data.razaoSocial || null, data.cnpj || null, data.email || null, data.telefone || null, data.endereco || null, data.observacoes || null]
-  );
+  const result = await db.execute(sql`
+    INSERT INTO fornecedores (box_id, nome, razao_social, cnpj, email, telefone, endereco, observacoes)
+    VALUES (${data.boxId}, ${data.nome}, ${data.razaoSocial || null}, ${data.cnpj || null}, 
+            ${data.email || null}, ${data.telefone || null}, ${data.endereco || null}, ${data.observacoes || null})
+  `);
 
   return { id: (result as any).insertId };
 }
@@ -5314,10 +5314,9 @@ export async function getFornecedores(boxId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  const result = await db.execute(
-    `SELECT * FROM fornecedores WHERE box_id = ? ORDER BY nome`,
-    [boxId]
-  );
+  const result = await db.execute(sql`
+    SELECT * FROM fornecedores WHERE box_id = ${boxId} ORDER BY nome
+  `);
 
   return (result as any)[0];
 }
@@ -5335,45 +5334,42 @@ export async function updateFornecedor(id: number, data: {
   if (!db) throw new Error("Database not available");
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: Record<string, any> = {};
 
   if (data.nome !== undefined) {
-    updates.push("nome = ?");
-    values.push(data.nome);
+    updates.push("nome = @nome");
+    values.nome = data.nome;
   }
   if (data.razaoSocial !== undefined) {
-    updates.push("razao_social = ?");
-    values.push(data.razaoSocial);
+    updates.push("razao_social = @razaoSocial");
+    values.razaoSocial = data.razaoSocial;
   }
   if (data.email !== undefined) {
-    updates.push("email = ?");
-    values.push(data.email);
+    updates.push("email = @email");
+    values.email = data.email;
   }
   if (data.telefone !== undefined) {
-    updates.push("telefone = ?");
-    values.push(data.telefone);
+    updates.push("telefone = @telefone");
+    values.telefone = data.telefone;
   }
   if (data.endereco !== undefined) {
-    updates.push("endereco = ?");
-    values.push(data.endereco);
+    updates.push("endereco = @endereco");
+    values.endereco = data.endereco;
   }
   if (data.ativo !== undefined) {
-    updates.push("ativo = ?");
-    values.push(data.ativo);
+    updates.push("ativo = @ativo");
+    values.ativo = data.ativo;
   }
   if (data.observacoes !== undefined) {
-    updates.push("observacoes = ?");
-    values.push(data.observacoes);
+    updates.push("observacoes = @observacoes");
+    values.observacoes = data.observacoes;
   }
 
   if (updates.length === 0) return { success: true };
 
-  values.push(id);
-
-  await db.execute(
-    `UPDATE fornecedores SET ${updates.join(", ")} WHERE id = ?`,
-    values
-  );
+  // Usar raw SQL com template literals
+  const updateQuery = `UPDATE fornecedores SET ${updates.join(", ")} WHERE id = ${id}`;
+  await db.execute(sql.raw(updateQuery));
 
   return { success: true };
 }
@@ -5390,11 +5386,11 @@ export async function createPedidoCompra(data: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.execute(
-    `INSERT INTO pedidos_compra (box_id, fornecedor_id, numero_pedido, data_pedido, data_entrega_prevista, observacoes, criado_por)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [data.boxId, data.fornecedorId, data.numeroPedido, data.dataPedido, data.dataEntregaPrevista || null, data.observacoes || null, data.criadoPor]
-  );
+  const result = await db.execute(sql`
+    INSERT INTO pedidos_compra (box_id, fornecedor_id, numero_pedido, data_pedido, data_entrega_prevista, observacoes, criado_por)
+    VALUES (${data.boxId}, ${data.fornecedorId}, ${data.numeroPedido}, ${data.dataPedido}, 
+            ${data.dataEntregaPrevista || null}, ${data.observacoes || null}, ${data.criadoPor})
+  `);
 
   return { id: (result as any).insertId };
 }
@@ -5411,19 +5407,18 @@ export async function addItemPedidoCompra(data: {
 
   const precoTotal = data.quantidade * data.precoUnitario;
 
-  await db.execute(
-    `INSERT INTO pedidos_compra_itens (pedido_id, descricao, quantidade, unidade, preco_unitario, preco_total)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [data.pedidoId, data.descricao, data.quantidade, data.unidade || null, data.precoUnitario, precoTotal]
-  );
+  await db.execute(sql`
+    INSERT INTO pedidos_compra_itens (pedido_id, descricao, quantidade, unidade, preco_unitario, preco_total)
+    VALUES (${data.pedidoId}, ${data.descricao}, ${data.quantidade}, ${data.unidade || null}, 
+            ${data.precoUnitario}, ${precoTotal})
+  `);
 
   // Atualizar valor total do pedido
-  await db.execute(
-    `UPDATE pedidos_compra SET valor_total = (
-      SELECT SUM(preco_total) FROM pedidos_compra_itens WHERE pedido_id = ?
-    ) WHERE id = ?`,
-    [data.pedidoId, data.pedidoId]
-  );
+  await db.execute(sql`
+    UPDATE pedidos_compra SET valor_total = (
+      SELECT SUM(preco_total) FROM pedidos_compra_itens WHERE pedido_id = ${data.pedidoId}
+    ) WHERE id = ${data.pedidoId}
+  `);
 
   return { success: true };
 }
@@ -5432,7 +5427,7 @@ export async function getPedidosCompra(boxId: number, status?: string) {
   const db = await getDb();
   if (!db) return [];
 
-  let query = `
+  let query = sql`
     SELECT 
       pc.*,
       f.nome as fornecedor_nome,
@@ -5440,19 +5435,16 @@ export async function getPedidosCompra(boxId: number, status?: string) {
     FROM pedidos_compra pc
     LEFT JOIN fornecedores f ON pc.fornecedor_id = f.id
     LEFT JOIN users u ON pc.criado_por = u.id
-    WHERE pc.box_id = ?
+    WHERE pc.box_id = ${boxId}
   `;
 
-  const params: any[] = [boxId];
-
   if (status) {
-    query += ` AND pc.status = ?`;
-    params.push(status);
+    query = sql`${query} AND pc.status = ${status}`;
   }
 
-  query += ` ORDER BY pc.data_pedido DESC`;
+  query = sql`${query} ORDER BY pc.data_pedido DESC`;
 
-  const result = await db.execute(query, params);
+  const result = await db.execute(query);
   return (result as any)[0];
 }
 
@@ -5460,10 +5452,9 @@ export async function getItensPedidoCompra(pedidoId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  const result = await db.execute(
-    `SELECT * FROM pedidos_compra_itens WHERE pedido_id = ? ORDER BY id`,
-    [pedidoId]
-  );
+  const result = await db.execute(sql`
+    SELECT * FROM pedidos_compra_itens WHERE pedido_id = ${pedidoId} ORDER BY id
+  `);
 
   return (result as any)[0];
 }
@@ -5473,16 +5464,710 @@ export async function updateStatusPedidoCompra(pedidoId: number, status: string,
   if (!db) throw new Error("Database not available");
 
   if (status === 'aprovado' && aprovadoPor) {
-    await db.execute(
-      `UPDATE pedidos_compra SET status = ?, aprovado_por = ? WHERE id = ?`,
-      [status, aprovadoPor, pedidoId]
-    );
+    await db.execute(sql`
+      UPDATE pedidos_compra SET status = ${status}, aprovado_por = ${aprovadoPor} WHERE id = ${pedidoId}
+    `);
   } else {
-    await db.execute(
-      `UPDATE pedidos_compra SET status = ? WHERE id = ?`,
-      [status, pedidoId]
-    );
+    await db.execute(sql`
+      UPDATE pedidos_compra SET status = ${status} WHERE id = ${pedidoId}
+    `);
   }
+
+  return { success: true };
+}
+
+
+// ==================== GESTÃO DE ESTOQUE ====================
+
+export async function getCategoriasProdutos() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM categorias_produtos ORDER BY nome
+  `);
+
+  return (result as any)[0];
+}
+
+export async function createCategoriaProduto(nome: string, descricao?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO categorias_produtos (nome, descricao) VALUES (${nome}, ${descricao || null})
+  `);
+
+  return { id: (result as any)[0].insertId };
+}
+
+export async function getProdutosByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT p.*, c.nome as categoria_nome
+    FROM produtos p
+    LEFT JOIN categorias_produtos c ON p.categoria_id = c.id
+    WHERE p.box_id = ${boxId}
+    ORDER BY p.nome
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getProdutoById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT p.*, c.nome as categoria_nome
+    FROM produtos p
+    LEFT JOIN categorias_produtos c ON p.categoria_id = c.id
+    WHERE p.id = ${id}
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getProdutoByCodigoBarras(codigoBarras: string, boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT p.*, c.nome as categoria_nome
+    FROM produtos p
+    LEFT JOIN categorias_produtos c ON p.categoria_id = c.id
+    WHERE p.codigo_barras = ${codigoBarras} AND p.box_id = ${boxId}
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function createProduto(data: {
+  boxId: number;
+  categoriaId?: number;
+  codigoBarras?: string;
+  nome: string;
+  descricao?: string;
+  unidade: string;
+  precoCusto?: number;
+  precoVenda?: number;
+  estoqueMinimo?: number;
+  estoqueMaximo?: number;
+  localizacao?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO produtos (
+      box_id, categoria_id, codigo_barras, nome, descricao, unidade,
+      preco_custo, preco_venda, estoque_minimo, estoque_maximo, localizacao
+    ) VALUES (
+      ${data.boxId}, ${data.categoriaId || null}, ${data.codigoBarras || null},
+      ${data.nome}, ${data.descricao || null}, ${data.unidade},
+      ${data.precoCusto || null}, ${data.precoVenda || null},
+      ${data.estoqueMinimo || 0}, ${data.estoqueMaximo || null}, ${data.localizacao || null}
+    )
+  `);
+
+  return { id: (result as any)[0].insertId };
+}
+
+export async function updateProduto(id: number, data: {
+  categoriaId?: number;
+  codigoBarras?: string;
+  nome?: string;
+  descricao?: string;
+  unidade?: string;
+  precoCusto?: number;
+  precoVenda?: number;
+  estoqueMinimo?: number;
+  estoqueMaximo?: number;
+  localizacao?: string;
+  ativo?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (data.categoriaId !== undefined) {
+    updates.push('categoria_id = ?');
+    values.push(data.categoriaId);
+  }
+  if (data.codigoBarras !== undefined) {
+    updates.push('codigo_barras = ?');
+    values.push(data.codigoBarras);
+  }
+  if (data.nome !== undefined) {
+    updates.push('nome = ?');
+    values.push(data.nome);
+  }
+  if (data.descricao !== undefined) {
+    updates.push('descricao = ?');
+    values.push(data.descricao);
+  }
+  if (data.unidade !== undefined) {
+    updates.push('unidade = ?');
+    values.push(data.unidade);
+  }
+  if (data.precoCusto !== undefined) {
+    updates.push('preco_custo = ?');
+    values.push(data.precoCusto);
+  }
+  if (data.precoVenda !== undefined) {
+    updates.push('preco_venda = ?');
+    values.push(data.precoVenda);
+  }
+  if (data.estoqueMinimo !== undefined) {
+    updates.push('estoque_minimo = ?');
+    values.push(data.estoqueMinimo);
+  }
+  if (data.estoqueMaximo !== undefined) {
+    updates.push('estoque_maximo = ?');
+    values.push(data.estoqueMaximo);
+  }
+  if (data.localizacao !== undefined) {
+    updates.push('localizacao = ?');
+    values.push(data.localizacao);
+  }
+  if (data.ativo !== undefined) {
+    updates.push('ativo = ?');
+    values.push(data.ativo);
+  }
+
+  if (updates.length === 0) {
+    return { success: true };
+  }
+
+  values.push(id);
+
+  const query = `UPDATE produtos SET ${updates.join(', ')} WHERE id = ?`;
+  await (db as any).execute(query, values);
+
+  return { success: true };
+}
+
+export async function deleteProduto(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE produtos SET ativo = FALSE WHERE id = ${id}
+  `);
+
+  return { success: true };
+}
+
+export async function getProdutosEstoqueBaixo(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT p.*, c.nome as categoria_nome
+    FROM produtos p
+    LEFT JOIN categorias_produtos c ON p.categoria_id = c.id
+    WHERE p.box_id = ${boxId} 
+      AND p.ativo = TRUE
+      AND p.estoque_atual <= p.estoque_minimo
+    ORDER BY (p.estoque_minimo - p.estoque_atual) DESC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function registrarMovimentacaoEstoque(data: {
+  produtoId: number;
+  boxId: number;
+  tipo: 'entrada' | 'saida' | 'ajuste' | 'transferencia';
+  quantidade: number;
+  motivo?: string;
+  documento?: string;
+  pedidoCompraId?: number;
+  vendaId?: number;
+  usuarioId: number;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar estoque atual
+  const produtoResult = await db.execute(sql`
+    SELECT estoque_atual FROM produtos WHERE id = ${data.produtoId}
+  `);
+  const produto = (produtoResult as any)[0][0];
+  if (!produto) throw new Error("Produto não encontrado");
+
+  const estoqueAnterior = parseFloat(produto.estoque_atual);
+  let estoqueNovo = estoqueAnterior;
+
+  // Calcular novo estoque
+  if (data.tipo === 'entrada' || data.tipo === 'ajuste') {
+    estoqueNovo = estoqueAnterior + data.quantidade;
+  } else if (data.tipo === 'saida') {
+    estoqueNovo = estoqueAnterior - data.quantidade;
+    if (estoqueNovo < 0) {
+      throw new Error("Estoque insuficiente");
+    }
+  }
+
+  // Registrar movimentação
+  await db.execute(sql`
+    INSERT INTO movimentacoes_estoque (
+      produto_id, box_id, tipo, quantidade, estoque_anterior, estoque_novo,
+      motivo, documento, pedido_compra_id, venda_id, usuario_id, observacoes
+    ) VALUES (
+      ${data.produtoId}, ${data.boxId}, ${data.tipo}, ${data.quantidade},
+      ${estoqueAnterior}, ${estoqueNovo}, ${data.motivo || null},
+      ${data.documento || null}, ${data.pedidoCompraId || null},
+      ${data.vendaId || null}, ${data.usuarioId}, ${data.observacoes || null}
+    )
+  `);
+
+  // Atualizar estoque do produto
+  await db.execute(sql`
+    UPDATE produtos SET estoque_atual = ${estoqueNovo} WHERE id = ${data.produtoId}
+  `);
+
+  return { success: true, estoqueNovo };
+}
+
+export async function getMovimentacoesEstoque(produtoId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT m.*, u.name as usuario_nome, p.nome as produto_nome
+    FROM movimentacoes_estoque m
+    LEFT JOIN users u ON m.usuario_id = u.id
+    LEFT JOIN produtos p ON m.produto_id = p.id
+    WHERE m.produto_id = ${produtoId}
+    ORDER BY m.data_movimentacao DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getMovimentacoesEstoqueByBox(boxId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT m.*, u.name as usuario_nome, p.nome as produto_nome
+    FROM movimentacoes_estoque m
+    LEFT JOIN users u ON m.usuario_id = u.id
+    LEFT JOIN produtos p ON m.produto_id = p.id
+    WHERE m.box_id = ${boxId}
+    ORDER BY m.data_movimentacao DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getRelatorioInventario(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      p.id,
+      p.nome,
+      p.codigo_barras,
+      c.nome as categoria_nome,
+      p.unidade,
+      p.estoque_atual,
+      p.estoque_minimo,
+      p.estoque_maximo,
+      p.preco_custo,
+      p.preco_venda,
+      (p.estoque_atual * p.preco_custo) as valor_estoque,
+      p.localizacao,
+      CASE 
+        WHEN p.estoque_atual <= p.estoque_minimo THEN 'critico'
+        WHEN p.estoque_atual <= (p.estoque_minimo * 1.5) THEN 'baixo'
+        ELSE 'normal'
+      END as status_estoque
+    FROM produtos p
+    LEFT JOIN categorias_produtos c ON p.categoria_id = c.id
+    WHERE p.box_id = ${boxId} AND p.ativo = TRUE
+    ORDER BY c.nome, p.nome
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getValorTotalEstoque(boxId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db.execute(sql`
+    SELECT SUM(estoque_atual * preco_custo) as valor_total
+    FROM produtos
+    WHERE box_id = ${boxId} AND ativo = TRUE
+  `);
+
+  const row = (result as any)[0][0];
+  return row?.valor_total ? parseFloat(row.valor_total) : 0;
+}
+
+
+// ==================== PDV (PONTO DE VENDA) ====================
+
+export async function gerarNumeroVenda(boxId: number): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const hoje = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  
+  const result = await db.execute(sql`
+    SELECT COUNT(*) as total FROM vendas 
+    WHERE box_id = ${boxId} AND DATE(data_venda) = CURDATE()
+  `);
+
+  const total = (result as any)[0][0].total;
+  const numero = (total + 1).toString().padStart(4, '0');
+  
+  return `VND${hoje}${numero}`;
+}
+
+export async function createVenda(data: {
+  boxId: number;
+  clienteId?: number;
+  clienteNome?: string;
+  subtotal: number;
+  desconto: number;
+  valorTotal: number;
+  formaPagamento: string;
+  observacoes?: string;
+  vendedorId: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const numeroVenda = await gerarNumeroVenda(data.boxId);
+
+  const result = await db.execute(sql`
+    INSERT INTO vendas (
+      box_id, numero_venda, cliente_id, cliente_nome, subtotal, desconto,
+      valor_total, forma_pagamento, observacoes, vendedor_id
+    ) VALUES (
+      ${data.boxId}, ${numeroVenda}, ${data.clienteId || null}, ${data.clienteNome || null},
+      ${data.subtotal}, ${data.desconto}, ${data.valorTotal}, ${data.formaPagamento},
+      ${data.observacoes || null}, ${data.vendedorId}
+    )
+  `);
+
+  return { id: (result as any)[0].insertId, numeroVenda };
+}
+
+export async function addItemVenda(data: {
+  vendaId: number;
+  produtoId: number;
+  descricao: string;
+  quantidade: number;
+  precoUnitario: number;
+  descontoItem: number;
+  precoTotal: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO vendas_itens (
+      venda_id, produto_id, descricao, quantidade, preco_unitario, desconto_item, preco_total
+    ) VALUES (
+      ${data.vendaId}, ${data.produtoId}, ${data.descricao}, ${data.quantidade},
+      ${data.precoUnitario}, ${data.descontoItem}, ${data.precoTotal}
+    )
+  `);
+
+  return { success: true };
+}
+
+export async function finalizarVenda(vendaId: number, boxId: number, vendedorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar itens da venda
+  const itensResult = await db.execute(sql`
+    SELECT * FROM vendas_itens WHERE venda_id = ${vendaId}
+  `);
+  const itens = (itensResult as any)[0];
+
+  // Dar baixa no estoque para cada item
+  for (const item of itens) {
+    await registrarMovimentacaoEstoque({
+      produtoId: item.produto_id,
+      boxId,
+      tipo: 'saida',
+      quantidade: parseFloat(item.quantidade),
+      motivo: 'Venda',
+      documento: `Venda #${vendaId}`,
+      vendaId,
+      usuarioId: vendedorId,
+      observacoes: `Venda de ${item.quantidade} ${item.descricao}`,
+    });
+  }
+
+  // Buscar caixa aberto
+  const caixaResult = await db.execute(sql`
+    SELECT * FROM caixa WHERE box_id = ${boxId} AND status = 'aberto' ORDER BY data_abertura DESC LIMIT 1
+  `);
+  const caixa = (caixaResult as any)[0][0];
+
+  if (caixa) {
+    // Buscar valor da venda
+    const vendaResult = await db.execute(sql`
+      SELECT valor_total FROM vendas WHERE id = ${vendaId}
+    `);
+    const venda = (vendaResult as any)[0][0];
+
+    // Registrar movimentação no caixa
+    await db.execute(sql`
+      INSERT INTO caixa_movimentacoes (caixa_id, tipo, valor, descricao, venda_id)
+      VALUES (${caixa.id}, 'venda', ${venda.valor_total}, 'Venda de produtos', ${vendaId})
+    `);
+
+    // Atualizar valor de vendas no caixa
+    await db.execute(sql`
+      UPDATE caixa SET valor_vendas = valor_vendas + ${venda.valor_total} WHERE id = ${caixa.id}
+    `);
+  }
+
+  return { success: true };
+}
+
+export async function cancelarVenda(vendaId: number, canceladoPor: number, motivo: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE vendas 
+    SET status = 'cancelada', cancelado_por = ${canceladoPor}, 
+        data_cancelamento = NOW(), motivo_cancelamento = ${motivo}
+    WHERE id = ${vendaId}
+  `);
+
+  return { success: true };
+}
+
+export async function getVendasByBox(boxId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT v.*, u.name as vendedor_nome, c.name as cliente_nome_usuario
+    FROM vendas v
+    LEFT JOIN users u ON v.vendedor_id = u.id
+    LEFT JOIN users c ON v.cliente_id = c.id
+    WHERE v.box_id = ${boxId}
+    ORDER BY v.data_venda DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getVendaById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT v.*, u.name as vendedor_nome, c.name as cliente_nome_usuario
+    FROM vendas v
+    LEFT JOIN users u ON v.vendedor_id = u.id
+    LEFT JOIN users c ON v.cliente_id = c.id
+    WHERE v.id = ${id}
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getItensVenda(vendaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT vi.*, p.nome as produto_nome, p.unidade
+    FROM vendas_itens vi
+    LEFT JOIN produtos p ON vi.produto_id = p.id
+    WHERE vi.venda_id = ${vendaId}
+    ORDER BY vi.id
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getRelatorioVendas(boxId: number, dataInicio: string, dataFim: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      DATE(v.data_venda) as data,
+      COUNT(*) as total_vendas,
+      SUM(v.valor_total) as valor_total,
+      AVG(v.valor_total) as ticket_medio,
+      v.forma_pagamento,
+      COUNT(DISTINCT v.vendedor_id) as total_vendedores
+    FROM vendas v
+    WHERE v.box_id = ${boxId} 
+      AND v.status = 'concluida'
+      AND DATE(v.data_venda) BETWEEN ${dataInicio} AND ${dataFim}
+    GROUP BY DATE(v.data_venda), v.forma_pagamento
+    ORDER BY data DESC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getProdutosMaisVendidos(boxId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      p.id,
+      p.nome,
+      p.codigo_barras,
+      SUM(vi.quantidade) as total_vendido,
+      SUM(vi.preco_total) as valor_total,
+      COUNT(DISTINCT vi.venda_id) as total_vendas
+    FROM vendas_itens vi
+    INNER JOIN produtos p ON vi.produto_id = p.id
+    INNER JOIN vendas v ON vi.venda_id = v.id
+    WHERE v.box_id = ${boxId} AND v.status = 'concluida'
+    GROUP BY p.id, p.nome, p.codigo_barras
+    ORDER BY total_vendido DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0];
+}
+
+// ==================== CAIXA ====================
+
+export async function abrirCaixa(boxId: number, usuarioId: number, valorInicial: number, observacoes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar se já existe caixa aberto
+  const caixaAbertoResult = await db.execute(sql`
+    SELECT id FROM caixa WHERE box_id = ${boxId} AND status = 'aberto'
+  `);
+  const caixaAberto = (caixaAbertoResult as any)[0];
+
+  if (caixaAberto.length > 0) {
+    throw new Error("Já existe um caixa aberto para este box");
+  }
+
+  const result = await db.execute(sql`
+    INSERT INTO caixa (box_id, usuario_id, valor_inicial, observacoes)
+    VALUES (${boxId}, ${usuarioId}, ${valorInicial}, ${observacoes || null})
+  `);
+
+  return { id: (result as any)[0].insertId };
+}
+
+export async function fecharCaixa(caixaId: number, valorFinal: number, observacoes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE caixa 
+    SET status = 'fechado', data_fechamento = NOW(), valor_final = ${valorFinal},
+        observacoes = CONCAT(COALESCE(observacoes, ''), ' | Fechamento: ', ${observacoes || ''})
+    WHERE id = ${caixaId}
+  `);
+
+  return { success: true };
+}
+
+export async function getCaixaAberto(boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT c.*, u.name as usuario_nome
+    FROM caixa c
+    LEFT JOIN users u ON c.usuario_id = u.id
+    WHERE c.box_id = ${boxId} AND c.status = 'aberto'
+    ORDER BY c.data_abertura DESC
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getHistoricoCaixa(boxId: number, limit: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT c.*, u.name as usuario_nome
+    FROM caixa c
+    LEFT JOIN users u ON c.usuario_id = u.id
+    WHERE c.box_id = ${boxId}
+    ORDER BY c.data_abertura DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getMovimentacoesCaixa(caixaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM caixa_movimentacoes
+    WHERE caixa_id = ${caixaId}
+    ORDER BY data_movimentacao DESC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function registrarSuprimento(caixaId: number, valor: number, descricao: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO caixa_movimentacoes (caixa_id, tipo, valor, descricao)
+    VALUES (${caixaId}, 'suprimento', ${valor}, ${descricao})
+  `);
+
+  await db.execute(sql`
+    UPDATE caixa SET valor_suprimentos = valor_suprimentos + ${valor} WHERE id = ${caixaId}
+  `);
+
+  return { success: true };
+}
+
+export async function registrarRetirada(caixaId: number, valor: number, descricao: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO caixa_movimentacoes (caixa_id, tipo, valor, descricao)
+    VALUES (${caixaId}, 'retirada', ${valor}, ${descricao})
+  `);
+
+  await db.execute(sql`
+    UPDATE caixa SET valor_retiradas = valor_retiradas + ${valor} WHERE id = ${caixaId}
+  `);
 
   return { success: true };
 }

@@ -2096,6 +2096,510 @@ export const appRouter = router({
         return db.getHistoricoReceita(ctx.user.boxId || 0, input.meses);
       }),
   }),
+
+  // Gestão de Compras
+  compras: router({
+    createFornecedor: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        razaoSocial: z.string().optional(),
+        cnpj: z.string().optional(),
+        email: z.string().optional(),
+        telefone: z.string().optional(),
+        endereco: z.string().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.createFornecedor({
+          boxId: ctx.user.boxId || 0,
+          ...input,
+        });
+      }),
+
+    getFornecedores: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getFornecedores(ctx.user.boxId || 0);
+      }),
+
+    updateFornecedor: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        razaoSocial: z.string().optional(),
+        email: z.string().optional(),
+        telefone: z.string().optional(),
+        endereco: z.string().optional(),
+        ativo: z.boolean().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        const { id, ...data } = input;
+        return db.updateFornecedor(id, data);
+      }),
+
+    createPedidoCompra: protectedProcedure
+      .input(z.object({
+        fornecedorId: z.number(),
+        numeroPedido: z.string(),
+        dataPedido: z.date(),
+        dataEntregaPrevista: z.date().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.createPedidoCompra({
+          boxId: ctx.user.boxId || 0,
+          criadoPor: ctx.user.id,
+          ...input,
+        });
+      }),
+
+    addItemPedido: protectedProcedure
+      .input(z.object({
+        pedidoId: z.number(),
+        descricao: z.string(),
+        quantidade: z.number(),
+        unidade: z.string().optional(),
+        precoUnitario: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.addItemPedidoCompra(input);
+      }),
+
+    getPedidos: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getPedidosCompra(ctx.user.boxId || 0, input.status);
+      }),
+
+    getItensPedido: protectedProcedure
+      .input(z.object({
+        pedidoId: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getItensPedidoCompra(input.pedidoId);
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({
+        pedidoId: z.number(),
+        status: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Workflow hierárquico: box_master pode criar, franqueado/admin_liga podem aprovar
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'franqueado' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        
+        const aprovadoPor = (input.status === 'aprovado') ? ctx.user.id : undefined;
+        return db.updateStatusPedidoCompra(input.pedidoId, input.status, aprovadoPor);
+      }),
+  }),
+
+  // ===== GESTÃO DE ESTOQUE =====
+  estoque: router({
+    // Categorias de Produtos
+    getCategorias: boxMasterProcedure
+      .query(async () => {
+        return db.getCategoriasProdutos();
+      }),
+
+    createCategoria: boxMasterProcedure
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.createCategoriaProduto(input.nome, input.descricao);
+      }),
+
+    // Produtos
+    getProdutos: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getProdutosByBox(boxId);
+      }),
+
+    getProdutoById: boxMasterProcedure
+      .input(z.object({
+        id: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getProdutoById(input.id);
+      }),
+
+    getProdutoByCodigoBarras: boxMasterProcedure
+      .input(z.object({
+        codigoBarras: z.string(),
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getProdutoByCodigoBarras(input.codigoBarras, boxId);
+      }),
+
+    createProduto: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        categoriaId: z.number().optional(),
+        codigoBarras: z.string().optional(),
+        nome: z.string(),
+        descricao: z.string().optional(),
+        unidade: z.string().default('un'),
+        precoCusto: z.number().optional(),
+        precoVenda: z.number().optional(),
+        estoqueMinimo: z.number().default(0),
+        estoqueMaximo: z.number().optional(),
+        localizacao: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.createProduto({ ...input, boxId });
+      }),
+
+    updateProduto: boxMasterProcedure
+      .input(z.object({
+        id: z.number(),
+        categoriaId: z.number().optional(),
+        codigoBarras: z.string().optional(),
+        nome: z.string().optional(),
+        descricao: z.string().optional(),
+        unidade: z.string().optional(),
+        precoCusto: z.number().optional(),
+        precoVenda: z.number().optional(),
+        estoqueMinimo: z.number().optional(),
+        estoqueMaximo: z.number().optional(),
+        localizacao: z.string().optional(),
+        ativo: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return db.updateProduto(id, data);
+      }),
+
+    deleteProduto: boxMasterProcedure
+      .input(z.object({
+        id: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.deleteProduto(input.id);
+      }),
+
+    getProdutosEstoqueBaixo: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getProdutosEstoqueBaixo(boxId);
+      }),
+
+    // Movimentações de Estoque
+    registrarMovimentacao: boxMasterProcedure
+      .input(z.object({
+        produtoId: z.number(),
+        boxId: z.number().optional(),
+        tipo: z.enum(['entrada', 'saida', 'ajuste', 'transferencia']),
+        quantidade: z.number(),
+        motivo: z.string().optional(),
+        documento: z.string().optional(),
+        pedidoCompraId: z.number().optional(),
+        vendaId: z.number().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.registrarMovimentacaoEstoque({
+          ...input,
+          boxId,
+          usuarioId: ctx.user.id,
+        });
+      }),
+
+    getMovimentacoes: boxMasterProcedure
+      .input(z.object({
+        produtoId: z.number(),
+        limit: z.number().default(50),
+      }))
+      .query(async ({ input }) => {
+        return db.getMovimentacoesEstoque(input.produtoId, input.limit);
+      }),
+
+    getMovimentacoesByBox: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        limit: z.number().default(100),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getMovimentacoesEstoqueByBox(boxId, input.limit);
+      }),
+
+    // Relatórios
+    getRelatorioInventario: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getRelatorioInventario(boxId);
+      }),
+
+    getValorTotalEstoque: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getValorTotalEstoque(boxId);
+      }),
+  }),
+
+  // ===== PDV (PONTO DE VENDA) ======
+  pdv: router({
+    // Vendas
+    createVenda: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        clienteId: z.number().optional(),
+        clienteNome: z.string().optional(),
+        subtotal: z.number(),
+        desconto: z.number().default(0),
+        valorTotal: z.number(),
+        formaPagamento: z.enum(['dinheiro', 'debito', 'credito', 'pix', 'boleto', 'outro']),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.createVenda({
+          ...input,
+          boxId,
+          vendedorId: ctx.user.id,
+        });
+      }),
+
+    addItemVenda: boxMasterProcedure
+      .input(z.object({
+        vendaId: z.number(),
+        produtoId: z.number(),
+        descricao: z.string(),
+        quantidade: z.number(),
+        precoUnitario: z.number(),
+        descontoItem: z.number().default(0),
+        precoTotal: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.addItemVenda(input);
+      }),
+
+    finalizarVenda: boxMasterProcedure
+      .input(z.object({
+        vendaId: z.number(),
+        boxId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.finalizarVenda(input.vendaId, boxId, ctx.user.id);
+      }),
+
+    cancelarVenda: boxMasterProcedure
+      .input(z.object({
+        vendaId: z.number(),
+        motivo: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.cancelarVenda(input.vendaId, ctx.user.id, input.motivo);
+      }),
+
+    getVendas: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        limit: z.number().default(50),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getVendasByBox(boxId, input.limit);
+      }),
+
+    getVendaById: boxMasterProcedure
+      .input(z.object({
+        id: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getVendaById(input.id);
+      }),
+
+    getItensVenda: boxMasterProcedure
+      .input(z.object({
+        vendaId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getItensVenda(input.vendaId);
+      }),
+
+    getRelatorioVendas: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getRelatorioVendas(boxId, input.dataInicio, input.dataFim);
+      }),
+
+    getProdutosMaisVendidos: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        limit: z.number().default(10),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getProdutosMaisVendidos(boxId, input.limit);
+      }),
+
+    // Caixa
+    abrirCaixa: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        valorInicial: z.number(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.abrirCaixa(boxId, ctx.user.id, input.valorInicial, input.observacoes);
+      }),
+
+    fecharCaixa: boxMasterProcedure
+      .input(z.object({
+        caixaId: z.number(),
+        valorFinal: z.number(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.fecharCaixa(input.caixaId, input.valorFinal, input.observacoes);
+      }),
+
+    getCaixaAberto: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getCaixaAberto(boxId);
+      }),
+
+    getHistoricoCaixa: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        limit: z.number().default(30),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) {
+          throw new Error("Box não especificado");
+        }
+        return db.getHistoricoCaixa(boxId, input.limit);
+      }),
+
+    getMovimentacoesCaixa: boxMasterProcedure
+      .input(z.object({
+        caixaId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getMovimentacoesCaixa(input.caixaId);
+      }),
+
+    registrarSuprimento: boxMasterProcedure
+      .input(z.object({
+        caixaId: z.number(),
+        valor: z.number(),
+        descricao: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.registrarSuprimento(input.caixaId, input.valor, input.descricao);
+      }),
+
+    registrarRetirada: boxMasterProcedure
+      .input(z.object({
+        caixaId: z.number(),
+        valor: z.number(),
+        descricao: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.registrarRetirada(input.caixaId, input.valor, input.descricao);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
