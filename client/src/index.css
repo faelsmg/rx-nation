@@ -79,6 +79,42 @@
   --sidebar-ring: oklch(0.8 0.15 85);
 }
 
+.light {
+  /* Impacto Pro League - Light Theme */
+  --primary: oklch(0.8 0.15 85); /* Amarelo Impacto */
+  --primary-foreground: oklch(0.15 0 0); /* Preto */
+  --sidebar-primary: oklch(0.8 0.15 85);
+  --sidebar-primary-foreground: oklch(0.15 0 0);
+  --background: oklch(0.98 0 0); /* Branco suave */
+  --foreground: oklch(0.15 0 0); /* Preto */
+  --card: oklch(1 0 0); /* Branco puro */
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --secondary: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.2 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.96 0 0);
+  --accent-foreground: oklch(0.15 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0 0 0 / 10%);
+  --input: oklch(0 0 0 / 15%);
+  --ring: oklch(0.8 0.15 85);
+  --chart-1: oklch(0.8 0.15 85);
+  --chart-2: oklch(0.7 0.15 85);
+  --chart-3: oklch(0.6 0.15 85);
+  --chart-4: oklch(0.5 0.15 85);
+  --chart-5: oklch(0.4 0.15 85);
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.15 0 0);
+  --sidebar-accent: oklch(0.95 0 0);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0 0 0 / 10%);
+  --sidebar-ring: oklch(0.8 0.15 85);
+}
+
 .dark {
   --primary: var(--color-blue-700);
   --primary-foreground: oklch(0.15 0 0); /* Preto */

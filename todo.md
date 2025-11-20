@@ -1045,3 +1045,26 @@
 - [x] Prevenir zoom indesejado em inputs mobile
 - [x] Implementar smooth scrolling
 - [x] Criar hook usePWA para gerenciar funcionalidades
+
+
+### Onboarding Interativo - ✅ CONCLUÍDO
+- [x] Criar componente de Tour guiado
+- [x] Implementar card animado com progress bar
+- [x] Adicionar destaque visual nos elementos (highlight com box-shadow)
+- [x] Criar 5 steps do tour (Welcome, WOD, Gamificação, Rankings, Complete)
+- [x] Implementar controles (Próximo, Anterior, Pular, Concluir)
+- [x] Salvar estado no localStorage (onboarding_completed)
+- [x] Criar hook useOnboarding para refazer tour
+- [x] Scroll automático para elementos destacados
+- [x] Animações suaves (fade-in, zoom-in, slide-in)
+
+### Modo Escuro/Claro - ✅ CONCLUÍDO
+- [x] Atualizar ThemeProvider para suportar auto/light/dark
+- [x] Implementar detecção de preferência do sistema (prefers-color-scheme)
+- [x] Criar ThemeToggle com dropdown menu no header
+- [x] Adicionar ícones de sol/lua com animação de rotação
+- [x] Implementar transições suaves entre temas (CSS transitions)
+- [x] Persistir preferência no localStorage
+- [x] Criar classe .light com cores claras completas no index.css
+- [x] Atualizar meta theme-color dinamicamente
+- [x] Habilitar switchable no App.tsx

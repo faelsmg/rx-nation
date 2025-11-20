@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+type ThemeMode = "light" | "dark" | "auto";
+type ResolvedTheme = "light" | "dark";
 
 interface ThemeContextType {
-  theme: Theme;
+  theme: ThemeMode;
+  resolvedTheme: ResolvedTheme;
+  setTheme: (theme: ThemeMode) => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
@@ -12,44 +15,85 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  defaultTheme?: Theme;
+  defaultTheme?: ThemeMode;
   switchable?: boolean;
+}
+
+function getSystemTheme(): ResolvedTheme {
+  if (typeof window === "undefined") return "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
+  defaultTheme = "dark",
   switchable = false,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+      const stored = localStorage.getItem("theme") as ThemeMode;
+      return stored || defaultTheme;
     }
     return defaultTheme;
   });
 
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme());
+
+  const resolvedTheme: ResolvedTheme = theme === "auto" ? systemTheme : theme;
+
+  // Listen to system theme changes
+  useEffect(() => {
+    if (theme !== "auto") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? "dark" : "light");
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme]);
+
+  // Apply theme to document
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+    
+    // Remove both classes first
+    root.classList.remove("light", "dark");
+    
+    // Add the resolved theme
+    root.classList.add(resolvedTheme);
+
+    // Update meta theme-color for mobile browsers
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute(
+        "content",
+        resolvedTheme === "dark" ? "#0a0a0a" : "#ffffff"
+      );
     }
 
     if (switchable) {
       localStorage.setItem("theme", theme);
     }
-  }, [theme, switchable]);
+  }, [resolvedTheme, theme, switchable]);
+
+  const setTheme = (newTheme: ThemeMode) => {
+    setThemeState(newTheme);
+  };
 
   const toggleTheme = switchable
     ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
+        setThemeState((prev) => {
+          if (prev === "light") return "dark";
+          if (prev === "dark") return "auto";
+          return "light";
+        });
       }
     : undefined;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );

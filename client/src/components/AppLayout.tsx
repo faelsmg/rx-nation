@@ -1,6 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { PWAInstallButton, PWAOfflineIndicator } from "@/components/PWAInstallButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Onboarding } from "@/components/Onboarding";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -185,6 +187,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
           
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <PWAInstallButton />
             <NotificationCenter />
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -213,6 +216,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* PWA Offline Indicator */}
       <PWAOfflineIndicator />
+
+      {/* Onboarding Tour */}
+      <Onboarding />
     </div>
   );
 }
