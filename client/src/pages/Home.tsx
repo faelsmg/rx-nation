@@ -91,6 +91,14 @@ export default function Home() {
                     variant="outline"
                     size="sm"
                     className="border-primary/50 hover:bg-primary/10"
+                    onClick={() => window.location.href = '/api/dev-login?openId=test-franqueado-ricardo'}
+                  >
+                    🏪 Franqueado (Ricardo)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/50 hover:bg-primary/10"
                     onClick={() => window.location.href = '/api/dev-login?openId=test-atleta-joao'}
                   >
                     🥇 Atleta (João)

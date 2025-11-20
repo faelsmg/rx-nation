@@ -1,0 +1,1 @@
+ALTER TABLE `boxes` ADD `franqueadoId` int;

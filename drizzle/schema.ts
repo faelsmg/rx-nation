@@ -30,6 +30,7 @@ export const boxes = mysqlTable("boxes", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
   tipo: mysqlEnum("tipo", ["proprio", "parceiro"]).default("proprio").notNull(), // próprio (Impacto) ou parceiro/franqueado
+  franqueadoId: int("franqueadoId"), // ID do usuário franqueado responsável
   endereco: text("endereco"),
   cidade: varchar("cidade", { length: 100 }),
   estado: varchar("estado", { length: 2 }),

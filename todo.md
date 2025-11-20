@@ -235,3 +235,15 @@
 - [x] Criar interface com botões de acesso rápido na página de login
 - [x] Implementar lógica de login direto (apenas para desenvolvimento)
 - [x] Testar acesso com cada perfil
+
+
+## Perfil Franqueado
+- [x] Criar usuário de teste Franqueado
+- [x] Adicionar botão de login rápido para Franqueado
+- [x] Criar tabela de franquias no schema (campo franqueadoId em boxes)
+- [x] Vincular boxes a franquias
+- [x] Criar procedures para listar boxes da franquia
+- [x] Criar procedures para métricas consolidadas
+- [x] Criar página de Dashboard do Franqueado
+- [x] Implementar visualização de múltiplos boxes
+- [x] Criar testes para funcionalidades de Franqueado

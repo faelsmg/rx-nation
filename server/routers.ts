@@ -4,6 +4,10 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { eq, and, sql } from "drizzle-orm";
+import { users, boxes } from "../drizzle/schema";
+import { getDb } from "./db";
+import { TRPCError } from "@trpc/server";
 
 // Middleware para verificar role de box_master ou franqueado
 const boxMasterProcedure = protectedProcedure.use(async ({ ctx, next }) => {
@@ -533,6 +537,50 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getReservasByAgendaAndDate(input.agendaAulaId, input.data);
       }),
+  }),
+
+  franqueado: router({
+    // Listar boxes da franquia
+    getMyBoxes: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'franqueado') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas franqueados podem acessar' });
+      }
+      const db = await getDb();
+      if (!db) return [];
+      return await db.select().from(boxes).where(eq(boxes.franqueadoId, ctx.user.id));
+    }),
+    
+    // Métricas consolidadas
+    getMetrics: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'franqueado') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas franqueados podem acessar' });
+      }
+      const db = await getDb();
+      if (!db) return { totalBoxes: 0, totalAlunos: 0, totalAtivos: 0, boxes: [] };
+      
+      // Buscar boxes do franqueado
+      const myBoxes = await db.select().from(boxes).where(eq(boxes.franqueadoId, ctx.user.id));
+      const boxIds = myBoxes.map(b => b.id);
+      
+      // Contar alunos
+      let totalAlunos = 0;
+      if (boxIds.length > 0) {
+        const alunos = await db.select().from(users).where(
+          and(
+            eq(users.role, 'atleta'),
+            sql`${users.boxId} IN (${sql.join(boxIds.map((id: number) => sql`${id}`), sql`, `)})`
+          )
+        );
+        totalAlunos = alunos.length;
+      }
+      
+      return {
+        totalBoxes: myBoxes.length,
+        totalAlunos,
+        totalAtivos: myBoxes.filter((b: any) => b.ativo).length,
+        boxes: myBoxes,
+      };
+    }),
   }),
 });
 
