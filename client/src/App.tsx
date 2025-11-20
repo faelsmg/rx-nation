@@ -40,6 +40,9 @@ import ScannerQRCode from "./pages/ScannerQRCode";
 import GestaoPlanos from "./pages/GestaoPlanos";
 import GestaoAssinaturas from "./pages/GestaoAssinaturas";
 import MinhaAssinatura from "./pages/MinhaAssinatura";
+import DashboardFinanceiro from "./pages/DashboardFinanceiro";
+import GestaoCupons from "./pages/GestaoCupons";
+import MinhasIndicacoes from "./pages/MinhasIndicacoes";
 
 function Router() {
   return (
@@ -79,6 +82,9 @@ function Router() {
       <Route path={"/gestao-planos"} component={GestaoPlanos} />
       <Route path={"/gestao-assinaturas"} component={GestaoAssinaturas} />
       <Route path={"/minha-assinatura"} component={MinhaAssinatura} />
+      <Route path={"/dashboard-financeiro"} component={DashboardFinanceiro} />
+      <Route path={"/gestao-cupons"} component={GestaoCupons} />
+      <Route path={"/minhas-indicacoes"} component={MinhasIndicacoes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

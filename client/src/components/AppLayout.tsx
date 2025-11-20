@@ -26,6 +26,9 @@ import {
   ScanLine,
   CreditCard,
   FileText,
+  BarChart3,
+  Tag,
+  UserPlus,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
@@ -75,6 +78,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: CreditCard, label: "Minha Assinatura", path: "/minha-assinatura", roles: ["atleta"] },
     { icon: FileText, label: "Gestão de Planos", path: "/gestao-planos", roles: ["box_master", "admin_liga"] },
     { icon: Users, label: "Gestão de Assinaturas", path: "/gestao-assinaturas", roles: ["box_master", "admin_liga"] },
+    { icon: BarChart3, label: "Dashboard Financeiro", path: "/dashboard-financeiro", roles: ["box_master", "admin_liga"] },
+    { icon: Tag, label: "Gestão de Cupons", path: "/gestao-cupons", roles: ["box_master", "admin_liga"] },
+    { icon: UserPlus, label: "Minhas Indicações", path: "/minhas-indicacoes", roles: ["atleta"] },
     { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Activity, label: "Dashboard Coach", path: "/dashboard-coach", roles: ["box_master", "admin_liga"] },
     { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "admin_liga"] },

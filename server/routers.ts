@@ -1737,6 +1737,139 @@ export const appRouter = router({
         return db.enviarNotificacoesVencimento();
       }),
   }),
+
+  // ===== CUPONS E DESCONTOS =====
+  cupons: router({
+    create: protectedProcedure
+      .input(z.object({
+        codigo: z.string(),
+        tipo: z.enum(["percentual", "valor_fixo"]),
+        valor: z.number(),
+        descricao: z.string().optional(),
+        limiteUso: z.number().optional(),
+        dataValidade: z.date().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.createCupom({
+          boxId: ctx.user.boxId || 0,
+          ...input,
+        });
+      }),
+
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getCupons(ctx.user.boxId || 0);
+      }),
+
+    validar: protectedProcedure
+      .input(z.object({
+        codigo: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.validarCupom(input.codigo, ctx.user.id);
+      }),
+
+    aplicar: protectedProcedure
+      .input(z.object({
+        cupomId: z.number(),
+        assinaturaId: z.number(),
+        valorDesconto: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.aplicarCupom(input.cupomId, ctx.user.id, input.assinaturaId, input.valorDesconto);
+      }),
+
+    desativar: protectedProcedure
+      .input(z.object({
+        cupomId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.desativarCupom(input.cupomId);
+      }),
+  }),
+
+  // ===== INDICAÇÕES =====
+  indicacoes: router({
+    gerarCodigo: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        return db.gerarCodigoIndicacao(ctx.user.id);
+      }),
+
+    registrar: protectedProcedure
+      .input(z.object({
+        codigoIndicacao: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.registrarIndicacao(input.codigoIndicacao, ctx.user.id);
+      }),
+
+    minhas: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getIndicacoes(ctx.user.id);
+      }),
+  }),
+
+  // ===== DASHBOARD FINANCEIRO =====
+  financeiro: router({
+    getMRR: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.calcularMRR(ctx.user.boxId || 0);
+      }),
+
+    getChurn: protectedProcedure
+      .input(z.object({
+        mes: z.number(),
+        ano: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.calcularChurn(ctx.user.boxId || 0, input.mes, input.ano);
+      }),
+
+    getProjecoes: protectedProcedure
+      .input(z.object({
+        meses: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.calcularProjecaoFaturamento(ctx.user.boxId || 0, input.meses);
+      }),
+
+    getInadimplencia: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.analisarInadimplencia(ctx.user.boxId || 0);
+      }),
+
+    getHistoricoReceita: protectedProcedure
+      .input(z.object({
+        meses: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getHistoricoReceita(ctx.user.boxId || 0, input.meses);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

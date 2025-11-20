@@ -778,3 +778,40 @@
 - [x] Criar relatório de receita mensal
 - [x] Adicionar tipos de notificação de assinatura no schema
 - [ ] Criar testes para funcionalidades de assinaturas
+
+
+## Dashboard Financeiro do Box
+- [x] Criar procedures para calcular MRR (Monthly Recurring Revenue)
+- [x] Criar procedures para calcular taxa de churn (cancelamento)
+- [x] Criar procedures para projeções de faturamento
+- [x] Criar procedures para análise de inadimplência
+- [x] Criar procedures para histórico de receita mensal
+- [x] Criar procedures para comparação mensal (crescimento/queda)
+- [x] Criar página de Dashboard Financeiro
+- [x] Implementar gráfico de evolução de MRR
+- [x] Implementar gráfico de taxa de churn
+- [x] Implementar gráfico de projeções de faturamento
+- [x] Adicionar indicadores de inadimplência
+- [x] Adicionar lista de inadimplentes com dias de atraso
+- [x] Adicionar filtros por período
+- [x] Adicionar link de Dashboard Financeiro no menu
+- [ ] Criar testes para cálculos financeiros
+
+## Sistema de Cupons e Descontos
+- [x] Criar tabela de cupons (cupons)
+- [x] Criar tabela de uso de cupons (cupons_usados)
+- [x] Criar procedures para CRUD de cupons
+- [x] Criar procedures para validar cupom
+- [x] Criar procedures para aplicar desconto
+- [x] Criar procedures para registrar uso de cupom
+- [x] Implementar tipos de cupons (percentual, valor fixo)
+- [x] Implementar limite de uso por cupom
+- [x] Implementar data de validade
+- [x] Criar página de gestão de cupons (box master)
+- [x] Criar tabela de indicações
+- [x] Implementar sistema de indicação com desconto
+- [x] Criar código único de indicação por atleta
+- [x] Criar página de Minhas Indicações
+- [x] Adicionar link de Gestão de Cupons no menu
+- [x] Adicionar link de Minhas Indicações no menu
+- [ ] Criar testes para funcionalidades de cupons

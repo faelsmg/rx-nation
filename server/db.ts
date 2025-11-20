@@ -4522,3 +4522,370 @@ export async function enviarNotificacoesVencimento() {
 
   return { enviadas };
 }
+
+
+// ===== DASHBOARD FINANCEIRO =====
+
+export async function calcularMRR(boxId: number) {
+  const db = await getDb();
+  if (!db) return { mrr: 0, assinaturasAtivas: 0 };
+
+  const result = await db.execute(sql`
+    SELECT 
+      COUNT(*) as assinaturas_ativas,
+      SUM(p.preco) as mrr_total
+    FROM assinaturas a
+    JOIN planos p ON a.plano_id = p.id
+    WHERE a.box_id = ${boxId}
+    AND a.status = 'ativa'
+  `);
+
+  const row = (result as any)[0]?.[0];
+  return {
+    mrr: parseFloat(row?.mrr_total || 0),
+    assinaturasAtivas: parseInt(row?.assinaturas_ativas || 0),
+  };
+}
+
+export async function calcularChurn(boxId: number, mes: number, ano: number) {
+  const db = await getDb();
+  if (!db) return { churn: 0, canceladas: 0, total: 0 };
+
+  // Assinaturas ativas no início do mês
+  const inicioMes = await db.execute(sql`
+    SELECT COUNT(*) as total
+    FROM assinaturas
+    WHERE box_id = ${boxId}
+    AND DATE(data_inicio) < DATE('${ano}-${mes.toString().padStart(2, '0')}-01')
+    AND (status = 'ativa' OR (status = 'cancelada' AND DATE(data_cancelamento) >= DATE('${ano}-${mes.toString().padStart(2, '0')}-01')))
+  `);
+
+  // Assinaturas canceladas no mês
+  const canceladas = await db.execute(sql`
+    SELECT COUNT(*) as canceladas
+    FROM assinaturas
+    WHERE box_id = ${boxId}
+    AND status = 'cancelada'
+    AND MONTH(data_cancelamento) = ${mes}
+    AND YEAR(data_cancelamento) = ${ano}
+  `);
+
+  const total = parseInt((inicioMes as any)[0]?.[0]?.total || 0);
+  const canceladasCount = parseInt((canceladas as any)[0]?.[0]?.canceladas || 0);
+
+  const churnRate = total > 0 ? (canceladasCount / total) * 100 : 0;
+
+  return {
+    churn: parseFloat(churnRate.toFixed(2)),
+    canceladas: canceladasCount,
+    total,
+  };
+}
+
+export async function calcularProjecaoFaturamento(boxId: number, meses: number = 3) {
+  const db = await getDb();
+  if (!db) return { projecoes: [] };
+
+  const { mrr } = await calcularMRR(boxId);
+
+  // Calcular crescimento médio dos últimos 3 meses
+  const historicoResult = await db.execute(sql`
+    SELECT 
+      YEAR(hp.data_pagamento) as ano,
+      MONTH(hp.data_pagamento) as mes,
+      SUM(hp.valor) as receita
+    FROM historico_pagamentos hp
+    JOIN assinaturas a ON hp.assinatura_id = a.id
+    WHERE a.box_id = ${boxId}
+    AND hp.status = 'pago'
+    AND hp.data_pagamento >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
+    GROUP BY ano, mes
+    ORDER BY ano DESC, mes DESC
+    LIMIT 3
+  `);
+
+  const historico = (historicoResult as any)[0] || [];
+
+  let taxaCrescimento = 0;
+  if (historico.length >= 2) {
+    const receitaAtual = parseFloat(historico[0]?.receita || 0);
+    const receitaAnterior = parseFloat(historico[1]?.receita || 0);
+    taxaCrescimento = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior) * 100 : 0;
+  }
+
+  const projecoes = [];
+  let receitaProjetada = mrr;
+
+  for (let i = 1; i <= meses; i++) {
+    receitaProjetada = receitaProjetada * (1 + taxaCrescimento / 100);
+    const dataProjecao = new Date();
+    dataProjecao.setMonth(dataProjecao.getMonth() + i);
+
+    projecoes.push({
+      mes: dataProjecao.getMonth() + 1,
+      ano: dataProjecao.getFullYear(),
+      receitaProjetada: parseFloat(receitaProjetada.toFixed(2)),
+    });
+  }
+
+  return {
+    projecoes,
+    taxaCrescimento: parseFloat(taxaCrescimento.toFixed(2)),
+  };
+}
+
+export async function analisarInadimplencia(boxId: number) {
+  const db = await getDb();
+  if (!db) return { inadimplentes: 0, valorTotal: 0, lista: [] };
+
+  const result = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      a.data_vencimento,
+      p.preco,
+      DATEDIFF(NOW(), a.data_vencimento) as dias_atraso
+    FROM assinaturas a
+    JOIN users u ON a.user_id = u.id
+    JOIN planos p ON a.plano_id = p.id
+    WHERE a.box_id = ${boxId}
+    AND a.status = 'vencida'
+    ORDER BY dias_atraso DESC
+  `);
+
+  const lista = (result as any)[0] || [];
+
+  const valorTotal = lista.reduce((sum: number, item: any) => sum + parseFloat(item.preco || 0), 0);
+
+  return {
+    inadimplentes: lista.length,
+    valorTotal: parseFloat(valorTotal.toFixed(2)),
+    lista,
+  };
+}
+
+export async function getHistoricoReceita(boxId: number, meses: number = 12) {
+  const db = await getDb();
+  if (!db) return { historico: [] };
+
+  const result = await db.execute(sql`
+    SELECT 
+      YEAR(hp.data_pagamento) as ano,
+      MONTH(hp.data_pagamento) as mes,
+      SUM(hp.valor) as receita,
+      COUNT(DISTINCT hp.assinatura_id) as assinaturas_pagas
+    FROM historico_pagamentos hp
+    JOIN assinaturas a ON hp.assinatura_id = a.id
+    WHERE a.box_id = ${boxId}
+    AND hp.status = 'pago'
+    AND hp.data_pagamento >= DATE_SUB(NOW(), INTERVAL ${meses} MONTH)
+    GROUP BY ano, mes
+    ORDER BY ano ASC, mes ASC
+  `);
+
+  const historico = (result as any)[0] || [];
+
+  return {
+    historico: historico.map((item: any) => ({
+      ano: item.ano,
+      mes: item.mes,
+      receita: parseFloat(item.receita || 0),
+      assinaturasPagas: parseInt(item.assinaturas_pagas || 0),
+    })),
+  };
+}
+
+
+// ===== CUPONS E DESCONTOS =====
+
+export async function createCupom(cupom: {
+  boxId: number;
+  codigo: string;
+  tipo: "percentual" | "valor_fixo";
+  valor: number;
+  descricao?: string;
+  limiteUso?: number;
+  dataValidade?: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO cupons (box_id, codigo, tipo, valor, descricao, limite_uso, data_validade)
+    VALUES (${cupom.boxId}, ${cupom.codigo}, ${cupom.tipo}, ${cupom.valor}, ${cupom.descricao || null}, ${cupom.limiteUso || null}, ${cupom.dataValidade || null})
+  `);
+
+  return { success: true };
+}
+
+export async function getCupons(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      id,
+      codigo,
+      tipo,
+      valor,
+      descricao,
+      limite_uso,
+      usos_atuais,
+      data_validade,
+      ativo,
+      created_at
+    FROM cupons
+    WHERE box_id = ${boxId}
+    ORDER BY created_at DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function validarCupom(codigo: string, userId: number) {
+  const db = await getDb();
+  if (!db) return { valido: false, erro: "Database not available" };
+
+  const cupomResult = await db.execute(sql`
+    SELECT * FROM cupons
+    WHERE codigo = ${codigo}
+    AND ativo = TRUE
+    LIMIT 1
+  `);
+
+  const cupom = (cupomResult as any)[0]?.[0];
+
+  if (!cupom) {
+    return { valido: false, erro: "Cupom não encontrado" };
+  }
+
+  // Verificar validade
+  if (cupom.data_validade && new Date(cupom.data_validade) < new Date()) {
+    return { valido: false, erro: "Cupom expirado" };
+  }
+
+  // Verificar limite de uso
+  if (cupom.limite_uso && cupom.usos_atuais >= cupom.limite_uso) {
+    return { valido: false, erro: "Cupom atingiu o limite de uso" };
+  }
+
+  // Verificar se usuário já usou
+  const jaUsouResult = await db.execute(sql`
+    SELECT COUNT(*) as count
+    FROM cupons_usados
+    WHERE cupom_id = ${cupom.id}
+    AND user_id = ${userId}
+  `);
+
+  const jaUsou = parseInt((jaUsouResult as any)[0]?.[0]?.count || 0);
+
+  if (jaUsou > 0) {
+    return { valido: false, erro: "Você já utilizou este cupom" };
+  }
+
+  return {
+    valido: true,
+    cupom: {
+      id: cupom.id,
+      codigo: cupom.codigo,
+      tipo: cupom.tipo,
+      valor: parseFloat(cupom.valor),
+    },
+  };
+}
+
+export async function aplicarCupom(cupomId: number, userId: number, assinaturaId: number, valorDesconto: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Registrar uso
+  await db.execute(sql`
+    INSERT INTO cupons_usados (cupom_id, user_id, assinatura_id, valor_desconto)
+    VALUES (${cupomId}, ${userId}, ${assinaturaId}, ${valorDesconto})
+  `);
+
+  // Incrementar contador de usos
+  await db.execute(sql`
+    UPDATE cupons
+    SET usos_atuais = usos_atuais + 1
+    WHERE id = ${cupomId}
+  `);
+
+  return { success: true };
+}
+
+export async function desativarCupom(cupomId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE cupons
+    SET ativo = FALSE
+    WHERE id = ${cupomId}
+  `);
+
+  return { success: true };
+}
+
+export async function gerarCodigoIndicacao(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Gerar código único de 8 caracteres
+  const codigo = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+  await db.execute(sql`
+    UPDATE users
+    SET codigo_indicacao = ${codigo}
+    WHERE id = ${userId}
+  `);
+
+  return { codigo };
+}
+
+export async function registrarIndicacao(codigoIndicacao: string, indicadoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar indicador pelo código
+  const indicadorResult = await db.execute(sql`
+    SELECT id FROM users
+    WHERE codigo_indicacao = ${codigoIndicacao}
+    LIMIT 1
+  `);
+
+  const indicador = (indicadorResult as any)[0]?.[0];
+
+  if (!indicador) {
+    return { success: false, erro: "Código de indicação inválido" };
+  }
+
+  // Registrar indicação
+  await db.execute(sql`
+    INSERT INTO indicacoes (indicador_id, indicado_id)
+    VALUES (${indicador.id}, ${indicadoId})
+  `);
+
+  return { success: true, indicadorId: indicador.id };
+}
+
+export async function getIndicacoes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      i.id,
+      i.data_indicacao,
+      i.desconto_aplicado,
+      u.name as indicado_nome,
+      u.email as indicado_email
+    FROM indicacoes i
+    JOIN users u ON i.indicado_id = u.id
+    WHERE i.indicador_id = ${userId}
+    ORDER BY i.data_indicacao DESC
+  `);
+
+  return (result as any)[0] || [];
+}
