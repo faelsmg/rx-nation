@@ -2600,6 +2600,92 @@ export const appRouter = router({
         return db.registrarRetirada(input.caixaId, input.valor, input.descricao);
       }),
   }),
+
+  // Dashboard Financeiro Geral (Consolidado)
+  financeiroGeral: router({
+    getIndicadores: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getIndicadoresFinanceiros(boxId, input.dataInicio, input.dataFim);
+      }),
+
+    getEvolucao: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+        agrupamento: z.enum(['dia', 'semana', 'mes']).optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getEvolucaoFinanceira(boxId, input.dataInicio, input.dataFim, input.agrupamento);
+      }),
+
+    getDistribuicaoReceitas: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getDistribuicaoReceitas(boxId, input.dataInicio, input.dataFim);
+      }),
+
+    getFluxoCaixa: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        ano: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getFluxoCaixaMensal(boxId, input.ano);
+      }),
+
+    getTopProdutos: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getTopProdutosFaturamento(boxId, input.dataInicio, input.dataFim, input.limit);
+      }),
+
+    getFormasPagamento: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getDistribuicaoFormasPagamento(boxId, input.dataInicio, input.dataFim);
+      }),
+
+    getTotalCaixa: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new Error("Box não especificado");
+        return db.getTotalEmCaixa(boxId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

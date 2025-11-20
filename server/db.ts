@@ -6171,3 +6171,287 @@ export async function registrarRetirada(caixaId: number, valor: number, descrica
 
   return { success: true };
 }
+
+
+// ==================== DASHBOARD FINANCEIRO ====================
+
+export async function getReceitaTotal(boxId: number, dataInicio: string, dataFim: string) {
+  const db = await getDb();
+  if (!db) return { vendas: 0, mensalidades: 0, total: 0 };
+
+  // Receita de vendas
+  const vendasResult = await db.execute(sql`
+    SELECT COALESCE(SUM(valor_total), 0) as total_vendas
+    FROM vendas
+    WHERE box_id = ${boxId} 
+      AND status = 'concluida'
+      AND DATE(data_venda) BETWEEN ${dataInicio} AND ${dataFim}
+  `);
+  const totalVendas = parseFloat((vendasResult as any)[0][0].total_vendas || 0);
+
+  // Receita de mensalidades (assinaturas)
+  const mensalidadesResult = await db.execute(sql`
+    SELECT COALESCE(SUM(valor), 0) as total_mensalidades
+    FROM pagamentos
+    WHERE box_id = ${boxId}
+      AND status = 'paid'
+      AND DATE(data_pagamento) BETWEEN ${dataInicio} AND ${dataFim}
+  `);
+  const totalMensalidades = parseFloat((mensalidadesResult as any)[0][0].total_mensalidades || 0);
+
+  return {
+    vendas: totalVendas,
+    mensalidades: totalMensalidades,
+    total: totalVendas + totalMensalidades,
+  };
+}
+
+export async function getDespesasTotal(boxId: number, dataInicio: string, dataFim: string) {
+  const db = await getDb();
+  if (!db) return { compras: 0, total: 0 };
+
+  // Despesas com compras (pedidos recebidos)
+  const comprasResult = await db.execute(sql`
+    SELECT COALESCE(SUM(valor_total), 0) as total_compras
+    FROM pedidos_compra
+    WHERE box_id = ${boxId}
+      AND status = 'recebido'
+      AND DATE(data_pedido) BETWEEN ${dataInicio} AND ${dataFim}
+  `);
+  const totalCompras = parseFloat((comprasResult as any)[0][0].total_compras || 0);
+
+  return {
+    compras: totalCompras,
+    total: totalCompras,
+  };
+}
+
+export async function getIndicadoresFinanceiros(boxId: number, dataInicio: string, dataFim: string) {
+  const receitas = await getReceitaTotal(boxId, dataInicio, dataFim);
+  const despesas = await getDespesasTotal(boxId, dataInicio, dataFim);
+  
+  const lucroLiquido = receitas.total - despesas.total;
+  const margemLucro = receitas.total > 0 ? (lucroLiquido / receitas.total) * 100 : 0;
+
+  // Ticket médio de vendas
+  const db = await getDb();
+  let ticketMedio = 0;
+  if (db) {
+    const ticketResult = await db.execute(sql`
+      SELECT 
+        COUNT(*) as total_vendas,
+        COALESCE(SUM(valor_total), 0) as valor_total
+      FROM vendas
+      WHERE box_id = ${boxId}
+        AND status = 'concluida'
+        AND DATE(data_venda) BETWEEN ${dataInicio} AND ${dataFim}
+    `);
+    const row = (ticketResult as any)[0][0];
+    const totalVendas = parseInt(row.total_vendas || 0);
+    const valorTotal = parseFloat(row.valor_total || 0);
+    ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
+  }
+
+  return {
+    receitaTotal: receitas.total,
+    receitaVendas: receitas.vendas,
+    receitaMensalidades: receitas.mensalidades,
+    despesaTotal: despesas.total,
+    despesaCompras: despesas.compras,
+    lucroLiquido,
+    margemLucro,
+    ticketMedio,
+  };
+}
+
+export async function getEvolucaoFinanceira(boxId: number, dataInicio: string, dataFim: string, agrupamento: 'dia' | 'semana' | 'mes' = 'dia') {
+  const db = await getDb();
+  if (!db) return [];
+
+  let formatoData = '%Y-%m-%d';
+  if (agrupamento === 'semana') {
+    formatoData = '%Y-%u'; // Ano-Semana
+  } else if (agrupamento === 'mes') {
+    formatoData = '%Y-%m'; // Ano-Mês
+  }
+
+  const result = await db.execute(sql`
+    SELECT 
+      DATE_FORMAT(data, ${formatoData}) as periodo,
+      SUM(receita_vendas) as receita_vendas,
+      SUM(receita_mensalidades) as receita_mensalidades,
+      SUM(despesa_compras) as despesa_compras,
+      SUM(receita_vendas + receita_mensalidades) as receita_total,
+      SUM(despesa_compras) as despesa_total,
+      SUM(receita_vendas + receita_mensalidades - despesa_compras) as lucro
+    FROM (
+      SELECT 
+        DATE(data_venda) as data,
+        SUM(valor_total) as receita_vendas,
+        0 as receita_mensalidades,
+        0 as despesa_compras
+      FROM vendas
+      WHERE box_id = ${boxId} 
+        AND status = 'concluida'
+        AND DATE(data_venda) BETWEEN ${dataInicio} AND ${dataFim}
+      GROUP BY DATE(data_venda)
+      
+      UNION ALL
+      
+      SELECT 
+        DATE(data_pagamento) as data,
+        0 as receita_vendas,
+        SUM(valor) as receita_mensalidades,
+        0 as despesa_compras
+      FROM pagamentos
+      WHERE box_id = ${boxId}
+        AND status = 'paid'
+        AND DATE(data_pagamento) BETWEEN ${dataInicio} AND ${dataFim}
+      GROUP BY DATE(data_pagamento)
+      
+      UNION ALL
+      
+      SELECT 
+        DATE(data_pedido) as data,
+        0 as receita_vendas,
+        0 as receita_mensalidades,
+        SUM(valor_total) as despesa_compras
+      FROM pedidos_compra
+      WHERE box_id = ${boxId}
+        AND status = 'recebido'
+        AND DATE(data_pedido) BETWEEN ${dataInicio} AND ${dataFim}
+      GROUP BY DATE(data_pedido)
+    ) as financeiro
+    GROUP BY periodo
+    ORDER BY periodo
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getDistribuicaoReceitas(boxId: number, dataInicio: string, dataFim: string) {
+  const receitas = await getReceitaTotal(boxId, dataInicio, dataFim);
+  
+  return [
+    { fonte: 'Vendas PDV', valor: receitas.vendas, percentual: receitas.total > 0 ? (receitas.vendas / receitas.total) * 100 : 0 },
+    { fonte: 'Mensalidades', valor: receitas.mensalidades, percentual: receitas.total > 0 ? (receitas.mensalidades / receitas.total) * 100 : 0 },
+  ];
+}
+
+export async function getFluxoCaixaMensal(boxId: number, ano: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      MONTH(data) as mes,
+      SUM(receita_vendas + receita_mensalidades) as receita,
+      SUM(despesa_compras) as despesa,
+      SUM(receita_vendas + receita_mensalidades - despesa_compras) as saldo
+    FROM (
+      SELECT 
+        DATE(data_venda) as data,
+        SUM(valor_total) as receita_vendas,
+        0 as receita_mensalidades,
+        0 as despesa_compras
+      FROM vendas
+      WHERE box_id = ${boxId} 
+        AND status = 'concluida'
+        AND YEAR(data_venda) = ${ano}
+      GROUP BY DATE(data_venda)
+      
+      UNION ALL
+      
+      SELECT 
+        DATE(data_pagamento) as data,
+        0 as receita_vendas,
+        SUM(valor) as receita_mensalidades,
+        0 as despesa_compras
+      FROM pagamentos
+      WHERE box_id = ${boxId}
+        AND status = 'paid'
+        AND YEAR(data_pagamento) = ${ano}
+      GROUP BY DATE(data_pagamento)
+      
+      UNION ALL
+      
+      SELECT 
+        DATE(data_pedido) as data,
+        0 as receita_vendas,
+        0 as receita_mensalidades,
+        SUM(valor_total) as despesa_compras
+      FROM pedidos_compra
+      WHERE box_id = ${boxId}
+        AND status = 'recebido'
+        AND YEAR(data_pedido) = ${ano}
+      GROUP BY DATE(data_pedido)
+    ) as fluxo
+    GROUP BY MONTH(data)
+    ORDER BY mes
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getTopProdutosFaturamento(boxId: number, dataInicio: string, dataFim: string, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      p.id,
+      p.nome,
+      p.codigo_barras,
+      SUM(vi.quantidade) as quantidade_vendida,
+      SUM(vi.preco_total) as faturamento_total,
+      COUNT(DISTINCT v.id) as numero_vendas
+    FROM vendas_itens vi
+    INNER JOIN produtos p ON vi.produto_id = p.id
+    INNER JOIN vendas v ON vi.venda_id = v.id
+    WHERE v.box_id = ${boxId}
+      AND v.status = 'concluida'
+      AND DATE(v.data_venda) BETWEEN ${dataInicio} AND ${dataFim}
+    GROUP BY p.id, p.nome, p.codigo_barras
+    ORDER BY faturamento_total DESC
+    LIMIT ${limit}
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getDistribuicaoFormasPagamento(boxId: number, dataInicio: string, dataFim: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      forma_pagamento,
+      COUNT(*) as quantidade,
+      SUM(valor_total) as valor_total,
+      (SUM(valor_total) / (SELECT SUM(valor_total) FROM vendas WHERE box_id = ${boxId} AND status = 'concluida' AND DATE(data_venda) BETWEEN ${dataInicio} AND ${dataFim})) * 100 as percentual
+    FROM vendas
+    WHERE box_id = ${boxId}
+      AND status = 'concluida'
+      AND DATE(data_venda) BETWEEN ${dataInicio} AND ${dataFim}
+    GROUP BY forma_pagamento
+    ORDER BY valor_total DESC
+  `);
+
+  return (result as any)[0];
+}
+
+export async function getTotalEmCaixa(boxId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db.execute(sql`
+    SELECT 
+      COALESCE(SUM(
+        valor_inicial + valor_vendas + valor_suprimentos - valor_retiradas
+      ), 0) as total_caixa
+    FROM caixa
+    WHERE box_id = ${boxId} AND status = 'aberto'
+  `);
+
+  return parseFloat((result as any)[0][0].total_caixa || 0);
+}

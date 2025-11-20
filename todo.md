@@ -940,3 +940,29 @@
 - [ ] Implementar exportação de relatórios em PDF/Excel
 - [ ] Adicionar link de Relatórios Gerenciais no menu
 - [ ] Criar testes para cálculos de relatórios
+
+
+### Dashboard Financeiro Consolidado - ✅ CONCLUÍDO
+- [x] Criar procedures para cálculo de receita total (vendas + mensalidades)
+- [x] Criar procedures para cálculo de despesas totais (compras)
+- [x] Criar procedures para cálculo de lucro líquido
+- [x] Criar procedures para cálculo de margem de lucro
+- [x] Criar procedures para cálculo de ticket médio
+- [x] Criar procedures para evolução temporal de receitas/despesas
+- [x] Criar procedures para distribuição de receitas por fonte
+- [x] Criar procedures para fluxo de caixa mensal
+- [x] Criar procedures para top produtos por faturamento
+- [x] Criar procedures para distribuição de formas de pagamento
+- [x] Criar página de Dashboard Financeiro Geral
+- [x] Implementar cards de KPIs (receita, despesa, lucro, margem, ticket médio, total em caixa)
+- [x] Implementar gráfico de linha (receitas vs despesas)
+- [x] Implementar gráfico de pizza (distribuição de receitas)
+- [x] Implementar gráfico de barras (fluxo de caixa mensal)
+- [x] Implementar tabela de top 10 produtos por faturamento
+- [x] Implementar tabela de formas de pagamento
+- [x] Implementar filtros de período (hoje, semana, mês, trimestre, ano)
+- [x] Adicionar link de Dashboard Financeiro Geral no menu
+- [ ] Implementar comparação com período anterior (futuro)
+- [ ] Adicionar exportação de relatório em PDF (futuro)
+- [ ] Adicionar exportação de dados em CSV (futuro)
+- [ ] Criar testes para cálculos financeiros

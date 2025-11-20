@@ -34,6 +34,7 @@ import {
   ShoppingCart,
   Package,
   Banknote,
+  LineChart,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
@@ -91,6 +92,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: ShoppingCart, label: "Gestão de Compras", path: "/gestao-compras", roles: ["box_master", "admin_liga"] },
     { icon: Package, label: "Gestão de Estoque", path: "/gestao-estoque", roles: ["box_master", "admin_liga"] },
     { icon: Banknote, label: "PDV - Ponto de Venda", path: "/pdv", roles: ["box_master", "admin_liga"] },
+    { icon: LineChart, label: "Dashboard Financeiro Geral", path: "/financeiro-geral", roles: ["box_master", "admin_liga"] },
     { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Activity, label: "Dashboard Coach", path: "/dashboard-coach", roles: ["box_master", "admin_liga"] },
     { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "admin_liga"] },

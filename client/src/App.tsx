@@ -47,6 +47,7 @@ import AvaliacoesFisicas from "./pages/AvaliacoesFisicas";
 import GestaoAdministrativa from "./pages/GestaoAdministrativa";
 import GestaoCompras from "./pages/GestaoCompras";
 import GestaoEstoque from "./pages/GestaoEstoque";
+import DashboardFinanceiroGeral from "./pages/DashboardFinanceiroGeral";
 import PDV from "./pages/PDV";
 
 function Router() {
@@ -95,6 +96,7 @@ function Router() {
       <Route path="/gestao-compras" component={GestaoCompras} />
       <Route path="/gestao-estoque" component={GestaoEstoque} />
       <Route path="/pdv" component={PDV} />
+      <Route path="/financeiro-geral" component={DashboardFinanceiroGeral} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
