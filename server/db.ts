@@ -4120,3 +4120,405 @@ export async function hasCheckedInToday(userId: number): Promise<boolean> {
 }
 
 
+
+
+// ===== PLANOS E ASSINATURAS =====
+
+export async function createPlano(plano: {
+  boxId: number;
+  nome: string;
+  descricao?: string;
+  preco: number;
+  duracaoDias: number;
+  limiteCheckins?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO planos (box_id, nome, descricao, preco, duracao_dias, limite_checkins)
+    VALUES (${plano.boxId}, ${plano.nome}, ${plano.descricao || null}, ${plano.preco}, ${plano.duracaoDias}, ${plano.limiteCheckins || null})
+  `);
+
+  return { id: (result as any).insertId };
+}
+
+export async function getPlanosByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM planos 
+    WHERE box_id = ${boxId} AND ativo = TRUE
+    ORDER BY preco ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getPlanoById(planoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT * FROM planos WHERE id = ${planoId} LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function updatePlano(planoId: number, data: {
+  nome?: string;
+  descricao?: string;
+  preco?: number;
+  duracaoDias?: number;
+  limiteCheckins?: number;
+  ativo?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (data.nome !== undefined) {
+    updates.push("nome = ?");
+    values.push(data.nome);
+  }
+  if (data.descricao !== undefined) {
+    updates.push("descricao = ?");
+    values.push(data.descricao);
+  }
+  if (data.preco !== undefined) {
+    updates.push("preco = ?");
+    values.push(data.preco);
+  }
+  if (data.duracaoDias !== undefined) {
+    updates.push("duracao_dias = ?");
+    values.push(data.duracaoDias);
+  }
+  if (data.limiteCheckins !== undefined) {
+    updates.push("limite_checkins = ?");
+    values.push(data.limiteCheckins);
+  }
+  if (data.ativo !== undefined) {
+    updates.push("ativo = ?");
+    values.push(data.ativo);
+  }
+
+  if (updates.length === 0) return;
+
+  values.push(planoId);
+
+  // Construir query dinamicamente
+  let query = "UPDATE planos SET ";
+  const setParts: string[] = [];
+  
+  if (data.nome !== undefined) setParts.push(`nome = '${data.nome}'`);
+  if (data.descricao !== undefined) setParts.push(`descricao = '${data.descricao}'`);
+  if (data.preco !== undefined) setParts.push(`preco = ${data.preco}`);
+  if (data.duracaoDias !== undefined) setParts.push(`duracao_dias = ${data.duracaoDias}`);
+  if (data.limiteCheckins !== undefined) setParts.push(`limite_checkins = ${data.limiteCheckins}`);
+  if (data.ativo !== undefined) setParts.push(`ativo = ${data.ativo}`);
+  
+  query += setParts.join(", ") + ` WHERE id = ${planoId}`;
+  await db.execute(sql.raw(query));
+}
+
+export async function createAssinatura(assinatura: {
+  userId: number;
+  planoId: number;
+  dataInicio: Date;
+  dataVencimento: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO assinaturas (user_id, plano_id, data_inicio, data_vencimento, status)
+    VALUES (${assinatura.userId}, ${assinatura.planoId}, ${assinatura.dataInicio}, ${assinatura.dataVencimento}, 'ativa')
+  `);
+
+  // Atualizar campos de assinatura do usuário
+  await db.execute(sql`
+    UPDATE users 
+    SET plano_id = ${assinatura.planoId}, 
+        data_vencimento = ${assinatura.dataVencimento},
+        status_assinatura = 'ativa'
+    WHERE id = ${assinatura.userId}
+  `);
+
+  return { id: (result as any).insertId };
+}
+
+export async function getAssinaturaAtiva(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT a.*, p.nome as plano_nome, p.preco, p.duracao_dias, p.limite_checkins
+    FROM assinaturas a
+    JOIN planos p ON a.plano_id = p.id
+    WHERE a.user_id = ${userId} AND a.status = 'ativa'
+    ORDER BY a.data_vencimento DESC
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getAssinaturasByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT a.*, p.nome as plano_nome, p.preco
+    FROM assinaturas a
+    JOIN planos p ON a.plano_id = p.id
+    WHERE a.user_id = ${userId}
+    ORDER BY a.created_at DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function renovarAssinatura(assinaturaId: number, novaDataVencimento: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE assinaturas 
+    SET data_vencimento = ${novaDataVencimento}, status = 'ativa'
+    WHERE id = ${assinaturaId}
+  `);
+
+  // Atualizar usuário
+  const result = await db.execute(sql`
+    SELECT user_id FROM assinaturas WHERE id = ${assinaturaId} LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  if (rows && rows.length > 0) {
+    const userId = rows[0].user_id;
+    await db.execute(sql`
+      UPDATE users 
+      SET data_vencimento = ${novaDataVencimento}, status_assinatura = 'ativa'
+      WHERE id = ${userId}
+    `);
+  }
+}
+
+export async function cancelarAssinatura(assinaturaId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE assinaturas 
+    SET status = 'cancelada'
+    WHERE id = ${assinaturaId}
+  `);
+
+  // Atualizar usuário
+  const result = await db.execute(sql`
+    SELECT user_id FROM assinaturas WHERE id = ${assinaturaId} LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  if (rows && rows.length > 0) {
+    const userId = rows[0].user_id;
+    await db.execute(sql`
+      UPDATE users 
+      SET status_assinatura = 'cancelada'
+      WHERE id = ${userId}
+    `);
+  }
+}
+
+export async function verificarAssinaturasVencidas() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hoje = new Date();
+  
+  const result = await db.execute(sql`
+    SELECT a.*, u.name, u.email
+    FROM assinaturas a
+    JOIN users u ON a.user_id = u.id
+    WHERE a.status = 'ativa' AND a.data_vencimento < ${hoje}
+  `);
+
+  const assinaturasVencidas = (result as any)[0] || [];
+
+  // Atualizar status para vencida
+  for (const assinatura of assinaturasVencidas) {
+    await db.execute(sql`
+      UPDATE assinaturas SET status = 'vencida' WHERE id = ${assinatura.id}
+    `);
+    await db.execute(sql`
+      UPDATE users SET status_assinatura = 'vencida' WHERE id = ${assinatura.user_id}
+    `);
+  }
+
+  return assinaturasVencidas;
+}
+
+export async function getAssinaturasProximasVencer(dias: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const dataLimite = new Date();
+  dataLimite.setDate(dataLimite.getDate() + dias);
+
+  const result = await db.execute(sql`
+    SELECT a.*, u.name, u.email, p.nome as plano_nome
+    FROM assinaturas a
+    JOIN users u ON a.user_id = u.id
+    JOIN planos p ON a.plano_id = p.id
+    WHERE a.status = 'ativa' 
+    AND a.data_vencimento <= ${dataLimite}
+    AND a.data_vencimento > CURDATE()
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function createPagamento(pagamento: {
+  assinaturaId: number;
+  userId: number;
+  valor: number;
+  metodoPagamento?: string;
+  status?: string;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO historico_pagamentos 
+    (assinatura_id, user_id, valor, metodo_pagamento, status, observacoes)
+    VALUES (${pagamento.assinaturaId}, ${pagamento.userId}, ${pagamento.valor}, 
+            ${pagamento.metodoPagamento || null}, ${pagamento.status || 'pendente'}, 
+            ${pagamento.observacoes || null})
+  `);
+
+  return { id: (result as any).insertId };
+}
+
+export async function getPagamentosByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT hp.*, p.nome as plano_nome
+    FROM historico_pagamentos hp
+    JOIN assinaturas a ON hp.assinatura_id = a.id
+    JOIN planos p ON a.plano_id = p.id
+    WHERE hp.user_id = ${userId}
+    ORDER BY hp.data_pagamento DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getReceitaMensal(boxId: number, mes: number, ano: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, pagamentos: [] };
+
+  const result = await db.execute(sql`
+    SELECT hp.*, u.name as user_name, p.nome as plano_nome
+    FROM historico_pagamentos hp
+    JOIN users u ON hp.user_id = u.id
+    JOIN assinaturas a ON hp.assinatura_id = a.id
+    JOIN planos p ON a.plano_id = p.id
+    WHERE u.box_id = ${boxId}
+    AND hp.status = 'pago'
+    AND MONTH(hp.data_pagamento) = ${mes}
+    AND YEAR(hp.data_pagamento) = ${ano}
+    ORDER BY hp.data_pagamento DESC
+  `);
+
+  const pagamentos = (result as any)[0] || [];
+  const total = pagamentos.reduce((sum: number, p: any) => sum + parseFloat(p.valor), 0);
+
+  return { total, pagamentos };
+}
+
+
+// ===== NOTIFICAÇÕES DE VENCIMENTO =====
+
+export async function enviarNotificacoesVencimento() {
+  const db = await getDb();
+  if (!db) return { enviadas: 0 };
+
+  let enviadas = 0;
+
+  // Notificar assinaturas que vencem em 7 dias
+  const em7Dias = await getAssinaturasProximasVencer(7);
+  for (const assinatura of em7Dias) {
+    const jaNotificado = await db.execute(sql`
+      SELECT id FROM notificacoes 
+      WHERE user_id = ${assinatura.user_id} 
+      AND tipo = 'assinatura_vence_7dias'
+      AND DATE(created_at) = CURDATE()
+      LIMIT 1
+    `);
+
+    if ((jaNotificado as any)[0]?.length === 0) {
+      await createNotification({
+        userId: assinatura.user_id,
+        tipo: "geral",
+        titulo: "Assinatura vence em 7 dias",
+        mensagem: `Sua assinatura do plano ${assinatura.plano_nome} vence em 7 dias. Renove para continuar acessando o box.`,
+      });
+      enviadas++;
+    }
+  }
+
+  // Notificar assinaturas que vencem em 3 dias
+  const em3Dias = await getAssinaturasProximasVencer(3);
+  for (const assinatura of em3Dias) {
+    const jaNotificado = await db.execute(sql`
+      SELECT id FROM notificacoes 
+      WHERE user_id = ${assinatura.user_id} 
+      AND tipo = 'assinatura_vence_3dias'
+      AND DATE(created_at) = CURDATE()
+      LIMIT 1
+    `);
+
+    if ((jaNotificado as any)[0]?.length === 0) {
+      await createNotification({
+        userId: assinatura.user_id,
+        tipo: "geral",
+        titulo: "Assinatura vence em 3 dias",
+        mensagem: `Sua assinatura do plano ${assinatura.plano_nome} vence em 3 dias. Renove urgentemente!`,
+      });
+      enviadas++;
+    }
+  }
+
+  // Notificar assinaturas vencidas
+  const vencidas = await verificarAssinaturasVencidas();
+  for (const assinatura of vencidas) {
+    const jaNotificado = await db.execute(sql`
+      SELECT id FROM notificacoes 
+      WHERE user_id = ${assinatura.user_id} 
+      AND tipo = 'assinatura_vencida'
+      AND DATE(created_at) = CURDATE()
+      LIMIT 1
+    `);
+
+    if ((jaNotificado as any)[0]?.length === 0) {
+      await createNotification({
+        userId: assinatura.user_id,
+        tipo: "geral",
+        titulo: "Assinatura vencida",
+        mensagem: `Sua assinatura venceu. Renove para continuar acessando o box.`,
+      });
+      enviadas++;
+    }
+  }
+
+  return { enviadas };
+}

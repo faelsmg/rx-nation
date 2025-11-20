@@ -24,6 +24,8 @@ import {
   MessageCircle,
   QrCode,
   ScanLine,
+  CreditCard,
+  FileText,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
@@ -70,6 +72,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: Calendar, label: "Eventos", path: "/calendario-eventos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: QrCode, label: "Meu QR Code", path: "/meu-qrcode", roles: ["atleta"] },
     { icon: ScanLine, label: "Scanner Check-in", path: "/scanner-qrcode", roles: ["box_master", "admin_liga"] },
+    { icon: CreditCard, label: "Minha Assinatura", path: "/minha-assinatura", roles: ["atleta"] },
+    { icon: FileText, label: "Gestão de Planos", path: "/gestao-planos", roles: ["box_master", "admin_liga"] },
+    { icon: Users, label: "Gestão de Assinaturas", path: "/gestao-assinaturas", roles: ["box_master", "admin_liga"] },
     { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Activity, label: "Dashboard Coach", path: "/dashboard-coach", roles: ["box_master", "admin_liga"] },
     { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "admin_liga"] },

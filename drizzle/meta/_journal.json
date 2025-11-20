@@ -71,6 +71,13 @@
       "when": 1763663270838,
       "tag": "0009_gifted_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1763669372092,
+      "tag": "0010_clear_boomer",
+      "breakpoints": true
     }
   ]
 }

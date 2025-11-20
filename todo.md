@@ -754,3 +754,27 @@
 - [x] Adicionar link de "Scanner Check-in" no menu do box master
 - [x] Implementar botão de download do QR Code
 - [ ] Criar testes para funcionalidades de QR Code
+
+
+## Sistema de Planos e Assinaturas
+- [x] Criar tabela de planos (planos)
+- [x] Criar tabela de assinaturas (assinaturas)
+- [x] Criar tabela de histórico de pagamentos (historico_pagamentos)
+- [x] Adicionar campo planoId e dataVencimento na tabela users
+- [x] Criar procedures para CRUD de planos
+- [x] Criar procedures para gerenciar assinaturas
+- [x] Criar procedure para verificar status da assinatura
+- [x] Criar procedure para renovar assinatura
+- [x] Criar procedure para cancelar assinatura
+- [x] Implementar middleware de verificação de assinatura ativa
+- [x] Criar sistema de notificações de vencimento (7 dias antes, 3 dias antes, vencida)
+- [x] Criar página de gestão de planos (box master)
+- [x] Criar página de gestão de assinaturas (box master)
+- [x] Criar página de visualização de assinatura do atleta
+- [x] Criar procedure para renovar assinatura
+- [x] Implementar função helper verificarAssinaturaAtiva
+- [x] Criar procedure assinaturaProcedure para bloquear acesso
+- [x] Adicionar links no menu (Minha Assinatura, Gestão de Planos, Gestão de Assinaturas)
+- [x] Criar relatório de receita mensal
+- [x] Adicionar tipos de notificação de assinatura no schema
+- [ ] Criar testes para funcionalidades de assinaturas

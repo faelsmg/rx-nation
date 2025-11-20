@@ -1562,6 +1562,181 @@ export const appRouter = router({
         }
       }),
   }),
+
+  // ===== PLANOS E ASSINATURAS =====
+  planos: router({
+    create: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string().optional(),
+        preco: z.number(),
+        duracaoDias: z.number(),
+        limiteCheckins: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Apenas box masters podem criar planos");
+        }
+        return db.createPlano({
+          boxId: ctx.user.boxId || 0,
+          ...input,
+        });
+      }),
+
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPlanosByBox(ctx.user.boxId || 0);
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        planoId: z.number(),
+        nome: z.string().optional(),
+        descricao: z.string().optional(),
+        preco: z.number().optional(),
+        duracaoDias: z.number().optional(),
+        limiteCheckins: z.number().optional(),
+        ativo: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Apenas box masters podem editar planos");
+        }
+        const { planoId, ...data } = input;
+        return db.updatePlano(planoId, data);
+      }),
+  }),
+
+  assinaturas: router({
+    create: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        planoId: z.number(),
+        duracaoMeses: z.number().default(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Apenas box masters podem criar assinaturas");
+        }
+
+        const plano = await db.getPlanoById(input.planoId);
+        if (!plano) throw new Error("Plano não encontrado");
+
+        const dataInicio = new Date();
+        const dataVencimento = new Date();
+        dataVencimento.setDate(dataVencimento.getDate() + (plano.duracao_dias * input.duracaoMeses));
+
+        const assinatura = await db.createAssinatura({
+          userId: input.userId,
+          planoId: input.planoId,
+          dataInicio,
+          dataVencimento,
+        });
+
+        // Criar registro de pagamento
+        await db.createPagamento({
+          assinaturaId: assinatura.id,
+          userId: input.userId,
+          valor: plano.preco * input.duracaoMeses,
+          status: 'pendente',
+        });
+
+        return assinatura;
+      }),
+
+    getAtiva: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getAssinaturaAtiva(ctx.user.id);
+      }),
+
+    getByUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getAssinaturasByUser(input.userId);
+      }),
+
+    renovar: protectedProcedure
+      .input(z.object({
+        assinaturaId: z.number(),
+        duracaoMeses: z.number().default(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const assinatura = await db.getAssinaturaAtiva(ctx.user.id);
+        if (!assinatura) throw new Error("Assinatura não encontrada");
+
+        const plano = await db.getPlanoById(assinatura.plano_id);
+        if (!plano) throw new Error("Plano não encontrado");
+
+        const novaDataVencimento = new Date(assinatura.data_vencimento);
+        novaDataVencimento.setDate(novaDataVencimento.getDate() + (plano.duracao_dias * input.duracaoMeses));
+
+        await db.renovarAssinatura(input.assinaturaId, novaDataVencimento);
+
+        // Criar registro de pagamento
+        await db.createPagamento({
+          assinaturaId: input.assinaturaId,
+          userId: ctx.user.id,
+          valor: plano.preco * input.duracaoMeses,
+          status: 'pendente',
+        });
+
+        return { success: true };
+      }),
+
+    cancelar: protectedProcedure
+      .input(z.object({ assinaturaId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.cancelarAssinatura(input.assinaturaId);
+        return { success: true };
+      }),
+
+    verificarVencidas: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.verificarAssinaturasVencidas();
+      }),
+
+    proximasVencer: protectedProcedure
+      .input(z.object({ dias: z.number().default(7) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getAssinaturasProximasVencer(input.dias);
+      }),
+  }),
+
+  pagamentos: router({
+    getByUser: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPagamentosByUser(ctx.user.id);
+      }),
+
+    getReceita: protectedProcedure
+      .input(z.object({
+        mes: z.number(),
+        ano: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getReceitaMensal(ctx.user.boxId || 0, input.mes, input.ano);
+      }),
+  }),
+
+  // ===== TAREFAS AUTOMATIZADAS =====
+  tarefas: router({
+    enviarNotificacoesVencimento: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.enviarNotificacoesVencimento();
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
