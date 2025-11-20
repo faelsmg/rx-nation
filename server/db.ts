@@ -4889,3 +4889,600 @@ export async function getIndicacoes(userId: number) {
 
   return (result as any)[0] || [];
 }
+
+
+// ===== AVALIAÇÕES FÍSICAS =====
+
+export async function createAvaliacaoFisica(avaliacao: {
+  userId: number;
+  boxId: number;
+  peso?: number;
+  altura?: number;
+  percentualGordura?: number;
+  circCintura?: number;
+  circQuadril?: number;
+  circBracoDireito?: number;
+  circBracoEsquerdo?: number;
+  circPernaDireita?: number;
+  circPernaEsquerda?: number;
+  circPeito?: number;
+  observacoes?: string;
+  avaliadorId: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Calcular IMC se peso e altura estiverem disponíveis
+  let imc = null;
+  if (avaliacao.peso && avaliacao.altura) {
+    imc = avaliacao.peso / (avaliacao.altura * avaliacao.altura);
+  }
+
+  await db.execute(sql`
+    INSERT INTO avaliacoes_fisicas (
+      user_id, box_id, peso, altura, imc, percentual_gordura,
+      circ_cintura, circ_quadril, circ_braco_direito, circ_braco_esquerdo,
+      circ_perna_direita, circ_perna_esquerda, circ_peito,
+      observacoes, avaliador_id
+    )
+    VALUES (
+      ${avaliacao.userId}, ${avaliacao.boxId}, ${avaliacao.peso || null}, ${avaliacao.altura || null},
+      ${imc}, ${avaliacao.percentualGordura || null},
+      ${avaliacao.circCintura || null}, ${avaliacao.circQuadril || null},
+      ${avaliacao.circBracoDireito || null}, ${avaliacao.circBracoEsquerdo || null},
+      ${avaliacao.circPernaDireita || null}, ${avaliacao.circPernaEsquerda || null},
+      ${avaliacao.circPeito || null}, ${avaliacao.observacoes || null}, ${avaliacao.avaliadorId}
+    )
+  `);
+
+  return { success: true };
+}
+
+export async function getAvaliacoesFisicas(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      af.*,
+      u.name as avaliador_nome
+    FROM avaliacoes_fisicas af
+    LEFT JOIN users u ON af.avaliador_id = u.id
+    WHERE af.user_id = ${userId}
+    ORDER BY af.data_avaliacao DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getUltimaAvaliacaoFisica(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT *
+    FROM avaliacoes_fisicas
+    WHERE user_id = ${userId}
+    ORDER BY data_avaliacao DESC
+    LIMIT 1
+  `);
+
+  return (result as any)[0]?.[0] || null;
+}
+
+export async function getEvolucaoAvaliacoes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      data_avaliacao,
+      peso,
+      percentual_gordura,
+      imc,
+      circ_cintura,
+      circ_quadril,
+      circ_peito
+    FROM avaliacoes_fisicas
+    WHERE user_id = ${userId}
+    ORDER BY data_avaliacao ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function compararAvaliacoes(userId: number, avaliacaoId1: number, avaliacaoId2: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT *
+    FROM avaliacoes_fisicas
+    WHERE user_id = ${userId}
+    AND id IN (${avaliacaoId1}, ${avaliacaoId2})
+    ORDER BY data_avaliacao ASC
+  `);
+
+  const avaliacoes = (result as any)[0] || [];
+
+  if (avaliacoes.length !== 2) {
+    return null;
+  }
+
+  const [anterior, atual] = avaliacoes;
+
+  return {
+    anterior,
+    atual,
+    diferencas: {
+      peso: atual.peso ? (atual.peso - (anterior.peso || 0)).toFixed(2) : null,
+      percentualGordura: atual.percentual_gordura ? (atual.percentual_gordura - (anterior.percentual_gordura || 0)).toFixed(2) : null,
+      imc: atual.imc ? (atual.imc - (anterior.imc || 0)).toFixed(2) : null,
+      circCintura: atual.circ_cintura ? (atual.circ_cintura - (anterior.circ_cintura || 0)).toFixed(2) : null,
+      circQuadril: atual.circ_quadril ? (atual.circ_quadril - (anterior.circ_quadril || 0)).toFixed(2) : null,
+      circPeito: atual.circ_peito ? (atual.circ_peito - (anterior.circ_peito || 0)).toFixed(2) : null,
+    },
+  };
+}
+
+
+// ===== GESTÃO ADMINISTRATIVA =====
+
+// Funcionários
+export async function createFuncionario(funcionario: {
+  boxId: number;
+  nome: string;
+  cpf?: string;
+  cargo: string;
+  salario: number;
+  dataAdmissao: Date;
+  email?: string;
+  telefone?: string;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO funcionarios (box_id, nome, cpf, cargo, salario, data_admissao, email, telefone, observacoes)
+    VALUES (${funcionario.boxId}, ${funcionario.nome}, ${funcionario.cpf || null}, ${funcionario.cargo}, 
+            ${funcionario.salario}, ${funcionario.dataAdmissao}, ${funcionario.email || null}, 
+            ${funcionario.telefone || null}, ${funcionario.observacoes || null})
+  `);
+
+  return { success: true };
+}
+
+export async function getFuncionarios(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM funcionarios
+    WHERE box_id = ${boxId}
+    ORDER BY ativo DESC, nome ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function updateFuncionario(id: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const fields = [];
+  const values = [];
+
+  if (data.nome) {
+    fields.push("nome = ?");
+    values.push(data.nome);
+  }
+  if (data.cargo) {
+    fields.push("cargo = ?");
+    values.push(data.cargo);
+  }
+  if (data.salario !== undefined) {
+    fields.push("salario = ?");
+    values.push(data.salario);
+  }
+  if (data.email !== undefined) {
+    fields.push("email = ?");
+    values.push(data.email);
+  }
+  if (data.telefone !== undefined) {
+    fields.push("telefone = ?");
+    values.push(data.telefone);
+  }
+  if (data.ativo !== undefined) {
+    fields.push("ativo = ?");
+    values.push(data.ativo);
+  }
+  if (data.dataDemissao) {
+    fields.push("data_demissao = ?");
+    values.push(data.dataDemissao);
+  }
+
+  if (fields.length === 0) return { success: true };
+
+  await db.execute(sql.raw(`
+    UPDATE funcionarios
+    SET ${fields.join(", ")}
+    WHERE id = ${id}
+  `));
+
+  return { success: true };
+}
+
+// Prestadores
+export async function createPrestador(prestador: {
+  boxId: number;
+  nome: string;
+  cpfCnpj?: string;
+  tipoServico: string;
+  valorMensal?: number;
+  diaPagamento?: number;
+  email?: string;
+  telefone?: string;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO prestadores (box_id, nome, cpf_cnpj, tipo_servico, valor_mensal, dia_pagamento, email, telefone, observacoes)
+    VALUES (${prestador.boxId}, ${prestador.nome}, ${prestador.cpfCnpj || null}, ${prestador.tipoServico},
+            ${prestador.valorMensal || null}, ${prestador.diaPagamento || null}, ${prestador.email || null},
+            ${prestador.telefone || null}, ${prestador.observacoes || null})
+  `);
+
+  return { success: true };
+}
+
+export async function getPrestadores(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM prestadores
+    WHERE box_id = ${boxId}
+    ORDER BY ativo DESC, nome ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+// Fluxo de Caixa
+export async function createTransacao(transacao: {
+  boxId: number;
+  tipo: "entrada" | "saida";
+  categoriaId?: number;
+  descricao: string;
+  valor: number;
+  dataTransacao: Date;
+  metodoPagamento?: string;
+  funcionarioId?: number;
+  prestadorId?: number;
+  observacoes?: string;
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO fluxo_caixa (box_id, tipo, categoria_id, descricao, valor, data_transacao, metodo_pagamento,
+                             funcionario_id, prestador_id, observacoes, created_by)
+    VALUES (${transacao.boxId}, ${transacao.tipo}, ${transacao.categoriaId || null}, ${transacao.descricao},
+            ${transacao.valor}, ${transacao.dataTransacao}, ${transacao.metodoPagamento || null},
+            ${transacao.funcionarioId || null}, ${transacao.prestadorId || null}, ${transacao.observacoes || null},
+            ${transacao.createdBy})
+  `);
+
+  return { success: true };
+}
+
+export async function getFluxoCaixa(boxId: number, dataInicio?: Date, dataFim?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = sql`
+    SELECT 
+      fc.*,
+      c.nome as categoria_nome,
+      c.cor as categoria_cor,
+      f.nome as funcionario_nome,
+      p.nome as prestador_nome
+    FROM fluxo_caixa fc
+    LEFT JOIN categorias_despesas c ON fc.categoria_id = c.id
+    LEFT JOIN funcionarios f ON fc.funcionario_id = f.id
+    LEFT JOIN prestadores p ON fc.prestador_id = p.id
+    WHERE fc.box_id = ${boxId}
+  `;
+
+  if (dataInicio && dataFim) {
+    query = sql`${query} AND fc.data_transacao BETWEEN ${dataInicio} AND ${dataFim}`;
+  }
+
+  query = sql`${query} ORDER BY fc.data_transacao DESC, fc.created_at DESC`;
+
+  const result = await db.execute(query);
+  return (result as any)[0] || [];
+}
+
+export async function getResumoFluxoCaixa(boxId: number, mes: number, ano: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as total_entradas,
+      SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END) as total_saidas,
+      SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE -valor END) as saldo
+    FROM fluxo_caixa
+    WHERE box_id = ${boxId}
+    AND MONTH(data_transacao) = ${mes}
+    AND YEAR(data_transacao) = ${ano}
+  `);
+
+  return (result as any)[0]?.[0] || { total_entradas: 0, total_saidas: 0, saldo: 0 };
+}
+
+export async function getDespesasPorCategoria(boxId: number, mes: number, ano: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      c.nome as categoria,
+      c.cor,
+      SUM(fc.valor) as total
+    FROM fluxo_caixa fc
+    JOIN categorias_despesas c ON fc.categoria_id = c.id
+    WHERE fc.box_id = ${boxId}
+    AND fc.tipo = 'saida'
+    AND MONTH(fc.data_transacao) = ${mes}
+    AND YEAR(fc.data_transacao) = ${ano}
+    GROUP BY c.id, c.nome, c.cor
+    ORDER BY total DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getFolhaPagamento(boxId: number, mes: number, ano: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      f.id,
+      f.nome,
+      f.cargo,
+      f.salario,
+      COALESCE(SUM(fc.valor), 0) as total_pago
+    FROM funcionarios f
+    LEFT JOIN fluxo_caixa fc ON f.id = fc.funcionario_id 
+      AND MONTH(fc.data_transacao) = ${mes}
+      AND YEAR(fc.data_transacao) = ${ano}
+    WHERE f.box_id = ${boxId}
+    AND f.ativo = TRUE
+    GROUP BY f.id, f.nome, f.cargo, f.salario
+    ORDER BY f.nome
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getCategoriasDespesas(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT * FROM categorias_despesas
+    WHERE box_id = ${boxId} OR box_id = 0
+    ORDER BY nome
+  `);
+
+  return (result as any)[0] || [];
+}
+
+
+// ===== GESTÃO DE COMPRAS =====
+
+export async function createFornecedor(data: {
+  boxId: number;
+  nome: string;
+  razaoSocial?: string;
+  cnpj?: string;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(
+    `INSERT INTO fornecedores (box_id, nome, razao_social, cnpj, email, telefone, endereco, observacoes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [data.boxId, data.nome, data.razaoSocial || null, data.cnpj || null, data.email || null, data.telefone || null, data.endereco || null, data.observacoes || null]
+  );
+
+  return { id: (result as any).insertId };
+}
+
+export async function getFornecedores(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(
+    `SELECT * FROM fornecedores WHERE box_id = ? ORDER BY nome`,
+    [boxId]
+  );
+
+  return (result as any)[0];
+}
+
+export async function updateFornecedor(id: number, data: {
+  nome?: string;
+  razaoSocial?: string;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  ativo?: boolean;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (data.nome !== undefined) {
+    updates.push("nome = ?");
+    values.push(data.nome);
+  }
+  if (data.razaoSocial !== undefined) {
+    updates.push("razao_social = ?");
+    values.push(data.razaoSocial);
+  }
+  if (data.email !== undefined) {
+    updates.push("email = ?");
+    values.push(data.email);
+  }
+  if (data.telefone !== undefined) {
+    updates.push("telefone = ?");
+    values.push(data.telefone);
+  }
+  if (data.endereco !== undefined) {
+    updates.push("endereco = ?");
+    values.push(data.endereco);
+  }
+  if (data.ativo !== undefined) {
+    updates.push("ativo = ?");
+    values.push(data.ativo);
+  }
+  if (data.observacoes !== undefined) {
+    updates.push("observacoes = ?");
+    values.push(data.observacoes);
+  }
+
+  if (updates.length === 0) return { success: true };
+
+  values.push(id);
+
+  await db.execute(
+    `UPDATE fornecedores SET ${updates.join(", ")} WHERE id = ?`,
+    values
+  );
+
+  return { success: true };
+}
+
+export async function createPedidoCompra(data: {
+  boxId: number;
+  fornecedorId: number;
+  numeroPedido: string;
+  dataPedido: Date;
+  dataEntregaPrevista?: Date;
+  observacoes?: string;
+  criadoPor: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(
+    `INSERT INTO pedidos_compra (box_id, fornecedor_id, numero_pedido, data_pedido, data_entrega_prevista, observacoes, criado_por)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [data.boxId, data.fornecedorId, data.numeroPedido, data.dataPedido, data.dataEntregaPrevista || null, data.observacoes || null, data.criadoPor]
+  );
+
+  return { id: (result as any).insertId };
+}
+
+export async function addItemPedidoCompra(data: {
+  pedidoId: number;
+  descricao: string;
+  quantidade: number;
+  unidade?: string;
+  precoUnitario: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const precoTotal = data.quantidade * data.precoUnitario;
+
+  await db.execute(
+    `INSERT INTO pedidos_compra_itens (pedido_id, descricao, quantidade, unidade, preco_unitario, preco_total)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [data.pedidoId, data.descricao, data.quantidade, data.unidade || null, data.precoUnitario, precoTotal]
+  );
+
+  // Atualizar valor total do pedido
+  await db.execute(
+    `UPDATE pedidos_compra SET valor_total = (
+      SELECT SUM(preco_total) FROM pedidos_compra_itens WHERE pedido_id = ?
+    ) WHERE id = ?`,
+    [data.pedidoId, data.pedidoId]
+  );
+
+  return { success: true };
+}
+
+export async function getPedidosCompra(boxId: number, status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = `
+    SELECT 
+      pc.*,
+      f.nome as fornecedor_nome,
+      u.name as criado_por_nome
+    FROM pedidos_compra pc
+    LEFT JOIN fornecedores f ON pc.fornecedor_id = f.id
+    LEFT JOIN users u ON pc.criado_por = u.id
+    WHERE pc.box_id = ?
+  `;
+
+  const params: any[] = [boxId];
+
+  if (status) {
+    query += ` AND pc.status = ?`;
+    params.push(status);
+  }
+
+  query += ` ORDER BY pc.data_pedido DESC`;
+
+  const result = await db.execute(query, params);
+  return (result as any)[0];
+}
+
+export async function getItensPedidoCompra(pedidoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(
+    `SELECT * FROM pedidos_compra_itens WHERE pedido_id = ? ORDER BY id`,
+    [pedidoId]
+  );
+
+  return (result as any)[0];
+}
+
+export async function updateStatusPedidoCompra(pedidoId: number, status: string, aprovadoPor?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (status === 'aprovado' && aprovadoPor) {
+    await db.execute(
+      `UPDATE pedidos_compra SET status = ?, aprovado_por = ? WHERE id = ?`,
+      [status, aprovadoPor, pedidoId]
+    );
+  } else {
+    await db.execute(
+      `UPDATE pedidos_compra SET status = ? WHERE id = ?`,
+      [status, pedidoId]
+    );
+  }
+
+  return { success: true };
+}

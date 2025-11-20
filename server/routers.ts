@@ -1818,6 +1818,232 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== AVALIAÇÕES FÍSICAS =====
+  avaliacoesFisicas: router({
+    create: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        peso: z.number().optional(),
+        altura: z.number().optional(),
+        percentualGordura: z.number().optional(),
+        circCintura: z.number().optional(),
+        circQuadril: z.number().optional(),
+        circBracoDireito: z.number().optional(),
+        circBracoEsquerdo: z.number().optional(),
+        circPernaDireita: z.number().optional(),
+        circPernaEsquerda: z.number().optional(),
+        circPeito: z.number().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createAvaliacaoFisica({
+          ...input,
+          boxId: ctx.user.boxId || 0,
+          avaliadorId: ctx.user.id,
+        });
+      }),
+
+    list: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const userId = input.userId || ctx.user.id;
+        return db.getAvaliacoesFisicas(userId);
+      }),
+
+    ultima: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const userId = input.userId || ctx.user.id;
+        return db.getUltimaAvaliacaoFisica(userId);
+      }),
+
+    evolucao: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const userId = input.userId || ctx.user.id;
+        return db.getEvolucaoAvaliacoes(userId);
+      }),
+
+    comparar: protectedProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+        avaliacaoId1: z.number(),
+        avaliacaoId2: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const userId = input.userId || ctx.user.id;
+        return db.compararAvaliacoes(userId, input.avaliacaoId1, input.avaliacaoId2);
+      }),
+  }),
+
+  // ===== GESTÃO ADMINISTRATIVA =====
+  gestaoAdministrativa: router({
+    // Funcionários
+    createFuncionario: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        cpf: z.string().optional(),
+        cargo: z.string(),
+        salario: z.number(),
+        dataAdmissao: z.date(),
+        email: z.string().optional(),
+        telefone: z.string().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.createFuncionario({
+          ...input,
+          boxId: ctx.user.boxId || 0,
+        });
+      }),
+
+    getFuncionarios: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getFuncionarios(ctx.user.boxId || 0);
+      }),
+
+    updateFuncionario: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        cargo: z.string().optional(),
+        salario: z.number().optional(),
+        email: z.string().optional(),
+        telefone: z.string().optional(),
+        ativo: z.boolean().optional(),
+        dataDemissao: z.date().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        const { id, ...data } = input;
+        return db.updateFuncionario(id, data);
+      }),
+
+    // Prestadores
+    createPrestador: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        cpfCnpj: z.string().optional(),
+        tipoServico: z.string(),
+        valorMensal: z.number().optional(),
+        diaPagamento: z.number().optional(),
+        email: z.string().optional(),
+        telefone: z.string().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.createPrestador({
+          ...input,
+          boxId: ctx.user.boxId || 0,
+        });
+      }),
+
+    getPrestadores: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getPrestadores(ctx.user.boxId || 0);
+      }),
+
+    // Fluxo de Caixa
+    createTransacao: protectedProcedure
+      .input(z.object({
+        tipo: z.enum(["entrada", "saida"]),
+        categoriaId: z.number().optional(),
+        descricao: z.string(),
+        valor: z.number(),
+        dataTransacao: z.date(),
+        metodoPagamento: z.string().optional(),
+        funcionarioId: z.number().optional(),
+        prestadorId: z.number().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.createTransacao({
+          ...input,
+          boxId: ctx.user.boxId || 0,
+          createdBy: ctx.user.id,
+        });
+      }),
+
+    getFluxoCaixa: protectedProcedure
+      .input(z.object({
+        dataInicio: z.date().optional(),
+        dataFim: z.date().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getFluxoCaixa(ctx.user.boxId || 0, input.dataInicio, input.dataFim);
+      }),
+
+    getResumoFluxoCaixa: protectedProcedure
+      .input(z.object({
+        mes: z.number(),
+        ano: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getResumoFluxoCaixa(ctx.user.boxId || 0, input.mes, input.ano);
+      }),
+
+    getDespesasPorCategoria: protectedProcedure
+      .input(z.object({
+        mes: z.number(),
+        ano: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getDespesasPorCategoria(ctx.user.boxId || 0, input.mes, input.ano);
+      }),
+
+    getFolhaPagamento: protectedProcedure
+      .input(z.object({
+        mes: z.number(),
+        ano: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getFolhaPagamento(ctx.user.boxId || 0, input.mes, input.ano);
+      }),
+
+    getCategoriasDespesas: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new Error("Acesso negado");
+        }
+        return db.getCategoriasDespesas(ctx.user.boxId || 0);
+      }),
+  }),
+
   // ===== DASHBOARD FINANCEIRO =====
   financeiro: router({
     getMRR: protectedProcedure

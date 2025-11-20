@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS avaliacoes_fisicas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  box_id INT NOT NULL,
+  data_avaliacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  peso DECIMAL(5,2),
+  altura DECIMAL(3,2),
+  imc DECIMAL(4,2),
+  percentual_gordura DECIMAL(4,2),
+  circ_cintura DECIMAL(5,2),
+  circ_quadril DECIMAL(5,2),
+  circ_braco_direito DECIMAL(5,2),
+  circ_braco_esquerdo DECIMAL(5,2),
+  circ_perna_direita DECIMAL(5,2),
+  circ_perna_esquerda DECIMAL(5,2),
+  circ_peito DECIMAL(5,2),
+  observacoes TEXT,
+  avaliador_id INT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (avaliador_id) REFERENCES users(id),
+  INDEX idx_user_data (user_id, data_avaliacao)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

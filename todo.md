@@ -815,3 +815,122 @@
 - [x] Adicionar link de Gestão de Cupons no menu
 - [x] Adicionar link de Minhas Indicações no menu
 - [ ] Criar testes para funcionalidades de cupons
+
+
+## Sistema de Avaliações Físicas
+- [ ] Criar tabela de avaliações físicas (avaliacoes_fisicas)
+- [ ] Criar campos: peso, altura, IMC, % gordura, circunferências (cintura, quadril, braço, perna, peito)
+- [ ] Criar procedures para registrar nova avaliação
+- [ ] Criar procedures para listar avaliações do atleta
+- [ ] Criar procedures para comparar avaliações (evolução)
+- [ ] Criar procedures para calcular IMC automaticamente
+- [ ] Criar página de registro de avaliação física
+- [ ] Criar página de histórico de avaliações do atleta
+- [ ] Implementar gráficos de evolução de peso
+- [ ] Implementar gráficos de evolução de % gordura
+- [ ] Implementar gráficos de evolução de circunferências
+- [ ] Adicionar comparação entre avaliações (diferenças)
+- [ ] Adicionar indicadores de progresso (ganho/perda)
+- [ ] Adicionar link de Avaliações Físicas no menu
+- [ ] Criar testes para funcionalidades de avaliações
+
+## Gestão Administrativa e Financeira
+- [ ] Criar tabela de funcionários (funcionarios)
+- [ ] Criar tabela de prestadores de serviços (prestadores)
+- [ ] Criar tabela de fluxo de caixa (fluxo_caixa)
+- [ ] Criar tabela de categorias de despesas (categorias_despesas)
+- [ ] Criar procedures para CRUD de funcionários
+- [ ] Criar procedures para CRUD de prestadores
+- [ ] Criar procedures para registrar entrada/saída no fluxo de caixa
+- [ ] Criar procedures para calcular folha de pagamento mensal
+- [ ] Criar procedures para relatório de fluxo de caixa
+- [ ] Criar procedures para análise de despesas por categoria
+- [ ] Criar procedures para projeção de fluxo de caixa
+- [ ] Criar página de gestão de funcionários
+- [ ] Criar página de gestão de prestadores
+- [ ] Criar página de fluxo de caixa
+- [ ] Implementar gráficos de receitas vs despesas
+- [ ] Implementar gráficos de despesas por categoria
+- [ ] Implementar relatório de folha de pagamento
+- [ ] Adicionar filtros por período
+- [ ] Adicionar exportação de relatórios
+- [ ] Adicionar link de Gestão Administrativa no menu
+- [ ] Criar testes para funcionalidades administrativas
+
+
+## Módulos de ERP para Box de CrossFit
+
+### Gestão de Compras
+- [ ] Criar tabela de fornecedores (fornecedores)
+- [ ] Criar tabela de pedidos de compra (pedidos_compra)
+- [ ] Criar tabela de itens do pedido (pedidos_compra_itens)
+- [ ] Criar procedures para CRUD de fornecedores
+- [ ] Criar procedures para criar pedido de compra
+- [ ] Criar procedures para adicionar itens ao pedido
+- [ ] Criar procedures para aprovar/cancelar pedido
+- [ ] Criar procedures para receber mercadorias
+- [ ] Criar página de gestão de fornecedores
+- [ ] Criar página de pedidos de compra
+- [ ] Implementar workflow de aprovação de pedidos
+- [ ] Adicionar link de Compras no menu
+- [ ] Criar testes para funcionalidades de compras
+
+### Gestão de Estoque
+- [ ] Criar tabela de produtos (produtos)
+- [ ] Criar tabela de categorias de produtos (categorias_produtos)
+- [ ] Criar tabela de movimentações de estoque (movimentacoes_estoque)
+- [ ] Criar procedures para CRUD de produtos
+- [ ] Criar procedures para entrada de estoque
+- [ ] Criar procedures para saída de estoque
+- [ ] Criar procedures para inventário
+- [ ] Criar procedures para alertas de estoque mínimo
+- [ ] Criar página de gestão de produtos
+- [ ] Criar página de movimentações de estoque
+- [ ] Implementar relatório de inventário
+- [ ] Implementar alertas de estoque baixo
+- [ ] Adicionar link de Estoque no menu
+- [ ] Criar testes para funcionalidades de estoque
+
+### PDV (Ponto de Venda)
+- [ ] Criar tabela de vendas (vendas)
+- [ ] Criar tabela de itens da venda (vendas_itens)
+- [ ] Criar tabela de formas de pagamento
+- [ ] Criar procedures para criar venda
+- [ ] Criar procedures para adicionar itens à venda
+- [ ] Criar procedures para finalizar venda
+- [ ] Criar procedures para cancelar venda
+- [ ] Criar procedures para relatório de vendas
+- [ ] Criar página de PDV
+- [ ] Implementar interface de caixa
+- [ ] Implementar busca rápida de produtos
+- [ ] Implementar impressão de recibo
+- [ ] Integrar com controle de estoque
+- [ ] Adicionar link de PDV no menu
+- [ ] Criar testes para funcionalidades de PDV
+
+### Notas Fiscais
+- [ ] Criar tabela de notas fiscais (notas_fiscais)
+- [ ] Criar procedures para emitir nota fiscal de serviço
+- [ ] Criar procedures para emitir nota fiscal de produto
+- [ ] Criar procedures para cancelar nota fiscal
+- [ ] Criar procedures para consultar notas emitidas
+- [ ] Criar página de gestão de notas fiscais
+- [ ] Implementar geração de XML da nota
+- [ ] Implementar impressão de DANFE
+- [ ] Adicionar validações fiscais
+- [ ] Adicionar link de Notas Fiscais no menu
+- [ ] Criar testes para funcionalidades de notas fiscais
+
+### Relatórios Gerenciais
+- [ ] Criar procedures para DRE (Demonstração do Resultado do Exercício)
+- [ ] Criar procedures para balanço patrimonial
+- [ ] Criar procedures para análise de rentabilidade por produto
+- [ ] Criar procedures para análise de rentabilidade por serviço
+- [ ] Criar procedures para curva ABC de produtos
+- [ ] Criar procedures para giro de estoque
+- [ ] Criar página de relatórios gerenciais
+- [ ] Implementar gráfico de DRE
+- [ ] Implementar gráfico de balanço
+- [ ] Implementar exportação de relatórios em PDF/Excel
+- [ ] Adicionar link de Relatórios Gerenciais no menu
+- [ ] Criar testes para cálculos de relatórios

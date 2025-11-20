@@ -43,6 +43,8 @@ import MinhaAssinatura from "./pages/MinhaAssinatura";
 import DashboardFinanceiro from "./pages/DashboardFinanceiro";
 import GestaoCupons from "./pages/GestaoCupons";
 import MinhasIndicacoes from "./pages/MinhasIndicacoes";
+import AvaliacoesFisicas from "./pages/AvaliacoesFisicas";
+import GestaoAdministrativa from "./pages/GestaoAdministrativa";
 
 function Router() {
   return (
@@ -85,6 +87,8 @@ function Router() {
       <Route path={"/dashboard-financeiro"} component={DashboardFinanceiro} />
       <Route path={"/gestao-cupons"} component={GestaoCupons} />
       <Route path={"/minhas-indicacoes"} component={MinhasIndicacoes} />
+      <Route path={"/avaliacoes-fisicas"} component={AvaliacoesFisicas} />
+      <Route path={"/gestao-administrativa"} component={GestaoAdministrativa} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

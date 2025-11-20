@@ -29,6 +29,8 @@ import {
   BarChart3,
   Tag,
   UserPlus,
+  Scale,
+  Briefcase,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
@@ -81,6 +83,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: BarChart3, label: "Dashboard Financeiro", path: "/dashboard-financeiro", roles: ["box_master", "admin_liga"] },
     { icon: Tag, label: "Gestão de Cupons", path: "/gestao-cupons", roles: ["box_master", "admin_liga"] },
     { icon: UserPlus, label: "Minhas Indicações", path: "/minhas-indicacoes", roles: ["atleta"] },
+    { icon: Scale, label: "Avaliações Físicas", path: "/avaliacoes-fisicas", roles: ["atleta", "box_master", "admin_liga"] },
+    { icon: Briefcase, label: "Gestão Administrativa", path: "/gestao-administrativa", roles: ["box_master", "admin_liga"] },
     { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Activity, label: "Dashboard Coach", path: "/dashboard-coach", roles: ["box_master", "admin_liga"] },
     { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "admin_liga"] },
