@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Trophy, TrendingUp, Calendar, Award, Dumbbell, Flame } from "lucide-react";
+import { Trophy, TrendingUp, Calendar, Award, Dumbbell, Flame, Megaphone } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,10 @@ export default function Dashboard() {
   const { data: pontuacaoTotal } = trpc.pontuacoes.getTotalByUser.useQuery();
   const { data: badges } = trpc.badges.getUserBadges.useQuery();
   const { data: wodHoje } = trpc.wods.getToday.useQuery();
+  const { data: comunicados } = trpc.comunicados.getByBox.useQuery(
+    { boxId: user?.boxId || 0, limit: 5 },
+    { enabled: !!user?.boxId }
+  );
 
   return (
     <AppLayout>
@@ -88,6 +92,46 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Comunicados */}
+        {comunicados && comunicados.length > 0 && (
+          <Card className="card-impacto">
+            <CardHeader>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Megaphone className="w-6 h-6 text-primary" />
+                Comunicados
+              </CardTitle>
+              <CardDescription>Avisos importantes do seu box</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {comunicados.map((comunicado: any) => {
+                const data = new Date(comunicado.dataPub);
+                return (
+                  <Card
+                    key={comunicado.id}
+                    className="border-2 border-primary/20 bg-primary/5"
+                  >
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-bold text-foreground">
+                            {comunicado.titulo}
+                          </h3>
+                          <span className="text-sm text-muted-foreground">
+                            {data.toLocaleDateString("pt-BR")}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground whitespace-pre-wrap">
+                          {comunicado.conteudo}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );

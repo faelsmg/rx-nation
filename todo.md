@@ -139,3 +139,16 @@
 - [x] Implementar validação de capacidade máxima
 - [ ] Implementar sistema de lista de espera (opcional)
 - [x] Criar testes para funcionalidades de agenda
+
+
+## Sistema de Comunicados e Notificações
+- [x] Verificar schema existente de comunicados (já existe)
+- [x] Adicionar procedures para criar comunicados (já existe)
+- [x] Adicionar procedures para listar comunicados do box (já existe)
+- [x] Adicionar procedures para editar comunicados
+- [x] Adicionar procedures para deletar comunicados
+- [ ] Adicionar procedures para marcar comunicado como lido
+- [x] Criar interface de gestão de comunicados para Box Masters
+- [x] Criar interface de visualização de comunicados para atletas
+- [ ] Implementar sistema de notificações em tempo real
+- [x] Criar testes para funcionalidades de comunicados

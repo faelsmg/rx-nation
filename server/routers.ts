@@ -422,6 +422,30 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getComunicadosGerais(input.limit);
       }),
+
+    update: boxMasterProcedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().optional(),
+        conteudo: z.string().optional(),
+        tipo: z.enum(["geral", "box", "campeonato"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return db.updateComunicado(id, data);
+      }),
+
+    delete: boxMasterProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.deleteComunicado(input.id);
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getComunicadoById(input.id);
+      }),
   }),
 
   // ===== AGENDA DE AULAS =====

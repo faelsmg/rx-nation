@@ -64,69 +64,73 @@ function createAtletaContext(): TrpcContext {
   return ctx;
 }
 
-describe("Agenda de Aulas", () => {
-  it("box master should be able to create schedule", async () => {
+describe("Comunicados", () => {
+  it("box master should be able to create announcement", async () => {
     const ctx = createBoxMasterContext();
     const caller = appRouter.createCaller(ctx);
 
-    const scheduleData = {
+    const comunicadoData = {
       boxId: 1,
-      diaSemana: 1, // Segunda-feira
-      horario: "06:00",
-      capacidade: 20,
+      titulo: "Mudança de horário",
+      conteudo: "A aula de sábado será às 10h ao invés de 9h",
+      tipo: "box" as const,
     };
 
-    const result = await caller.agenda.create(scheduleData);
+    const result = await caller.comunicados.create(comunicadoData);
     expect(result).toBeDefined();
   });
 
-  it("should list schedules by box", async () => {
-    const ctx = createBoxMasterContext();
-    const caller = appRouter.createCaller(ctx);
-
-    const schedules = await caller.agenda.getByBox({ boxId: 1 });
-    expect(Array.isArray(schedules)).toBe(true);
-  });
-});
-
-describe("Reservas de Aulas", () => {
-  it("athlete should be able to reserve a class", async () => {
+  it("should list announcements by box", async () => {
     const ctx = createAtletaContext();
     const caller = appRouter.createCaller(ctx);
 
-    // Primeiro criar um horário
-    const boxMasterCtx = createBoxMasterContext();
-    const boxMasterCaller = appRouter.createCaller(boxMasterCtx);
-    
-    await boxMasterCaller.agenda.create({
+    const comunicados = await caller.comunicados.getByBox({ boxId: 1, limit: 10 });
+    expect(Array.isArray(comunicados)).toBe(true);
+  });
+
+  it("box master should be able to update announcement", async () => {
+    const ctx = createBoxMasterContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Criar comunicado primeiro
+    await caller.comunicados.create({
       boxId: 1,
-      diaSemana: 2,
-      horario: "18:00",
-      capacidade: 15,
+      titulo: "Teste Update",
+      conteudo: "Conteúdo original",
+      tipo: "box" as const,
     });
 
-    const schedules = await caller.agenda.getByBox({ boxId: 1 });
-    const schedule = schedules.find((s: any) => s.horario === "18:00");
+    const comunicados = await caller.comunicados.getByBox({ boxId: 1 });
+    const comunicado = comunicados.find((c: any) => c.titulo === "Teste Update");
 
-    if (schedule) {
-      // Usar data única para evitar conflito com reservas anteriores
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 30) + 10);
-
-      const result = await caller.reservas.create({
-        agendaAulaId: schedule.id,
-        data: futureDate,
+    if (comunicado) {
+      const result = await caller.comunicados.update({
+        id: comunicado.id,
+        titulo: "Teste Update - Atualizado",
       });
 
       expect(result).toBeDefined();
     }
   });
 
-  it("should list athlete reservations", async () => {
-    const ctx = createAtletaContext();
+  it("box master should be able to delete announcement", async () => {
+    const ctx = createBoxMasterContext();
     const caller = appRouter.createCaller(ctx);
 
-    const reservations = await caller.reservas.getByUser({ limit: 10 });
-    expect(Array.isArray(reservations)).toBe(true);
+    // Criar comunicado primeiro
+    await caller.comunicados.create({
+      boxId: 1,
+      titulo: "Teste Delete",
+      conteudo: "Será deletado",
+      tipo: "box" as const,
+    });
+
+    const comunicados = await caller.comunicados.getByBox({ boxId: 1 });
+    const comunicado = comunicados.find((c: any) => c.titulo === "Teste Delete");
+
+    if (comunicado) {
+      const result = await caller.comunicados.delete({ id: comunicado.id });
+      expect(result).toBeDefined();
+    }
   });
 });

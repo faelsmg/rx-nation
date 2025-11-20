@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlunosTab } from "@/components/AlunosTab";
 import { AgendaTab } from "@/components/AgendaTab";
+import { ComunicadosTab } from "@/components/ComunicadosTab";
 
 export default function GestaoBox() {
   const { user } = useAuth();
@@ -152,10 +153,11 @@ export default function GestaoBox() {
         </div>
 
         <Tabs defaultValue="wods" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="wods">WODs</TabsTrigger>
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="comunicados">Comunicados</TabsTrigger>
           </TabsList>
 
           <TabsContent value="wods" className="space-y-6">
@@ -346,6 +348,10 @@ export default function GestaoBox() {
 
           <TabsContent value="agenda">
             <AgendaTab boxId={user.boxId} />
+          </TabsContent>
+
+          <TabsContent value="comunicados">
+            <ComunicadosTab boxId={user.boxId} />
           </TabsContent>
         </Tabs>
       </div>

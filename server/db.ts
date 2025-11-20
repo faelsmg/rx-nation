@@ -607,3 +607,25 @@ export async function getComunicadosGerais(limit = 10) {
 
   return db.select().from(comunicados).where(sql`${comunicados.boxId} IS NULL`).orderBy(desc(comunicados.dataPub)).limit(limit);
 }
+
+export async function updateComunicado(id: number, data: Partial<InsertComunicado>) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.update(comunicados).set(data).where(eq(comunicados.id, id));
+}
+
+export async function deleteComunicado(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.delete(comunicados).where(eq(comunicados.id, id));
+}
+
+export async function getComunicadoById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(comunicados).where(eq(comunicados.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
