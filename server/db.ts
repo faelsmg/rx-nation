@@ -6455,3 +6455,6 @@ export async function getTotalEmCaixa(boxId: number) {
 
   return parseFloat((result as any)[0][0].total_caixa || 0);
 }
+
+
+// ============================================

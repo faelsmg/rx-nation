@@ -12,6 +12,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { TrendingUp, Trophy, Target, Users, Lightbulb, Award } from "lucide-react";
 import { useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function AnalisePerformance() {
   const { user } = useAuth();
@@ -149,29 +150,44 @@ export default function AnalisePerformance() {
               </CardHeader>
               <CardContent>
                 {evolucao && evolucao.length > 0 ? (
-                  <div className="space-y-3">
-                    {evolucao.map((pr: any, idx: number) => {
-                      const maxValor = Math.max(...evolucao.map((p: any) => p.valor));
-                      const porcentagem = (pr.valor / maxValor) * 100;
-                      
-                      return (
-                        <div key={idx}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(pr.data).toLocaleDateString('pt-BR')}
-                            </span>
-                            <span className="text-sm font-semibold">{pr.valor} kg</span>
-                          </div>
-                          <div className="h-3 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all"
-                              style={{ width: `${porcentagem}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={evolucao.map((pr: any) => ({
+                      data: new Date(pr.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                      valor: pr.valor,
+                      dataCompleta: new Date(pr.data).toLocaleDateString('pt-BR')
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="data" 
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis 
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        label={{ value: 'Carga (kg)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--popover))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                        itemStyle={{ color: 'hsl(var(--primary))' }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="valor" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={3}
+                        dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+                        activeDot={{ r: 7 }}
+                        name="Carga (kg)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 ) : (
                   <p className="text-center text-muted-foreground py-4">
                     Nenhum PR registrado ainda

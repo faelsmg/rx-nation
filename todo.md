@@ -1068,3 +1068,113 @@
 - [x] Criar classe .light com cores claras completas no index.css
 - [x] Atualizar meta theme-color dinamicamente
 - [x] Habilitar switchable no App.tsx
+
+
+### Implementação das 15 Funcionalidades Finais
+
+#### 4. Gráficos de Evolução de Performance
+- [ ] Criar procedures para buscar histórico de PRs por movimento
+- [ ] Criar procedures para buscar evolução de carga x tempo
+- [ ] Criar procedures para comparar resultados entre períodos
+- [ ] Adicionar gráficos de linha na página de PRs
+- [ ] Adicionar gráficos de evolução na página de Análise de Performance
+- [ ] Implementar comparação de resultados com outros atletas
+
+#### 5. Sistema de Notificações em Tempo Real
+- [ ] Criar tabela de notificações push
+- [ ] Implementar envio de notificações para novos comunicados
+- [ ] Implementar alertas de WOD do dia
+- [ ] Implementar lembretes de reservas de aulas
+- [ ] Criar componente de notificações push no frontend
+- [ ] Integrar com Service Worker para notificações offline
+
+#### 6. Gestão Completa de Boxes Parceiros
+- [ ] Criar procedures para CRUD de boxes (admin_liga)
+- [ ] Criar procedures para visualizar quantidade de boxes
+- [ ] Criar procedures para métricas consolidadas da liga
+- [ ] Criar página de Gestão de Boxes para admin_liga
+- [ ] Implementar formulário de cadastro de box
+- [ ] Implementar listagem com filtros
+
+#### 7. Gestão de Categorias de Competição
+- [ ] Criar procedures para CRUD de categorias
+- [ ] Criar procedures para configurar pesos de eventos
+- [ ] Criar procedures para sistema de classificação
+- [ ] Criar página de Gestão de Categorias
+- [ ] Implementar configuração de ranking anual
+
+#### 8. Trilhas de Treino Personalizadas
+- [ ] Criar tabela de programas de treino
+- [ ] Criar tabela de planilhas semanais
+- [ ] Criar procedures para CRUD de programas
+- [ ] Criar procedures para distribuir planilhas
+- [ ] Criar página de Gestão de Trilhas
+- [ ] Implementar distribuição automática para franqueados
+
+#### 9. Rankings Avançados
+- [ ] Criar procedures para ranking semanal
+- [ ] Criar procedures para ranking mensal
+- [ ] Criar procedures para ranking da temporada
+- [ ] Criar procedures para ranking entre boxes
+- [ ] Criar procedures para ranking por categoria/idade
+- [ ] Criar página de Rankings Avançados com filtros
+
+#### 10. Sistema de Baterias (Heats)
+- [ ] Criar procedures para gestão de baterias
+- [ ] Criar procedures para leaderboard de campeonatos
+- [ ] Criar procedures para sistema de classificação
+- [ ] Criar página de Gestão de Baterias
+- [ ] Implementar interface de leaderboard
+
+#### 11. Pagamento de Inscrições em Eventos
+- [ ] Integrar Stripe para pagamentos
+- [ ] Criar fluxo de checkout de inscrição
+- [ ] Implementar confirmação automática
+- [ ] Criar webhook para atualizar status
+- [ ] Adicionar histórico de pagamentos
+
+#### 12. Chat em Tempo Real
+- [ ] Criar tabela de conversas
+- [ ] Criar tabela de mensagens
+- [ ] Implementar Socket.IO para mensagens
+- [ ] Criar componente de Chat
+- [ ] Implementar indicador de "digitando..."
+- [ ] Implementar histórico persistente
+
+#### 13. Calendário Semanal de Treinos
+- [ ] Criar procedures para visualização semanal
+- [ ] Criar componente de Calendário
+- [ ] Implementar navegação entre semanas
+- [ ] Adicionar indicadores de treinos realizados
+
+#### 14. Lista de Espera para Aulas
+- [ ] Criar tabela de lista de espera
+- [ ] Criar procedures para adicionar à fila
+- [ ] Criar procedures para notificar vaga disponível
+- [ ] Implementar lógica automática de fila
+- [ ] Adicionar interface de lista de espera
+
+#### 15. Exportação de Relatórios em PDF
+- [ ] Implementar geração de PDF de avaliações físicas
+- [ ] Implementar geração de PDF de evolução
+- [ ] Implementar geração de certificados de conquistas
+- [ ] Criar templates de PDF profissionais
+- [ ] Adicionar botões de exportação nas páginas
+
+#### 16. Testes Completos (QA)
+- [ ] Criar testes de procedures de boxes
+- [ ] Criar testes de campeonatos
+- [ ] Criar testes de rankings
+- [ ] Criar testes de fluxos completos
+
+#### 17. Otimização de Performance
+- [ ] Revisar queries do banco
+- [ ] Implementar cache de dados
+- [ ] Implementar lazy loading de imagens
+- [ ] Otimizar bundle size
+
+#### 18. Marcar Comunicados como Lidos
+- [ ] Criar tabela de leituras de comunicados
+- [ ] Criar procedures para marcar como lido
+- [ ] Adicionar badge de não lidos
+- [ ] Implementar filtro de lidos/não lidos
