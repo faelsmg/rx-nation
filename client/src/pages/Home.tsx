@@ -65,6 +65,39 @@ export default function Home() {
                 Saiba Mais
               </Button>
             </div>
+            
+            {/* Botões de Teste Rápido (apenas para desenvolvimento) */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-12 p-6 bg-card/80 border border-border rounded-lg">
+                <p className="text-sm text-muted-foreground mb-4 font-semibold">Acesso Rápido para Testes:</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/50 hover:bg-primary/10"
+                    onClick={() => window.location.href = '/api/dev-login?openId=test-admin-liga-gabriel'}
+                  >
+                    🏆 Admin Liga (Gabriel/Messi)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/50 hover:bg-primary/10"
+                    onClick={() => window.location.href = '/api/dev-login?openId=test-box-master-carlos'}
+                  >
+                    🏋️ Box Master (Carlos)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/50 hover:bg-primary/10"
+                    onClick={() => window.location.href = '/api/dev-login?openId=test-atleta-joao'}
+                  >
+                    🥇 Atleta (João)
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

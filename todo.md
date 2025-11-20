@@ -228,3 +228,10 @@
 - [x] Localizar componente Dialog sem DialogTitle no Dashboard
 - [x] Adicionar DialogTitle para acessibilidade
 - [x] Testar correção
+
+
+## Botões de Acesso Rápido para Teste
+- [x] Criar usuários de teste no banco de dados
+- [x] Criar interface com botões de acesso rápido na página de login
+- [x] Implementar lógica de login direto (apenas para desenvolvimento)
+- [x] Testar acesso com cada perfil
