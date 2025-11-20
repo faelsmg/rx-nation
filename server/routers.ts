@@ -41,6 +41,12 @@ export const appRouter = router({
     getProfile: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserById(ctx.user.id);
     }),
+
+    getByBox: protectedProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getUsersByBox(input.boxId);
+      }),
   }),
 
   // ===== BOXES =====
@@ -105,6 +111,10 @@ export const appRouter = router({
 
     getToday: protectedProcedure.query(async ({ ctx }) => {
       const user = await db.getUserById(ctx.user.id);
+      // Admin da liga não precisa estar vinculado a um box
+      if (user?.role === "admin_liga") {
+        return null;
+      }
       if (!user?.boxId) {
         throw new Error("Usuário não vinculado a nenhum box");
       }
@@ -115,6 +125,28 @@ export const appRouter = router({
       .input(z.object({ boxId: z.number(), date: z.date() }))
       .query(async ({ input }) => {
         return db.getWodByBoxAndDate(input.boxId, input.date);
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        boxId: z.number(),
+        titulo: z.string(),
+        descricao: z.string(),
+        tipo: z.enum(["for_time", "amrap", "emom", "tabata", "strength", "outro"]),
+        data: z.date(),
+        duracao: z.number().optional(),
+        timeCap: z.number().optional(),
+        oficial: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.updateWod(input.id, input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.deleteWod(input.id);
       }),
   }),
 

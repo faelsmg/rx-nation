@@ -117,3 +117,11 @@
 - [x] Criar dados de exemplo (seed)
 - [ ] Revisar e otimizar queries do banco
 - [ ] Criar checkpoint final
+
+
+## Correções de Bugs
+- [x] Corrigir erro de DialogTitle faltando em componentes Dialog
+- [x] Corrigir erro de usuário não vinculado a box (admin_liga não precisa de box)
+- [x] Corrigir erro de links aninhados no AppLayout
+- [x] Implementar criação de WODs para Box Masters
+- [x] Implementar gerenciamento de alunos para Box Masters

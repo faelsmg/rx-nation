@@ -86,8 +86,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           
           return (
             <Link key={item.path} href={item.path}>
-              <a
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-secondary"
@@ -96,7 +96,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
-              </a>
+              </div>
             </Link>
           );
         })}
@@ -105,8 +105,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* User Profile */}
       <div className="p-4 border-t border-border space-y-2">
         <Link href="/perfil">
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-secondary transition-colors"
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-secondary transition-colors cursor-pointer"
             onClick={() => setSidebarOpen(false)}
           >
             <User className="w-5 h-5" />
@@ -114,7 +114,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <p className="font-medium truncate">{user?.name || "Usuário"}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
-          </a>
+          </div>
         </Link>
         
         <Button

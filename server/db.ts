@@ -126,6 +126,13 @@ export async function getUserById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUsersByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(users).where(eq(users.boxId, boxId));
+}
+
 export async function updateUserProfile(userId: number, data: {
   name?: string;
   boxId?: number | null;
@@ -217,6 +224,20 @@ export async function getWodByBoxAndDate(boxId: number, date: Date) {
     .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateWod(id: number, data: Partial<InsertWod>) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.update(wods).set(data).where(eq(wods.id, id));
+}
+
+export async function deleteWod(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.delete(wods).where(eq(wods.id, id));
 }
 
 // ===== CHECK-INS =====
