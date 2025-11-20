@@ -1130,3 +1130,330 @@ export async function getRetencaoAlunos(boxId: number) {
     taxaRetencao: Math.round(taxaRetencao * 10) / 10,
   };
 }
+
+
+// ============================================================================
+// Sistema de Badges Automáticos
+// ============================================================================
+
+// Verificar e atribuir badges automáticos baseados em conquistas
+export async function checkAndAwardAchievementBadges(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const awardedBadges: string[] = [];
+
+  // Buscar badges já conquistados pelo usuário
+  const conqueredBadges = await db
+    .select({ badgeId: userBadges.badgeId })
+    .from(userBadges)
+    .where(eq(userBadges.userId, userId));
+
+  const userBadgeIds = new Set(conqueredBadges.map((ub: any) => ub.badgeId));
+
+  // Buscar todos os badges de conquistas
+  const allBadges = await db.select().from(badges);
+
+  // Verificar conquistas de WODs
+  const wodsCompleted = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.userId, userId));
+
+  const wodCount = wodsCompleted[0]?.count || 0;
+
+  const wodBadges = [
+    { count: 1, nome: "Primeiro Passo" },
+    { count: 10, nome: "Iniciante Dedicado" },
+    { count: 50, nome: "Atleta Consistente" },
+    { count: 100, nome: "Centurião" },
+    { count: 500, nome: "Lenda do Box" },
+  ];
+
+  for (const { count, nome } of wodBadges) {
+    if (wodCount >= count) {
+      const badge = allBadges.find((b) => b.nome === nome);
+      if (badge && !userBadgeIds.has(badge.id)) {
+        await assignBadgeToUser({ userId, badgeId: badge.id });
+        awardedBadges.push(nome);
+      }
+    }
+  }
+
+  // Verificar conquistas de aulas consecutivas
+  const consecutiveDays = await getConsecutiveClassDays(userId);
+
+  const streakBadges = [
+    { days: 7, nome: "Frequência Perfeita" },
+    { days: 30, nome: "Mês Completo" },
+    { days: 50, nome: "Maratonista" },
+  ];
+
+  for (const { days, nome } of streakBadges) {
+    if (consecutiveDays >= days) {
+      const badge = allBadges.find((b) => b.nome === nome);
+      if (badge && !userBadgeIds.has(badge.id)) {
+        await assignBadgeToUser({ userId, badgeId: badge.id });
+        awardedBadges.push(nome);
+      }
+    }
+  }
+
+  // Verificar conquistas de PRs
+  const prsCount = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prs)
+    .where(eq(prs.userId, userId));
+
+  const prCount = prsCount[0]?.count || 0;
+
+  const prBadges = [
+    { count: 1, nome: "Primeiro PR" },
+    { count: 10, nome: "Colecionador de PRs" },
+    { count: 25, nome: "Quebrador de Recordes" },
+  ];
+
+  for (const { count, nome } of prBadges) {
+    if (prCount >= count) {
+      const badge = allBadges.find((b) => b.nome === nome);
+      if (badge && !userBadgeIds.has(badge.id)) {
+        await assignBadgeToUser({ userId, badgeId: badge.id });
+        awardedBadges.push(nome);
+      }
+    }
+  }
+
+  // Verificar badges de horário (madrugador e noturno)
+  const earlyWods = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(
+      and(
+        eq(resultadosTreinos.userId, userId),
+        sql`HOUR(${resultadosTreinos.dataRegistro}) < 7`
+      )
+    );
+
+  if ((earlyWods[0]?.count || 0) >= 20) {
+    const badge = allBadges.find((b) => b.nome === "Madrugador");
+    if (badge && !userBadgeIds.has(badge.id)) {
+      await assignBadgeToUser({ userId, badgeId: badge.id });
+      awardedBadges.push("Madrugador");
+    }
+  }
+
+  const lateWods = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(
+      and(
+        eq(resultadosTreinos.userId, userId),
+        sql`HOUR(${resultadosTreinos.dataRegistro}) >= 20`
+      )
+    );
+
+  if ((lateWods[0]?.count || 0) >= 20) {
+    const badge = allBadges.find((b) => b.nome === "Guerreiro Noturno");
+    if (badge && !userBadgeIds.has(badge.id)) {
+      await assignBadgeToUser({ userId, badgeId: badge.id });
+      awardedBadges.push("Guerreiro Noturno");
+    }
+  }
+
+  return awardedBadges;
+}
+
+// Calcular dias consecutivos de aulas
+async function getConsecutiveClassDays(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Buscar todas as reservas confirmadas do usuário, ordenadas por data
+  const reservas = await db
+    .select({ data: reservasAulas.data })
+    .from(reservasAulas)
+    .where(
+      and(
+        eq(reservasAulas.userId, userId),
+        eq(reservasAulas.status, "confirmada")
+      )
+    )
+    .orderBy(sql`${reservasAulas.data} DESC`);
+
+  if (reservas.length === 0) return 0;
+
+  let consecutiveDays = 1;
+  let currentDate = new Date(reservas[0].data);
+  currentDate.setHours(0, 0, 0, 0);
+
+  for (let i = 1; i < reservas.length; i++) {
+    const reservaDate = new Date(reservas[i].data);
+    reservaDate.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor(
+      (currentDate.getTime() - reservaDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (diffDays === 1) {
+      consecutiveDays++;
+      currentDate = reservaDate;
+    } else if (diffDays > 1) {
+      // Quebrou a sequência
+      break;
+    }
+    // Se diffDays === 0, é o mesmo dia, continua
+  }
+
+  return consecutiveDays;
+}
+
+
+// ============================================================================
+// Dashboard de Badges para Box Masters
+// ============================================================================
+
+// Badges mais conquistados no box
+export async function getMostEarnedBadges(boxId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select({
+      badgeId: userBadges.badgeId,
+      badgeNome: badges.nome,
+      badgeIcone: badges.icone,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(userBadges)
+    .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+    .innerJoin(users, eq(userBadges.userId, users.id))
+    .where(eq(users.boxId, boxId))
+    .groupBy(userBadges.badgeId, badges.nome, badges.icone)
+    .orderBy(sql`COUNT(*) DESC`)
+    .limit(limit);
+
+  return result;
+}
+
+// Atletas com mais badges no box
+export async function getTopBadgeEarners(boxId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select({
+      userId: users.id,
+      userName: users.name,
+      userEmail: users.email,
+      badgeCount: sql<number>`COUNT(${userBadges.id})`,
+    })
+    .from(users)
+    .leftJoin(userBadges, eq(users.id, userBadges.userId))
+    .where(eq(users.boxId, boxId))
+    .groupBy(users.id, users.name, users.email)
+    .orderBy(sql`COUNT(${userBadges.id}) DESC`)
+    .limit(limit);
+
+  return result;
+}
+
+// Progresso geral do box (estatísticas de badges)
+export async function getBadgeProgressStats(boxId: number) {
+  const db = await getDb();
+  if (!db) return {
+    totalBadgesEarned: 0,
+    totalAtletas: 0,
+    avgBadgesPerAthlete: 0,
+    badgesEarnedThisMonth: 0,
+  };
+
+  // Total de badges conquistados no box
+  const totalBadges = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(userBadges)
+    .innerJoin(users, eq(userBadges.userId, users.id))
+    .where(eq(users.boxId, boxId));
+
+  // Total de atletas no box
+  const totalAtletas = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(users)
+    .where(eq(users.boxId, boxId));
+
+  const totalBadgesCount = totalBadges[0]?.count || 0;
+  const totalAtletasCount = totalAtletas[0]?.count || 0;
+
+  // Média de badges por atleta
+  const avgBadges = totalAtletasCount > 0 ? totalBadgesCount / totalAtletasCount : 0;
+
+  // Badges conquistados no mês atual
+  const dataLimite = new Date();
+  dataLimite.setDate(1); // Primeiro dia do mês
+  dataLimite.setHours(0, 0, 0, 0);
+
+  const badgesThisMonth = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(userBadges)
+    .innerJoin(users, eq(userBadges.userId, users.id))
+    .where(
+      and(
+        eq(users.boxId, boxId),
+        sql`${userBadges.dataConquista} >= ${dataLimite}`
+      )
+    );
+
+  return {
+    totalBadgesEarned: totalBadgesCount,
+    totalAtletas: totalAtletasCount,
+    avgBadgesPerAthlete: Math.round(avgBadges * 10) / 10,
+    badgesEarnedThisMonth: badgesThisMonth[0]?.count || 0,
+  };
+}
+
+// Distribuição de badges por categoria (conquistas, frequência, PRs)
+export async function getBadgeDistribution(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Categorizar badges por nome/critério
+  const allBadges = await db
+    .select({
+      badgeId: userBadges.badgeId,
+      badgeNome: badges.nome,
+      badgeCriterio: badges.criterio,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(userBadges)
+    .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+    .innerJoin(users, eq(userBadges.userId, users.id))
+    .where(eq(users.boxId, boxId))
+    .groupBy(userBadges.badgeId, badges.nome, badges.criterio);
+
+  // Categorizar badges
+  const categories = {
+    wods: 0,
+    frequencia: 0,
+    prs: 0,
+    outros: 0,
+  };
+
+  for (const badge of allBadges) {
+    const criterio = badge.badgeCriterio?.toLowerCase() || "";
+    if (criterio.includes("wod")) {
+      categories.wods += badge.count;
+    } else if (criterio.includes("aula") || criterio.includes("consecutiv")) {
+      categories.frequencia += badge.count;
+    } else if (criterio.includes("pr") || criterio.includes("record")) {
+      categories.prs += badge.count;
+    } else {
+      categories.outros += badge.count;
+    }
+  }
+
+  return [
+    { categoria: "WODs Completados", count: categories.wods },
+    { categoria: "Frequência", count: categories.frequencia },
+    { categoria: "Personal Records", count: categories.prs },
+    { categoria: "Outros", count: categories.outros },
+  ];
+}

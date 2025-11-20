@@ -353,3 +353,36 @@
 - [ ] Adicionar integração com serviço de email
 - [ ] Criar templates de email para lembretes
 - [ ] Implementar envio de email em paralelo às notificações in-app
+
+
+## Badges Automáticos - ✅ CONCLUÍDO
+- [x] Criar badges de marcos (100 WODs, 50 aulas consecutivas, primeiro PR)
+- [x] Implementar função para verificar conquistas de WODs
+- [x] Implementar função para verificar conquistas de aulas consecutivas
+- [x] Implementar função para verificar conquistas de PRs
+- [x] Adicionar trigger ao registrar resultado de WOD
+- [x] Adicionar trigger ao confirmar presença em aula
+- [x] Adicionar trigger ao registrar PR
+- [x] Criar notificação automática ao desbloquear badge
+- [x] Testar badges automáticos end-to-end
+
+## Dashboard de Badges para Box Masters - ✅ CONCLUÍDO
+- [x] Criar aba "Dashboard de Badges" na Gestão do Box
+- [x] Implementar query para badges mais conquistados
+- [x] Implementar query para atletas com mais badges
+- [x] Implementar query para progresso geral do box
+- [x] Criar gráfico de badges mais conquistados
+- [x] Criar ranking de atletas por badges
+- [x] Criar métricas de engajamento com badges
+- [x] Criar distribuição de badges por categoria
+- [x] Testar dashboard de badges
+
+## Sistema de Preferências de Notificações - EM ANDAMENTO
+- [ ] Criar schema de preferências de notificações
+- [ ] Adicionar migration para tabela de preferências
+- [ ] Criar página de preferências no perfil do atleta
+- [ ] Implementar toggles para cada tipo de notificação (WODs, comunicados, lembretes, badges)
+- [ ] Criar queries para salvar/carregar preferências
+- [ ] Modificar funções de notificação para respeitar preferências
+- [ ] Adicionar link para preferências no dropdown de notificações
+- [ ] Testar sistema de preferências

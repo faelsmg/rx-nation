@@ -17,6 +17,7 @@ import { AgendaTab } from "@/components/AgendaTab";
 import { ComunicadosTab } from "@/components/ComunicadosTab";
 import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { BadgesTab } from "@/components/BadgesTab";
+import { BadgesDashboardTab } from "@/components/BadgesDashboardTab";
 
 export default function GestaoBox() {
   const { user } = useAuth();
@@ -155,12 +156,13 @@ export default function GestaoBox() {
         </div>
 
         <Tabs defaultValue="wods" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="wods">WODs</TabsTrigger>
             <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
             <TabsTrigger value="comunicados">Comunicados</TabsTrigger>
             <TabsTrigger value="badges">Badges</TabsTrigger>
+            <TabsTrigger value="badges-dashboard">Dashboard Badges</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -360,6 +362,10 @@ export default function GestaoBox() {
 
           <TabsContent value="badges">
             <BadgesTab boxId={user.boxId} />
+          </TabsContent>
+
+          <TabsContent value="badges-dashboard">
+            <BadgesDashboardTab boxId={user.boxId} />
           </TabsContent>
 
           <TabsContent value="analytics">

@@ -241,6 +241,20 @@ export const appRouter = router({
           referencia: input.wodId.toString(),
         });
 
+        // Verificar e atribuir badges automáticos
+        const newBadges = await db.checkAndAwardAchievementBadges(ctx.user.id);
+        
+        // Criar notificações para badges desbloqueados
+        for (const badgeName of newBadges) {
+          await db.createNotification({
+            userId: ctx.user.id,
+            tipo: "badge",
+            titulo: `Novo Badge Desbloqueado: ${badgeName}!`,
+            mensagem: `Parabéns! Você conquistou o badge "${badgeName}".`,
+            link: "/badges",
+          });
+        }
+
         return result;
       }),
 
@@ -284,6 +298,20 @@ export const appRouter = router({
             tipo: "novo_pr",
             pontos: 30,
             referencia: input.movimento,
+          });
+        }
+
+        // Verificar e atribuir badges automáticos
+        const newBadges = await db.checkAndAwardAchievementBadges(ctx.user.id);
+        
+        // Criar notificações para badges desbloqueados
+        for (const badgeName of newBadges) {
+          await db.createNotification({
+            userId: ctx.user.id,
+            tipo: "badge",
+            titulo: `Novo Badge Desbloqueado: ${badgeName}!`,
+            mensagem: `Parabéns! Você conquistou o badge "${badgeName}".`,
+            link: "/badges",
           });
         }
 
@@ -738,6 +766,33 @@ export const appRouter = router({
         ...result,
       };
     }),
+  }),
+
+  // ===== DASHBOARD DE BADGES =====
+  badgesDashboard: router({
+    getMostEarned: boxMasterProcedure
+      .input(z.object({ boxId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getMostEarnedBadges(input.boxId, input.limit);
+      }),
+
+    getTopEarners: boxMasterProcedure
+      .input(z.object({ boxId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getTopBadgeEarners(input.boxId, input.limit);
+      }),
+
+    getProgressStats: boxMasterProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBadgeProgressStats(input.boxId);
+      }),
+
+    getDistribution: boxMasterProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBadgeDistribution(input.boxId);
+      }),
   }),
 });
 
