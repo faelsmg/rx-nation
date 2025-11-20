@@ -16,6 +16,7 @@ import { Trophy, Plus, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MOVIMENTOS_PR } from "@/const";
+import PREvolutionChart from "@/components/PREvolutionChart";
 
 export default function PRs() {
   const { data: prs, isLoading } = trpc.prs.getByUser.useQuery();
@@ -189,11 +190,12 @@ export default function PRs() {
                     )}
                     
                     {historico.length > 0 && (
-                      <div className="pt-4 border-t">
+                      <div className="pt-4 border-t space-y-4">
                         <p className="text-sm font-semibold mb-2 flex items-center gap-2">
                           <TrendingUp className="w-4 h-4" />
-                          Histórico
+                          Evolução
                         </p>
+                        <PREvolutionChart data={movPrs} movimento={mov} />
                         <div className="space-y-1">
                           {historico.map((pr) => (
                             <div key={pr.id} className="flex justify-between text-sm text-muted-foreground">

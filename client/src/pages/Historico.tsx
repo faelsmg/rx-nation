@@ -2,10 +2,28 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { History, Clock, Repeat, Weight } from "lucide-react";
+import { History, Clock, Repeat, Weight, TrendingUp } from "lucide-react";
+import WODEvolutionChart from "@/components/WODEvolutionChart";
+import { useState } from "react";
 
 export default function Historico() {
   const { data: resultados, isLoading } = trpc.resultados.getByUser.useQuery({ limit: 50 });
+  const [selectedWodId, setSelectedWodId] = useState<number | null>(null);
+  
+  // Agrupar resultados por WOD para identificar WODs repetidos
+  const resultadosPorWod = resultados?.reduce((acc, r) => {
+    if (!r.wodId) return acc;
+    if (!acc[r.wodId]) {
+      acc[r.wodId] = [];
+    }
+    acc[r.wodId].push(r);
+    return acc;
+  }, {} as Record<number, typeof resultados>);
+  
+  // WODs com múltiplos resultados (para mostrar evolução)
+  const wodsComEvolucao = Object.entries(resultadosPorWod || {}).filter(
+    ([_, results]) => results.length >= 2
+  );
 
   const formatTempo = (segundos: number) => {
     const minutos = Math.floor(segundos / 60);
@@ -32,6 +50,37 @@ export default function Historico() {
           <p className="text-muted-foreground">Seus resultados registrados</p>
         </div>
 
+        {/* Evolução de WODs Repetidos */}
+        {wodsComEvolucao.length > 0 && (
+          <Card className="card-impacto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Evolução em WODs Repetidos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {wodsComEvolucao.map(([wodId, results]) => {
+                  const wodTitulo = results[0].wod?.titulo || "WOD";
+                  const wodTipo = results[0].wod?.tipo || "outro";
+                  
+                  return (
+                    <div key={wodId} className="border rounded-lg p-4">
+                      <h3 className="font-semibold mb-3">{wodTitulo}</h3>
+                      <WODEvolutionChart 
+                        data={results.map(r => ({ id: r.id, tempo: r.tempo, reps: r.reps, data: r.dataRegistro }))} 
+                        wodTitulo={wodTitulo} 
+                        tipo={wodTipo}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {isLoading ? (
           <Card className="card-impacto">
             <CardContent className="pt-6">

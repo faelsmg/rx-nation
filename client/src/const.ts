@@ -66,3 +66,23 @@ export const ICONES_WOD = {
   strength: "💪",
   outro: "🏋️",
 };
+
+// Categorias de atletas
+export const CATEGORIAS = [
+  "iniciante",
+  "intermediario",
+  "avancado",
+  "elite",
+];
+
+// Faixas etárias
+export const FAIXAS_ETARIAS = [
+  "18-24",
+  "25-29",
+  "30-34",
+  "35-39",
+  "40-44",
+  "45-49",
+  "50-54",
+  "55+",
+];

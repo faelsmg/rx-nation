@@ -271,3 +271,12 @@
 - [ ] Criar página de Rankings com filtros por movimento e categoria
 - [ ] Adicionar gráficos de evolução de PRs
 - [ ] Criar testes para funcionalidades de PRs
+
+
+## Rankings e Gráficos de Evolução
+- [x] Criar página de Rankings com filtros por movimento
+- [x] Adicionar filtros por categoria e faixa etária
+- [x] Mostrar top 50 atletas e posição do usuário
+- [x] Adicionar gráficos de evolução de PRs ao longo do tempo
+- [x] Adicionar gráficos de evolução de tempos em WODs
+- [x] Criar testes para rankings (48/49 passando)
