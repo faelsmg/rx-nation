@@ -318,3 +318,15 @@
 - [x] Integrar NotificationCenter no AppLayout
 - [x] Testar fluxo completo de notificações
 - [x] Criar testes para triggers de notificações
+
+
+## Notificações de Badges e Lembretes de Aulas - ✅ CONCLUÍDO
+- [x] Implementar trigger de notificação ao desbloquear badge
+- [x] Adicionar link direto para página de badges na notificação
+- [x] Criar função para verificar aulas próximas (1h antes)
+- [x] Implementar job agendado para enviar lembretes de aulas
+- [x] Criar procedure tRPC para enviar lembretes manualmente (teste)
+- [x] Testar fluxo completo de notificação de badge
+- [x] Testar fluxo completo de lembretes de aulas
+- [x] Criar testes unitários para triggers de badges
+- [x] Criar testes unitários para lembretes de aulas

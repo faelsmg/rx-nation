@@ -420,6 +420,35 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return db.createBadge(input);
       }),
+
+    assign: boxMasterProcedure
+      .input(z.object({
+        userId: z.number(),
+        badgeId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await db.assignBadgeToUser({
+          userId: input.userId,
+          badgeId: input.badgeId,
+          dataConquista: new Date(),
+        });
+
+        // Buscar informações do badge para a notificação
+        const badge = await db.getBadgeById(input.badgeId);
+        
+        if (badge) {
+          // Notificar o atleta sobre o badge desbloqueado
+          await db.createNotification({
+            userId: input.userId,
+            tipo: "badge",
+            titulo: "Novo Badge Desbloqueado! 🏆",
+            mensagem: `Parabéns! Você conquistou o badge \"${badge.nome}\"`,
+            link: "/badges",
+          });
+        }
+
+        return result;
+      }),
   }),
 
   // ===== RANKINGS =====
@@ -690,6 +719,19 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getRetencaoAlunos(input.boxId);
       }),
+  }),
+
+  // ===== LEMBRETES E AUTOMAÇÕES =====
+  reminders: router({
+    // Enviar lembretes de aulas próximas (chamado manualmente ou por cron)
+    sendClassReminders: adminProcedure.mutation(async () => {
+      const result = await db.sendClassReminders();
+      return {
+        success: true,
+        message: `Lembretes enviados: ${result.sent} sucesso, ${result.errors} erros`,
+        ...result,
+      };
+    }),
   }),
 });
 

@@ -558,6 +558,14 @@ export async function getAllBadges() {
   return db.select().from(badges);
 }
 
+export async function getBadgeById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(badges).where(eq(badges.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
 export async function assignBadgeToUser(data: InsertUserBadge) {
   const db = await getDb();
   if (!db) return undefined;
@@ -812,6 +820,58 @@ export async function notifyBoxStudents(boxId: number, notification: {
   }
   
   return notifications;
+}
+
+// Helper para enviar lembretes de aulas próximas (1h antes)
+export async function sendClassReminders() {
+  const db = await getDb();
+  if (!db) return { sent: 0, errors: 0 };
+
+  // Buscar reservas confirmadas para as próximas 1-2 horas
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+  const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+  const upcomingReservations = await db
+    .select({
+      reservaId: reservasAulas.id,
+      userId: reservasAulas.userId,
+      data: reservasAulas.data,
+      horario: agendaAulas.horario,
+      userName: users.name,
+    })
+    .from(reservasAulas)
+    .leftJoin(agendaAulas, eq(reservasAulas.agendaAulaId, agendaAulas.id))
+    .leftJoin(users, eq(reservasAulas.userId, users.id))
+    .where(and(
+      eq(reservasAulas.status, "confirmada"),
+      gte(reservasAulas.data, oneHourLater),
+      lte(reservasAulas.data, twoHoursLater)
+    ));
+
+  let sent = 0;
+  let errors = 0;
+
+  for (const reservation of upcomingReservations) {
+    try {
+      const classTime = new Date(reservation.data);
+      const timeUntilClass = Math.round((classTime.getTime() - now.getTime()) / (60 * 1000));
+
+      await createNotification({
+        userId: reservation.userId,
+        tipo: "aula",
+        titulo: "Lembrete de Aula 📍",
+        mensagem: `Sua aula começa em ${timeUntilClass} minutos (às ${reservation.horario}). Prepare-se!`,
+        link: "/agenda",
+      });
+      sent++;
+    } catch (error) {
+      console.error(`Erro ao enviar lembrete para reserva ${reservation.reservaId}:`, error);
+      errors++;
+    }
+  }
+
+  return { sent, errors };
 }
 
 // ============================================================================
