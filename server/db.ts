@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, count, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -37,6 +37,8 @@ import {
   InsertNotificationPreference,
   metas,
   InsertMeta,
+  feedAtividades,
+  InsertFeedAtividade,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1896,4 +1898,156 @@ export async function checkAndUpdateGoals(userId: number) {
   }
 
   return notifiedGoals;
+}
+
+
+// ==================== FEED SOCIAL ====================
+
+export async function createFeedAtividade(atividade: InsertFeedAtividade) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(feedAtividades).values(atividade);
+  return result;
+}
+
+export async function getFeedByBox(boxId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const atividades = await db
+    .select({
+      id: feedAtividades.id,
+      userId: feedAtividades.userId,
+      userName: users.name,
+      boxId: feedAtividades.boxId,
+      tipo: feedAtividades.tipo,
+      titulo: feedAtividades.titulo,
+      descricao: feedAtividades.descricao,
+      metadata: feedAtividades.metadata,
+      curtidas: feedAtividades.curtidas,
+      createdAt: feedAtividades.createdAt,
+    })
+    .from(feedAtividades)
+    .leftJoin(users, eq(feedAtividades.userId, users.id))
+    .where(eq(feedAtividades.boxId, boxId))
+    .orderBy(desc(feedAtividades.createdAt))
+    .limit(limit);
+
+  return atividades;
+}
+
+export async function curtirAtividade(atividadeId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(feedAtividades)
+    .set({ curtidas: sql`${feedAtividades.curtidas} + 1` })
+    .where(eq(feedAtividades.id, atividadeId));
+
+  return true;
+}
+
+// Trigger: Criar post ao completar WOD
+export async function createFeedPostWOD(userId: number, boxId: number, wodTitulo: string, tempo?: number, reps?: number) {
+  const descricao = tempo 
+    ? `Completou em ${Math.floor(tempo / 60)}:${(tempo % 60).toString().padStart(2, '0')}`
+    : reps 
+    ? `${reps} reps`
+    : "Completou o treino!";
+
+  await createFeedAtividade({
+    userId,
+    boxId,
+    tipo: "wod_completo",
+    titulo: `${wodTitulo}`,
+    descricao,
+    metadata: JSON.stringify({ wodTitulo, tempo, reps }),
+  });
+}
+
+// Trigger: Criar post ao quebrar PR
+export async function createFeedPostPR(userId: number, boxId: number, movimento: string, carga: number) {
+  await createFeedAtividade({
+    userId,
+    boxId,
+    tipo: "pr_quebrado",
+    titulo: `Novo PR: ${movimento}`,
+    descricao: `${carga} kg 🔥`,
+    metadata: JSON.stringify({ movimento, carga }),
+  });
+}
+
+// Trigger: Criar post ao desbloquear badge
+export async function createFeedPostBadge(userId: number, boxId: number, badgeTitulo: string, badgeIcone: string) {
+  await createFeedAtividade({
+    userId,
+    boxId,
+    tipo: "badge_desbloqueado",
+    titulo: `Desbloqueou: ${badgeTitulo}`,
+    descricao: badgeIcone,
+    metadata: JSON.stringify({ badgeTitulo, badgeIcone }),
+  });
+}
+
+
+// ==================== COMPARAÇÃO DE ATLETAS ====================
+
+export async function compareAtletas(userId1: number, userId2: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar dados dos dois atletas
+  const [atleta1, atleta2] = await Promise.all([
+    getUserById(userId1),
+    getUserById(userId2),
+  ]);
+
+  if (!atleta1 || !atleta2) return null;
+
+  // Buscar PRs de ambos
+  const [prs1, prs2] = await Promise.all([
+    getPrsByUser(userId1),
+    getPrsByUser(userId2),
+  ]);
+
+  // Buscar badges de ambos
+  const [badges1, badges2] = await Promise.all([
+    getUserBadges(userId1),
+    getUserBadges(userId2),
+  ]);
+
+  // Buscar estatísticas de WODs
+  const [wods1Result, wods2Result] = await Promise.all([
+    db.select({ count: count() }).from(resultadosTreinos).where(eq(resultadosTreinos.userId, userId1)),
+    db.select({ count: count() }).from(resultadosTreinos).where(eq(resultadosTreinos.userId, userId2)),
+  ]);
+
+  // Buscar pontuação total
+  const [pontos1Result, pontos2Result] = await Promise.all([
+    db.select({ total: sum(pontuacoes.pontos) }).from(pontuacoes).where(eq(pontuacoes.userId, userId1)),
+    db.select({ total: sum(pontuacoes.pontos) }).from(pontuacoes).where(eq(pontuacoes.userId, userId2)),
+  ]);
+
+  return {
+    atleta1: {
+      ...atleta1,
+      totalWods: wods1Result[0]?.count || 0,
+      totalBadges: badges1.length,
+      totalPRs: prs1.length,
+      pontos: Number(pontos1Result[0]?.total) || 0,
+      prs: prs1,
+      badges: badges1,
+    },
+    atleta2: {
+      ...atleta2,
+      totalWods: wods2Result[0]?.count || 0,
+      totalBadges: badges2.length,
+      totalPRs: prs2.length,
+      pontos: Number(pontos2Result[0]?.total) || 0,
+      prs: prs2,
+      badges: badges2,
+    },
+  };
 }

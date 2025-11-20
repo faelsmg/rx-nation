@@ -267,6 +267,18 @@ export const appRouter = router({
         // Atualizar progresso de metas
         await db.checkAndUpdateGoals(ctx.user.id);
 
+        // Criar post no feed social
+        const wod = await db.getWodById(input.wodId);
+        if (wod && ctx.user.boxId) {
+          await db.createFeedPostWOD(
+            ctx.user.id,
+            ctx.user.boxId,
+            wod.titulo,
+            input.tempo,
+            input.reps
+          );
+        }
+
         return result;
       }),
 
@@ -332,6 +344,16 @@ export const appRouter = router({
 
         // Atualizar progresso de metas
         await db.checkAndUpdateGoals(ctx.user.id);
+
+        // Criar post no feed social (apenas para novos PRs)
+        if (isNewPr && ctx.user.boxId) {
+          await db.createFeedPostPR(
+            ctx.user.id,
+            ctx.user.boxId,
+            input.movimento,
+            input.carga
+          );
+        }
 
         return result;
       }),
@@ -488,9 +510,20 @@ export const appRouter = router({
             userId: input.userId,
             tipo: "badge",
             titulo: "Novo Badge Desbloqueado! 🏆",
-            mensagem: `Parabéns! Você conquistou o badge \"${badge.nome}\"`,
+            mensagem: `Parabéns! Você conquistou o badge "${badge.nome}"`,
             link: "/badges",
           });
+
+          // Criar post no feed social
+          const user = await db.getUserById(input.userId);
+          if (user && user.boxId) {
+            await db.createFeedPostBadge(
+              input.userId,
+              user.boxId,
+              badge.nome,
+              badge.icone || "🏆"
+            );
+          }
         }
 
         return result;
@@ -881,6 +914,30 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         return db.updateMetaProgress(input.metaId, input.valorAtual);
+      }),
+  }),
+
+  // ===== FEED SOCIAL =====
+  feed: router({
+    getByBox: protectedProcedure
+      .input(z.object({ boxId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getFeedByBox(input.boxId, input.limit);
+      }),
+
+    curtir: protectedProcedure
+      .input(z.object({ atividadeId: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.curtirAtividade(input.atividadeId);
+      }),
+  }),
+
+  // ===== COMPARAÇÃO DE ATLETAS =====
+  comparacao: router({
+    compareAtletas: protectedProcedure
+      .input(z.object({ userId1: z.number(), userId2: z.number() }))
+      .query(async ({ input }) => {
+        return db.compareAtletas(input.userId1, input.userId2);
       }),
   }),
 });

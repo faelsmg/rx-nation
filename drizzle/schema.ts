@@ -543,3 +543,33 @@ export const metasRelations = relations(metas, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+
+/**
+ * Feed Social do Box - Atividades dos atletas
+ */
+export const feedAtividades = mysqlTable("feed_atividades", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  boxId: int("boxId").notNull(),
+  tipo: mysqlEnum("tipo", ["wod_completo", "pr_quebrado", "badge_desbloqueado"]).notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  metadata: text("metadata"), // JSON com dados específicos (wodId, prId, badgeId, etc)
+  curtidas: int("curtidas").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FeedAtividade = typeof feedAtividades.$inferSelect;
+export type InsertFeedAtividade = typeof feedAtividades.$inferInsert;
+
+export const feedAtividadesRelations = relations(feedAtividades, ({ one }) => ({
+  user: one(users, {
+    fields: [feedAtividades.userId],
+    references: [users.id],
+  }),
+  box: one(boxes, {
+    fields: [feedAtividades.boxId],
+    references: [boxes.id],
+  }),
+}));

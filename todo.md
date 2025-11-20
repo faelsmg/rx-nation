@@ -463,3 +463,32 @@
 - [x] Integrar gráficos na página de PRs (já existente)
 - [x] Integrar gráficos na página de Histórico (já existente)
 - [x] Testar gráficos com dados reais
+
+
+## Feed Social do Box - ✅ CONCLUÍDO
+- [x] Criar schema de atividades/posts do feed
+- [x] Implementar geração automática de posts ao completar WOD
+- [x] Implementar geração automática de posts ao quebrar PR
+- [x] Implementar geração automática de posts ao desbloquear badge
+- [x] Criar queries para buscar feed do box com paginação
+- [x] Adicionar procedures tRPC para feed
+- [x] Criar página de Feed Social (/feed)
+- [x] Implementar timeline com cards de atividades
+- [x] Adicionar filtros por tipo de atividade
+- [x] Implementar sistema de curtidas/reações
+- [x] Adicionar link de Feed na navegação
+- [x] Implementar botão de compartilhar no Instagram
+- [x] Adicionar deep link para Instagram Stories
+- [x] Testar feed social completo
+
+## Comparação de Performance entre Atletas - ✅ CONCLUÍDO
+- [x] Criar função para buscar dados comparativos de dois atletas
+- [x] Implementar comparação de PRs lado a lado
+- [x] Implementar comparação de badges conquistados
+- [x] Implementar comparação de estatísticas (WODs, frequência, pontos)
+- [x] Adicionar procedures tRPC para comparação
+- [x] Criar página de Comparação (/comparar)
+- [x] Implementar seletor de dois atletas
+- [x] Criar visualização lado a lado com cards
+- [x] Implementar tabela de PRs lado a lado
+- [x] Testar comparação de atletas

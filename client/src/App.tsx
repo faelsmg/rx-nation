@@ -21,6 +21,8 @@ import Preferencias from "./pages/Preferencias";
 import Notificacoes from "./pages/Notificacoes";
 import PerfilPublico from "./pages/PerfilPublico";
 import Metas from "./pages/Metas";
+import Feed from "./pages/Feed";
+import Comparar from "./pages/Comparar";
 
 function Router() {
   return (
@@ -42,6 +44,8 @@ function Router() {
       <Route path={"/notificacoes"} component={Notificacoes} />
       <Route path={"/atleta/:id"} component={PerfilPublico} />
       <Route path={"/metas"} component={Metas} />
+      <Route path={"/feed"} component={Feed} />
+      <Route path={"/comparar"} component={Comparar} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
