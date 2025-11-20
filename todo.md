@@ -568,3 +568,44 @@
 - [x] Criar procedure para marcar onboarding como completo
 - [x] Integrar OnboardingTour no Dashboard
 - [x] Adicionar barra de progresso e navegação
+
+
+## Sistema de Equipes/Times
+- [x] Criar tabela de equipes (teams)
+- [x] Criar tabela de membros de equipes (team_members)
+- [x] Criar procedures para criar equipe
+- [x] Criar procedures para adicionar/remover membros
+- [x] Criar procedures para listar equipes do box
+- [x] Criar procedures para ranking de equipes
+- [x] Criar página de listagem de equipes
+- [x] Criar página de detalhes da equipe
+- [x] Criar interface de criação de equipe
+- [x] Adicionar desafios coletivos entre equipes
+- [x] Implementar pontuação acumulada da equipe
+- [x] Adicionar link de Equipes no menu
+- [ ] Criar testes para funcionalidades de equipes
+
+## Dashboard de Progresso Semanal
+- [x] Criar procedures para buscar dados de frequência semanal
+- [x] Criar procedures para calcular volume de treino semanal
+- [x] Criar procedures para comparação com semanas anteriores
+- [x] Criar componente de gráfico de frequência
+- [x] Criar componente de gráfico de volume
+- [x] Criar componente de comparação semanal
+- [x] Adicionar seção de progresso semanal no Dashboard
+- [x] Implementar filtros de período (últimas 4 semanas)
+- [x] Adicionar indicadores de tendência (subindo/descendo)
+- [ ] Criar testes para cálculos de progresso
+
+## Sistema de Recompensas por Streak
+- [x] Adicionar campo streak_atual e streak_recorde na tabela users
+- [x] Criar badges de streak (7, 30, 100 dias consecutivos)
+- [x] Criar função para calcular streak de check-ins
+- [x] Criar função para verificar e atualizar streak diariamente
+- [x] Criar trigger para atualizar streak após check-in
+- [x] Criar procedure para buscar histórico de streak
+- [x] Adicionar indicador de streak no Dashboard
+- [x] Implementar badge automático ao atingir marcos de streak
+- [x] Criar componente StreakIndicator com progresso visual
+- [x] Adicionar notificações de badges conquistados
+- [ ] Criar testes para cálculo de streak

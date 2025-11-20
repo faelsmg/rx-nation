@@ -25,6 +25,8 @@ import Feed from "./pages/Feed";
 import Comparar from "./pages/Comparar";
 import Desafios from "./pages/Desafios";
 import DesafioDetalhes from "./pages/DesafioDetalhes";
+import Equipes from "./pages/Equipes";
+import EquipeDetalhes from "./pages/EquipeDetalhes";
 
 function Router() {
   return (
@@ -50,6 +52,8 @@ function Router() {
       <Route path={"/comparar"} component={Comparar} />
       <Route path={"/desafios"} component={Desafios} />
       <Route path={"/desafios/:id"} component={DesafioDetalhes} />
+      <Route path={"/equipes"} component={Equipes} />
+      <Route path={"/equipes/:id"} component={EquipeDetalhes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

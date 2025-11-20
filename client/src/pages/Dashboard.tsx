@@ -6,6 +6,8 @@ import { Trophy, TrendingUp, Calendar, Award, Dumbbell, Flame, Megaphone } from 
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { ProgressoSemanal } from "@/components/ProgressoSemanal";
+import { StreakIndicator } from "@/components/StreakIndicator";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -38,6 +40,11 @@ export default function Dashboard() {
             Confira seu progresso e continue treinando forte.
           </p>
         </div>
+
+        {/* Streak Indicator */}
+        {user?.role === "atleta" && (
+          <StreakIndicator />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-onboarding="dashboard-stats">
           <Card className="card-impacto">
@@ -103,6 +110,14 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Progresso Semanal */}
+        {user?.role === "atleta" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Seu Progresso Semanal</h2>
+            <ProgressoSemanal />
+          </div>
+        )}
 
         {/* Comunicados */}
         {comunicados && comunicados.length > 0 && (

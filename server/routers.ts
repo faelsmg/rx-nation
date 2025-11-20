@@ -1061,6 +1061,146 @@ export const appRouter = router({
         return db.getDesafiosByUser(ctx.user.id);
       }),
   }),
+
+  // ===== EQUIPES/TIMES =====
+  teams: router({
+    create: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string().optional(),
+        cor: z.string().optional(),
+        logoUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createTeam({
+          ...input,
+          boxId: ctx.user.boxId!,
+          capitaoId: ctx.user.id,
+        });
+      }),
+
+    getByBox: protectedProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTeamsByBox(input.boxId);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTeamById(input.teamId);
+      }),
+
+    getMembers: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTeamMembers(input.teamId);
+      }),
+
+    addMember: protectedProcedure
+      .input(z.object({ teamId: z.number(), userId: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.addTeamMember(input.teamId, input.userId);
+      }),
+
+    removeMember: protectedProcedure
+      .input(z.object({ teamId: z.number(), userId: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.removeTeamMember(input.teamId, input.userId);
+      }),
+
+    getMyTeams: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getUserTeams(ctx.user.id);
+      }),
+
+    createDesafio: protectedProcedure
+      .input(z.object({
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        tipo: z.enum(["wod", "frequencia", "pontos", "custom"]),
+        metaValor: z.number().optional(),
+        metaUnidade: z.string().optional(),
+        dataInicio: z.date(),
+        dataFim: z.date(),
+        teamsIds: z.array(z.number()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createTeamDesafio({
+          ...input,
+          criadorId: ctx.user.id,
+          boxId: ctx.user.boxId!,
+        });
+      }),
+
+    getDesafiosByBox: protectedProcedure
+      .input(z.object({ boxId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTeamDesafiosByBox(input.boxId);
+      }),
+
+    getDesafioParticipantes: protectedProcedure
+      .input(z.object({ desafioId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getTeamDesafioParticipantes(input.desafioId);
+      }),
+
+    atualizarPontosDesafio: protectedProcedure
+      .input(z.object({ desafioId: z.number(), teamId: z.number(), pontos: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.atualizarPontosTeamDesafio(input.desafioId, input.teamId, input.pontos);
+      }),
+
+    completarDesafio: protectedProcedure
+      .input(z.object({ desafioId: z.number(), teamId: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.completarTeamDesafio(input.desafioId, input.teamId);
+      }),
+  }),
+
+  // ===== PROGRESSO SEMANAL =====
+  progresso: router({
+    getFrequenciaSemanal: protectedProcedure
+      .input(z.object({ semanas: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getFrequenciaSemanal(ctx.user.id, input.semanas || 4);
+      }),
+
+    getVolumeTreinoSemanal: protectedProcedure
+      .input(z.object({ semanas: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getVolumeTreinoSemanal(ctx.user.id, input.semanas || 4);
+      }),
+
+    getComparacaoSemanal: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getComparacaoSemanal(ctx.user.id);
+      }),
+
+    getProgressoPRsSemanal: protectedProcedure
+      .input(z.object({ semanas: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getProgressoPRsSemanal(ctx.user.id, input.semanas || 4);
+      }),
+  }),
+
+  // ===== STREAK =====
+  streak: router({
+    getInfo: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getStreakInfo(ctx.user.id);
+      }),
+
+    calcular: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.calcularStreak(ctx.user.id);
+      }),
+
+    atualizar: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        return db.atualizarStreak(ctx.user.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

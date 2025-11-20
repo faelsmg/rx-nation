@@ -372,6 +372,12 @@ export async function createCheckin(data: InsertCheckin) {
   if (!db) return undefined;
 
   const result = await db.insert(checkins).values(data);
+  
+  // Atualizar streak após check-in
+  if (data.userId) {
+    await atualizarStreak(data.userId);
+  }
+  
   return result;
 }
 
@@ -2367,4 +2373,545 @@ export async function getDesafiosByUser(userId: number) {
   `);
 
   return (result as any)[0] || [];
+}
+
+
+// ==================== EQUIPES/TIMES ====================
+
+export async function createTeam(data: {
+  nome: string;
+  descricao?: string;
+  boxId: number;
+  capitaoId: number;
+  cor?: string;
+  logoUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [team] = await db.execute(sql`
+    INSERT INTO teams (nome, descricao, box_id, capitao_id, cor, logo_url)
+    VALUES (${data.nome}, ${data.descricao || null}, ${data.boxId}, ${data.capitaoId}, ${data.cor || '#F2C200'}, ${data.logoUrl || null})
+  `);
+
+  const teamId = (team as any).insertId;
+
+  // Adicionar capitão como membro
+  await db.execute(sql`
+    INSERT INTO team_members (team_id, user_id, role)
+    VALUES (${teamId}, ${data.capitaoId}, 'capitao')
+  `);
+
+  return teamId;
+}
+
+export async function getTeamsByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      t.*,
+      u.name as capitao_nome,
+      COUNT(DISTINCT tm.id) as total_membros
+    FROM teams t
+    LEFT JOIN users u ON t.capitao_id = u.id
+    LEFT JOIN team_members tm ON t.id = tm.team_id
+    WHERE t.box_id = ${boxId}
+    GROUP BY t.id
+    ORDER BY t.pontos_totais DESC, t.created_at DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getTeamById(teamId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      t.*,
+      u.name as capitao_nome,
+      u.email as capitao_email
+    FROM teams t
+    LEFT JOIN users u ON t.capitao_id = u.id
+    WHERE t.id = ${teamId}
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getTeamMembers(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      tm.*,
+      u.name as user_name,
+      u.email as user_email,
+      u.categoria
+    FROM team_members tm
+    LEFT JOIN users u ON tm.user_id = u.id
+    WHERE tm.team_id = ${teamId}
+    ORDER BY tm.role DESC, tm.joined_at ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function addTeamMember(teamId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.execute(sql`
+      INSERT INTO team_members (team_id, user_id, role)
+      VALUES (${teamId}, ${userId}, 'membro')
+    `);
+    return true;
+  } catch (error) {
+    console.error("Erro ao adicionar membro:", error);
+    return false;
+  }
+}
+
+export async function removeTeamMember(teamId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    DELETE FROM team_members
+    WHERE team_id = ${teamId} AND user_id = ${userId} AND role != 'capitao'
+  `);
+
+  return true;
+}
+
+export async function updateTeamPoints(teamId: number, pontos: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    UPDATE teams
+    SET pontos_totais = pontos_totais + ${pontos}
+    WHERE id = ${teamId}
+  `);
+
+  return true;
+}
+
+export async function getUserTeams(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      t.*,
+      tm.role as meu_role,
+      u.name as capitao_nome,
+      COUNT(DISTINCT tm2.id) as total_membros
+    FROM teams t
+    INNER JOIN team_members tm ON t.id = tm.team_id
+    LEFT JOIN users u ON t.capitao_id = u.id
+    LEFT JOIN team_members tm2 ON t.id = tm2.team_id
+    WHERE tm.user_id = ${userId}
+    GROUP BY t.id
+    ORDER BY t.created_at DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function createTeamDesafio(data: {
+  titulo: string;
+  descricao?: string;
+  tipo: "wod" | "frequencia" | "pontos" | "custom";
+  metaValor?: number;
+  metaUnidade?: string;
+  dataInicio: Date;
+  dataFim: Date;
+  criadorId: number;
+  boxId: number;
+  teamsIds: number[];
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [desafio] = await db.execute(sql`
+    INSERT INTO team_desafios (titulo, descricao, tipo, meta_valor, meta_unidade, data_inicio, data_fim, criador_id, box_id, status)
+    VALUES (${data.titulo}, ${data.descricao || null}, ${data.tipo}, ${data.metaValor || null}, ${data.metaUnidade || null}, ${data.dataInicio}, ${data.dataFim}, ${data.criadorId}, ${data.boxId}, 'ativo')
+  `);
+
+  const desafioId = (desafio as any).insertId;
+
+  // Adicionar equipes participantes
+  for (const teamId of data.teamsIds) {
+    await db.execute(sql`
+      INSERT INTO team_desafio_participantes (desafio_id, team_id)
+      VALUES (${desafioId}, ${teamId})
+    `);
+
+    // Notificar membros da equipe
+    const membros = await getTeamMembers(teamId);
+    for (const membro of membros) {
+      await createNotification({
+        userId: membro.user_id,
+        tipo: "geral",
+        titulo: "Novo Desafio de Equipe!",
+        mensagem: `Sua equipe foi desafiada: ${data.titulo}`,
+        link: `/equipes/desafios/${desafioId}`,
+      });
+    }
+  }
+
+  return desafioId;
+}
+
+export async function getTeamDesafiosByBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      td.*,
+      u.name as criador_nome,
+      COUNT(DISTINCT tdp.id) as total_equipes
+    FROM team_desafios td
+    LEFT JOIN users u ON td.criador_id = u.id
+    LEFT JOIN team_desafio_participantes tdp ON td.id = tdp.desafio_id
+    WHERE td.box_id = ${boxId}
+    GROUP BY td.id
+    ORDER BY td.created_at DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getTeamDesafioParticipantes(desafioId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      tdp.*,
+      t.nome as team_nome,
+      t.cor as team_cor,
+      COUNT(DISTINCT tm.id) as total_membros
+    FROM team_desafio_participantes tdp
+    LEFT JOIN teams t ON tdp.team_id = t.id
+    LEFT JOIN team_members tm ON t.id = tm.team_id
+    WHERE tdp.desafio_id = ${desafioId}
+    GROUP BY tdp.id
+    ORDER BY tdp.pontos DESC, tdp.completado_em ASC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function atualizarPontosTeamDesafio(desafioId: number, teamId: number, pontos: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    UPDATE team_desafio_participantes
+    SET pontos = pontos + ${pontos}
+    WHERE desafio_id = ${desafioId} AND team_id = ${teamId}
+  `);
+
+  // Atualizar pontos totais da equipe
+  await updateTeamPoints(teamId, pontos);
+
+  return true;
+}
+
+export async function completarTeamDesafio(desafioId: number, teamId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.execute(sql`
+    UPDATE team_desafio_participantes
+    SET completado = true, completado_em = NOW()
+    WHERE desafio_id = ${desafioId} AND team_id = ${teamId}
+  `);
+
+  return true;
+}
+
+
+// ==================== PROGRESSO SEMANAL ====================
+
+export async function getFrequenciaSemanal(userId: number, semanas: number = 4) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      YEARWEEK(data, 1) as semana,
+      COUNT(*) as total_checkins,
+      DATE_SUB(CURDATE(), INTERVAL (WEEKOFYEAR(CURDATE()) - WEEKOFYEAR(data)) WEEK) as semana_inicio
+    FROM checkins
+    WHERE user_id = ${userId}
+      AND data >= DATE_SUB(CURDATE(), INTERVAL ${semanas} WEEK)
+    GROUP BY YEARWEEK(data, 1)
+    ORDER BY semana DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getVolumeTreinoSemanal(userId: number, semanas: number = 4) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      YEARWEEK(rt.data_treino, 1) as semana,
+      COUNT(DISTINCT rt.id) as total_treinos,
+      COUNT(DISTINCT rt.wod_id) as wods_diferentes,
+      AVG(CASE 
+        WHEN rt.tipo_resultado = 'tempo' THEN rt.valor_numerico
+        WHEN rt.tipo_resultado = 'reps' THEN rt.valor_numerico
+        ELSE NULL
+      END) as media_performance
+    FROM resultados_treinos rt
+    WHERE rt.user_id = ${userId}
+      AND rt.data_treino >= DATE_SUB(CURDATE(), INTERVAL ${semanas} WEEK)
+    GROUP BY YEARWEEK(rt.data_treino, 1)
+    ORDER BY semana DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+export async function getComparacaoSemanal(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT 
+      -- Semana atual
+      (SELECT COUNT(*) FROM checkins 
+       WHERE user_id = ${userId} 
+         AND YEARWEEK(data, 1) = YEARWEEK(CURDATE(), 1)) as checkins_semana_atual,
+      
+      (SELECT COUNT(*) FROM resultados_treinos 
+       WHERE user_id = ${userId} 
+         AND YEARWEEK(data_treino, 1) = YEARWEEK(CURDATE(), 1)) as treinos_semana_atual,
+      
+      -- Semana passada
+      (SELECT COUNT(*) FROM checkins 
+       WHERE user_id = ${userId} 
+         AND YEARWEEK(data, 1) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL 1 WEEK), 1)) as checkins_semana_passada,
+      
+      (SELECT COUNT(*) FROM resultados_treinos 
+       WHERE user_id = ${userId} 
+         AND YEARWEEK(data_treino, 1) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL 1 WEEK), 1)) as treinos_semana_passada,
+      
+      -- Média das últimas 4 semanas
+      (SELECT AVG(cnt) FROM (
+        SELECT COUNT(*) as cnt
+        FROM checkins 
+        WHERE user_id = ${userId}
+          AND data >= DATE_SUB(CURDATE(), INTERVAL 4 WEEK)
+        GROUP BY YEARWEEK(data, 1)
+      ) as subq) as media_checkins_4semanas,
+      
+      (SELECT AVG(cnt) FROM (
+        SELECT COUNT(*) as cnt
+        FROM resultados_treinos 
+        WHERE user_id = ${userId}
+          AND data_treino >= DATE_SUB(CURDATE(), INTERVAL 4 WEEK)
+        GROUP BY YEARWEEK(data_treino, 1)
+      ) as subq) as media_treinos_4semanas
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getProgressoPRsSemanal(userId: number, semanas: number = 4) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT 
+      YEARWEEK(data, 1) as semana,
+      COUNT(*) as total_prs,
+      SUM(CASE WHEN tipo = 'peso' THEN 1 ELSE 0 END) as prs_peso,
+      SUM(CASE WHEN tipo = 'tempo' THEN 1 ELSE 0 END) as prs_tempo,
+      SUM(CASE WHEN tipo = 'reps' THEN 1 ELSE 0 END) as prs_reps
+    FROM prs
+    WHERE user_id = ${userId}
+      AND data >= DATE_SUB(CURDATE(), INTERVAL ${semanas} WEEK)
+    GROUP BY YEARWEEK(data, 1)
+    ORDER BY semana DESC
+  `);
+
+  return (result as any)[0] || [];
+}
+
+
+// ==================== STREAK DE CHECK-INS ====================
+
+export async function calcularStreak(userId: number) {
+  const db = await getDb();
+  if (!db) return { streakAtual: 0, streakRecorde: 0 };
+
+  // Buscar últimos check-ins ordenados por data
+  const result = await db.execute(sql`
+    SELECT DISTINCT DATE(data) as data_checkin
+    FROM checkins
+    WHERE user_id = ${userId}
+    ORDER BY data_checkin DESC
+    LIMIT 365
+  `);
+
+  const checkins = (result as any)[0] || [];
+  
+  if (checkins.length === 0) {
+    return { streakAtual: 0, streakRecorde: 0 };
+  }
+
+  let streakAtual = 0;
+  let streakRecorde = 0;
+  let streakTemp = 1;
+  
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  
+  const ultimaData = new Date(checkins[0].data_checkin);
+  ultimaData.setHours(0, 0, 0, 0);
+  
+  // Verificar se o streak está ativo (último check-in foi hoje ou ontem)
+  const diffDias = Math.floor((hoje.getTime() - ultimaData.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffDias <= 1) {
+    streakAtual = 1;
+    
+    // Calcular streak consecutivo
+    for (let i = 1; i < checkins.length; i++) {
+      const dataAtual = new Date(checkins[i - 1].data_checkin);
+      const dataAnterior = new Date(checkins[i].data_checkin);
+      
+      const diff = Math.floor((dataAtual.getTime() - dataAnterior.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diff === 1) {
+        streakAtual++;
+        streakTemp++;
+      } else {
+        break;
+      }
+    }
+  }
+  
+  // Calcular streak recorde (maior sequência)
+  streakRecorde = streakAtual;
+  streakTemp = 1;
+  
+  for (let i = 1; i < checkins.length; i++) {
+    const dataAtual = new Date(checkins[i - 1].data_checkin);
+    const dataAnterior = new Date(checkins[i].data_checkin);
+    
+    const diff = Math.floor((dataAtual.getTime() - dataAnterior.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diff === 1) {
+      streakTemp++;
+      if (streakTemp > streakRecorde) {
+        streakRecorde = streakTemp;
+      }
+    } else {
+      streakTemp = 1;
+    }
+  }
+
+  return { streakAtual, streakRecorde };
+}
+
+export async function atualizarStreak(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const { streakAtual, streakRecorde } = await calcularStreak(userId);
+
+  await db.execute(sql`
+    UPDATE users
+    SET streak_atual = ${streakAtual},
+        streak_recorde = ${streakRecorde},
+        ultima_atividade = CURDATE()
+    WHERE id = ${userId}
+  `);
+
+  // Verificar e conceder badges de streak
+  await verificarBadgesStreak(userId, streakAtual, streakRecorde);
+
+  return true;
+}
+
+export async function verificarBadgesStreak(userId: number, streakAtual: number, streakRecorde: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  const badgesParaConceder: string[] = [];
+
+  if (streakAtual >= 7) badgesParaConceder.push('streak_7_dias');
+  if (streakAtual >= 30) badgesParaConceder.push('streak_30_dias');
+  if (streakAtual >= 100) badgesParaConceder.push('streak_100_dias');
+  if (streakRecorde >= 50) badgesParaConceder.push('streak_recorde_50');
+
+  for (const criterio of badgesParaConceder) {
+    // Buscar badge
+    const badgeResult = await db.execute(sql`
+      SELECT id FROM badges WHERE criterio = ${criterio} LIMIT 1
+    `);
+    
+    const badgeRows = (badgeResult as any)[0];
+    if (!badgeRows || badgeRows.length === 0) continue;
+    
+    const badgeId = badgeRows[0].id;
+
+    // Verificar se já possui
+    const possuiResult = await db.execute(sql`
+      SELECT id FROM users_badges 
+      WHERE user_id = ${userId} AND badge_id = ${badgeId}
+      LIMIT 1
+    `);
+    
+    const possuiRows = (possuiResult as any)[0];
+    if (possuiRows && possuiRows.length > 0) continue;
+
+    // Conceder badge
+    await db.execute(sql`
+      INSERT INTO users_badges (user_id, badge_id)
+      VALUES (${userId}, ${badgeId})
+    `);
+
+    // Notificar usuário
+    const badgeNome = badgeRows[0].nome || 'Badge de Streak';
+    await createNotification({
+      userId,
+      tipo: 'badge',
+      titulo: 'Novo Badge Conquistado! 🏆',
+      mensagem: `Você conquistou: ${badgeNome}`,
+      link: '/badges',
+    });
+  }
+}
+
+export async function getStreakInfo(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.execute(sql`
+    SELECT streak_atual, streak_recorde, ultima_atividade
+    FROM users
+    WHERE id = ${userId}
+    LIMIT 1
+  `);
+
+  const rows = (result as any)[0];
+  return rows && rows.length > 0 ? rows[0] : null;
 }
