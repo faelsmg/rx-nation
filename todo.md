@@ -1781,3 +1781,32 @@
 - [ ] Testar confirmação de pagamento
 - [ ] Testar geração de relatórios
 - [ ] Testar exportação de listas
+
+
+## Novas Funcionalidades (Sprint Atual)
+
+### 1. Integração Stripe para Pagamentos Automáticos
+- [x] Criar procedure tRPC para gerar Payment Intent
+- [x] Criar procedure para processar webhook do Stripe
+- [x] Adicionar botão de pagamento na página de inscrição
+- [x] Implementar fluxo completo de checkout
+- [x] Atualizar status de pagamento automaticamente
+- [x] Adicionar testes para fluxo de pagamento
+
+### 2. Dashboard de Campeonatos com Métricas
+- [x] Criar queries para métricas consolidadas (total inscrições, receita, conversão)
+- [x] Implementar cálculo de receita total por campeonato
+- [x] Implementar taxa de conversão
+- [x] Criar página DashboardCampeonatos.tsx
+- [x] Adicionar gráficos com Chart.js
+- [x] Adicionar filtros por período
+- [x] Adicionar testes para queries de métricas
+
+### 3. Certificados Digitais em PDF
+- [x] Criar template de certificado com design profissional
+- [x] Implementar geração de PDF com dados do atleta (nome, posição, pontos)
+- [x] Criar procedure tRPC para gerar certificado
+- [x] Adicionar botão de download na página do campeonato
+- [x] Adicionar logo da liga e assinatura digital
+- [x] Implementar validação (apenas atletas com posição final)
+- [x] Adicionar testes para geração de PDF

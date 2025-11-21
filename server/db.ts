@@ -7258,6 +7258,369 @@ export async function confirmarPagamentoInscricao(inscricaoId: number) {
   return { success: true };
 }
 
+export async function getInscricaoByUserAndCampeonato(userId: number, campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db
+    .select()
+    .from(inscricoesCampeonatos)
+    .where(
+      and(
+        eq(inscricoesCampeonatos.userId, userId),
+        eq(inscricoesCampeonatos.campeonatoId, campeonatoId)
+      )
+    )
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function criarStripePaymentIntent(data: {
+  amount: number;
+  userId: number;
+  campeonatoId: number;
+  categoria: string;
+  faixaEtaria: string;
+}) {
+  const { ENV } = await import('./_core/env');
+  
+  if (!ENV.stripeSecretKey) {
+    throw new Error("Stripe não configurado");
+  }
+
+  const Stripe = (await import('stripe')).default;
+  const stripe = new Stripe(ENV.stripeSecretKey, {
+    apiVersion: '2025-11-17.clover',
+  });
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: data.amount,
+    currency: 'brl',
+    metadata: {
+      userId: data.userId.toString(),
+      campeonatoId: data.campeonatoId.toString(),
+      categoria: data.categoria,
+      faixaEtaria: data.faixaEtaria,
+    },
+  });
+
+  return {
+    clientSecret: paymentIntent.client_secret,
+    paymentIntentId: paymentIntent.id,
+  };
+}
+
+export async function processarPagamentoStripe(paymentIntentId: string) {
+  const { ENV } = await import('./_core/env');
+  
+  if (!ENV.stripeSecretKey) {
+    throw new Error("Stripe não configurado");
+  }
+
+  const Stripe = (await import('stripe')).default;
+  const stripe = new Stripe(ENV.stripeSecretKey, {
+    apiVersion: '2025-11-17.clover',
+  });
+
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+  if (paymentIntent.status === 'succeeded') {
+    const metadata = paymentIntent.metadata;
+    const userId = parseInt(metadata.userId);
+    const campeonatoId = parseInt(metadata.campeonatoId);
+
+    // Criar inscrição
+    await createInscricaoCampeonato({
+      userId,
+      campeonatoId,
+      categoria: metadata.categoria as any,
+      faixaEtaria: metadata.faixaEtaria,
+      status: 'aprovada' as any,
+      statusPagamento: 'pago' as any,
+    });
+
+    // Adicionar pontos de gamificação
+    await createPontuacao({
+      userId,
+      tipo: "participacao_campeonato",
+      pontos: 50,
+      referencia: campeonatoId.toString(),
+    });
+
+    return { success: true };
+  }
+
+  return { success: false };
+}
+
+export async function getMetricasCampeonatos(periodo: string) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      totalCampeonatos: 0,
+      totalInscricoes: 0,
+      receitaTotal: 0,
+      taxaConversao: 0,
+      campeonatosPorTipo: {},
+      evolucaoInscricoes: [],
+      evolucaoReceita: [],
+      topCampeonatos: [],
+    };
+  }
+
+  // Calcular data inicial baseado no período
+  const now = new Date();
+  let dataInicio: Date;
+  
+  switch (periodo) {
+    case "7d":
+      dataInicio = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      dataInicio = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      dataInicio = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case "1y":
+      dataInicio = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      dataInicio = new Date(0); // All time
+  }
+
+  // Total de campeonatos no período
+  const listaCampeonatos = await db
+    .select()
+    .from(campeonatos)
+    .where(gte(campeonatos.createdAt, dataInicio));
+
+  const totalCampeonatos = listaCampeonatos.length;
+
+  // Total de inscrições
+  const inscricoes = await db
+    .select()
+    .from(inscricoesCampeonatos)
+    .where(gte(inscricoesCampeonatos.createdAt, dataInicio));
+
+  const totalInscricoes = inscricoes.length;
+
+  // Receita total (soma de valorInscricao de campeonatos com inscrições pagas)
+  let receitaTotal = 0;
+  for (const inscricao of inscricoes) {
+    if (inscricao.statusPagamento === 'pago') {
+      const campeonato = listaCampeonatos.find((c: any) => c.id === inscricao.campeonatoId);
+      if (campeonato && campeonato.valorInscricao) {
+        receitaTotal += campeonato.valorInscricao;
+      }
+    }
+  }
+
+  // Taxa de conversão (inscrições pagas / total inscrições)
+  const inscricoesPagas = inscricoes.filter(i => i.statusPagamento === 'pago').length;
+  const taxaConversao = totalInscricoes > 0 ? (inscricoesPagas / totalInscricoes) * 100 : 0;
+
+  // Campeonatos por tipo
+  const campeonatosPorTipo: Record<string, number> = {};
+  for (const campeonato of listaCampeonatos) {
+    campeonatosPorTipo[campeonato.tipo] = (campeonatosPorTipo[campeonato.tipo] || 0) + 1;
+  }
+
+  // Evolução de inscrições (agrupado por dia)
+  const evolucaoInscricoes: Array<{ data: string; total: number }> = [];
+  const inscricoesPorDia: Record<string, number> = {};
+  
+  for (const inscricao of inscricoes) {
+    const dia = new Date(inscricao.createdAt).toISOString().split('T')[0];
+    inscricoesPorDia[dia] = (inscricoesPorDia[dia] || 0) + 1;
+  }
+  
+  for (const [data, total] of Object.entries(inscricoesPorDia)) {
+    evolucaoInscricoes.push({ data, total });
+  }
+  evolucaoInscricoes.sort((a, b) => a.data.localeCompare(b.data));
+
+  // Evolução de receita (agrupado por dia)
+  const evolucaoReceita: Array<{ data: string; receita: number }> = [];
+  const receitaPorDia: Record<string, number> = {};
+  
+  for (const inscricao of inscricoes) {
+    if (inscricao.statusPagamento === 'pago') {
+      const campeonato = listaCampeonatos.find((c: any) => c.id === inscricao.campeonatoId);
+      if (campeonato && campeonato.valorInscricao) {
+        const dia = new Date(inscricao.createdAt).toISOString().split('T')[0];
+        receitaPorDia[dia] = (receitaPorDia[dia] || 0) + campeonato.valorInscricao;
+      }
+    }
+  }
+  
+  for (const [data, receita] of Object.entries(receitaPorDia)) {
+    evolucaoReceita.push({ data, receita });
+  }
+  evolucaoReceita.sort((a, b) => a.data.localeCompare(b.data));
+
+  // Top 5 campeonatos por inscrições
+  const inscricoesPorCampeonato: Record<number, number> = {};
+  for (const inscricao of inscricoes) {
+    inscricoesPorCampeonato[inscricao.campeonatoId] = 
+      (inscricoesPorCampeonato[inscricao.campeonatoId] || 0) + 1;
+  }
+
+  const topCampeonatos = listaCampeonatos
+    .map((c: any) => ({
+      id: c.id,
+      nome: c.nome,
+      tipo: c.tipo,
+      inscricoes: inscricoesPorCampeonato[c.id] || 0,
+      receita: (inscricoesPorCampeonato[c.id] || 0) * (c.valorInscricao || 0),
+    }))
+    .sort((a: any, b: any) => b.inscricoes - a.inscricoes)
+    .slice(0, 5);
+
+  return {
+    totalCampeonatos,
+    totalInscricoes,
+    receitaTotal,
+    taxaConversao,
+    campeonatosPorTipo,
+    evolucaoInscricoes,
+    evolucaoReceita,
+    topCampeonatos,
+  };
+}
+
+export async function getResultadoAtleta(userId: number, campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Primeiro, buscar a inscrição do usuário no campeonato
+  const inscricao = await getInscricaoByUserAndCampeonato(userId, campeonatoId);
+  if (!inscricao) return null;
+
+  // Buscar resultado pela inscrição
+  const results = await db
+    .select()
+    .from(resultadosAtletas)
+    .where(eq(resultadosAtletas.inscricaoId, inscricao.id))
+    .orderBy(desc(resultadosAtletas.pontos))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function gerarCertificadoPDF(data: {
+  nomeAtleta: string;
+  nomeCampeonato: string;
+  posicao: number;
+  pontos: number;
+  data: Date;
+}): Promise<Buffer> {
+  const PDFDocument = (await import('pdfkit')).default;
+  
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: 'A4',
+      layout: 'landscape',
+      margins: { top: 50, bottom: 50, left: 50, right: 50 },
+    });
+
+    const buffers: Buffer[] = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => resolve(Buffer.concat(buffers)));
+    doc.on('error', reject);
+
+    // Fundo e borda
+    doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
+      .lineWidth(3)
+      .stroke('#2563eb');
+
+    doc.rect(30, 30, doc.page.width - 60, doc.page.height - 60)
+      .lineWidth(1)
+      .stroke('#93c5fd');
+
+    // Título
+    doc.fontSize(40)
+      .font('Helvetica-Bold')
+      .fillColor('#1e3a8a')
+      .text('CERTIFICADO', 0, 100, { align: 'center' });
+
+    doc.fontSize(16)
+      .font('Helvetica')
+      .fillColor('#64748b')
+      .text('DE PARTICIPAÇÃO', 0, 150, { align: 'center' });
+
+    // Linha decorativa
+    doc.moveTo(doc.page.width / 2 - 100, 180)
+      .lineTo(doc.page.width / 2 + 100, 180)
+      .lineWidth(2)
+      .stroke('#2563eb');
+
+    // Texto principal
+    doc.fontSize(14)
+      .font('Helvetica')
+      .fillColor('#334155')
+      .text('Certificamos que', 0, 220, { align: 'center' });
+
+    doc.fontSize(28)
+      .font('Helvetica-Bold')
+      .fillColor('#1e3a8a')
+      .text(data.nomeAtleta.toUpperCase(), 0, 260, { align: 'center' });
+
+    doc.fontSize(14)
+      .font('Helvetica')
+      .fillColor('#334155')
+      .text('participou do campeonato', 0, 310, { align: 'center' });
+
+    doc.fontSize(20)
+      .font('Helvetica-Bold')
+      .fillColor('#2563eb')
+      .text(data.nomeCampeonato, 0, 340, { align: 'center' });
+
+    // Resultados
+    const resultY = 390;
+    doc.fontSize(16)
+      .font('Helvetica-Bold')
+      .fillColor('#1e3a8a')
+      .text(`Posição: ${data.posicao}º lugar`, 0, resultY, { align: 'center' });
+
+    doc.fontSize(14)
+      .font('Helvetica')
+      .fillColor('#64748b')
+      .text(`Pontuação: ${data.pontos} pontos`, 0, resultY + 30, { align: 'center' });
+
+    // Data
+    const dataFormatada = new Date(data.data).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    doc.fontSize(12)
+      .font('Helvetica')
+      .fillColor('#64748b')
+      .text(`Emitido em ${dataFormatada}`, 0, doc.page.height - 100, { align: 'center' });
+
+    // Assinatura
+    doc.moveTo(doc.page.width / 2 - 150, doc.page.height - 120)
+      .lineTo(doc.page.width / 2 + 150, doc.page.height - 120)
+      .lineWidth(1)
+      .stroke('#cbd5e1');
+
+    doc.fontSize(10)
+      .font('Helvetica-Bold')
+      .fillColor('#475569')
+      .text('IMPACTO PRO LEAGUE', 0, doc.page.height - 105, { align: 'center' });
+
+    doc.fontSize(8)
+      .font('Helvetica')
+      .fillColor('#94a3b8')
+      .text('Organização Oficial de Campeonatos', 0, doc.page.height - 90, { align: 'center' });
+
+    doc.end();
+  });
+}
+
 export async function gerarRelatorioInscricoes(campeonatoId: number) {
   const db = await getDb();
   if (!db) return { total: 0, porCategoria: {}, porFaixaEtaria: {}, porStatus: {}, porStatusPagamento: {} };

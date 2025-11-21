@@ -21,13 +21,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Users, DollarSign, Trophy, Medal, CheckCircle2, XCircle, Clock, Settings } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Trophy, Medal, CheckCircle2, XCircle, Clock, Settings, Loader2, Download } from "lucide-react";
 import GestaoBaterias from "@/components/GestaoBaterias";
 import ConfiguracaoPontuacao from "@/components/ConfiguracaoPontuacao";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useState } from "react";
+import StripeCheckout from "@/components/StripeCheckout";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function CampeonatoDetalhes() {
   const [, params] = useRoute("/campeonatos/:id");
@@ -36,6 +44,10 @@ export default function CampeonatoDetalhes() {
 
   const [categoriaFiltro, setCategoriaFiltro] = useState<string | undefined>(undefined);
   const [faixaEtariaFiltro, setFaixaEtariaFiltro] = useState<string | undefined>(undefined);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [categoria, setCategoria] = useState<"iniciante" | "intermediario" | "avancado" | "elite">("intermediario");
+  const [faixaEtaria, setFaixaEtaria] = useState<string>("18-29");
 
   const utils = trpc.useUtils();
 
@@ -86,6 +98,39 @@ export default function CampeonatoDetalhes() {
     },
   });
 
+  const criarPaymentIntentMutation = trpc.inscricoes.criarPaymentIntent.useMutation({
+    onSuccess: (data) => {
+      setClientSecret(data.clientSecret);
+      setShowCheckout(true);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao iniciar pagamento");
+    },
+  });
+
+  const gerarCertificadoMutation = trpc.campeonatos.gerarCertificado.useMutation({
+    onSuccess: (data) => {
+      // Converter base64 para blob e baixar
+      const byteCharacters = atob(data.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = data.filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Certificado baixado com sucesso!');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Erro ao gerar certificado');
+    },
+  });
+
   const getTipoLabel = (tipo: string) => {
     const labels: Record<string, string> = {
       interno: "Interno",
@@ -125,6 +170,25 @@ export default function CampeonatoDetalhes() {
     if (inscricao && confirm("Tem certeza que deseja cancelar sua inscrição?")) {
       cancelarMutation.mutate({ inscricaoId: inscricao.id });
     }
+  };
+
+  const handlePagarInscrever = () => {
+    criarPaymentIntentMutation.mutate({
+      campeonatoId,
+      categoria,
+      faixaEtaria,
+    });
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowCheckout(false);
+    setClientSecret(null);
+    utils.campeonatos.minhasInscricoes.invalidate();
+    utils.campeonatos.listInscricoes.invalidate();
+  };
+
+  const handleBaixarCertificado = () => {
+    gerarCertificadoMutation.mutate({ campeonatoId });
   };
 
   if (isLoading) {
@@ -191,12 +255,22 @@ export default function CampeonatoDetalhes() {
                       Cancelar Inscrição
                     </Button>
                   ) : campeonato.inscricoesAbertas ? (
-                    <Button
-                      onClick={handleInscrever}
-                      disabled={inscreverMutation.isPending}
-                    >
-                      Inscrever-se
-                    </Button>
+                    campeonato.valorInscricao && campeonato.valorInscricao > 0 ? (
+                      <Button
+                        onClick={handlePagarInscrever}
+                        disabled={criarPaymentIntentMutation.isPending}
+                      >
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Inscrever-se (R$ {campeonato.valorInscricao.toFixed(2)})
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleInscrever}
+                        disabled={inscreverMutation.isPending}
+                      >
+                        Inscrever-se (Gratuito)
+                      </Button>
+                    )
                   ) : null}
                 </div>
               )}
@@ -315,8 +389,27 @@ export default function CampeonatoDetalhes() {
           <TabsContent value="leaderboard">
             <Card className="card-impacto">
               <CardHeader>
-                <CardTitle>Ranking</CardTitle>
-                <CardDescription>Classificação dos atletas por pontuação</CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Ranking</CardTitle>
+                    <CardDescription>Classificação dos atletas por pontuação</CardDescription>
+                  </div>
+                  {isInscrito() && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBaixarCertificado}
+                      disabled={gerarCertificadoMutation.isPending}
+                    >
+                      {gerarCertificadoMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
+                      Baixar Certificado
+                    </Button>
+                  )}
+                </div>
 
                 {/* Filtros do Leaderboard */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -464,6 +557,26 @@ export default function CampeonatoDetalhes() {
           )}
         </Tabs>
       </div>
+
+      {/* Dialog de Pagamento Stripe */}
+      <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Finalizar Inscrição</DialogTitle>
+            <DialogDescription>
+              Complete o pagamento para confirmar sua inscrição no campeonato
+            </DialogDescription>
+          </DialogHeader>
+          {clientSecret && campeonato && (
+            <StripeCheckout
+              clientSecret={clientSecret}
+              onSuccess={handlePaymentSuccess}
+              campeonatoNome={campeonato.nome}
+              valor={campeonato.valorInscricao || 0}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

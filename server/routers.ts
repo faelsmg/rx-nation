@@ -627,6 +627,51 @@ export const appRouter = router({
         return db.listarMinhasInscricoes(ctx.user.id);
       }),
 
+    // Gerar certificado de participação (Atleta)
+    gerarCertificado: protectedProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const campeonato = await db.getCampeonatoById(input.campeonatoId);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        // Verificar se o usuário está inscrito
+        const inscricao = await db.getInscricaoByUserAndCampeonato(
+          ctx.user.id,
+          input.campeonatoId
+        );
+        if (!inscricao) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Você não está inscrito neste campeonato',
+          });
+        }
+
+        // Buscar resultado do atleta
+        const resultado = await db.getResultadoAtleta(ctx.user.id, input.campeonatoId);
+        if (!resultado) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Você ainda não possui resultado final neste campeonato',
+          });
+        }
+
+        // Gerar PDF
+        const pdfBuffer = await db.gerarCertificadoPDF({
+          nomeAtleta: ctx.user.name || 'Atleta',
+          nomeCampeonato: campeonato.nome,
+          posicao: resultado.posicao || 0,
+          pontos: resultado.pontos || 0,
+          data: campeonato.dataFim,
+        });
+
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `certificado-${campeonato.nome.replace(/\s+/g, '-')}.pdf`,
+        };
+      }),
+
     // Leaderboard
     leaderboard: publicProcedure
       .input(z.object({
@@ -791,7 +836,67 @@ export const appRouter = router({
 
         return db.gerarRelatorioInscricoes(input.campeonatoId);
       }),
+
+    // Criar Payment Intent para inscrição (Atleta)
+    criarPaymentIntent: protectedProcedure
+      .input(z.object({ 
+        campeonatoId: z.number(),
+        categoria: z.enum(["iniciante", "intermediario", "avancado", "elite"]),
+        faixaEtaria: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const campeonato = await db.getCampeonatoById(input.campeonatoId);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        if (!campeonato.valorInscricao || campeonato.valorInscricao <= 0) {
+          throw new TRPCError({ 
+            code: 'BAD_REQUEST', 
+            message: 'Este campeonato não requer pagamento' 
+          });
+        }
+
+        // Verificar se já está inscrito
+        const inscricaoExistente = await db.getInscricaoByUserAndCampeonato(
+          ctx.user.id, 
+          input.campeonatoId
+        );
+        if (inscricaoExistente) {
+          throw new TRPCError({ 
+            code: 'BAD_REQUEST', 
+            message: 'Você já está inscrito neste campeonato' 
+          });
+        }
+
+        // Criar Payment Intent no Stripe
+        const paymentIntent = await db.criarStripePaymentIntent({
+          amount: Math.round(campeonato.valorInscricao * 100), // centavos
+          userId: ctx.user.id,
+          campeonatoId: input.campeonatoId,
+          categoria: input.categoria,
+          faixaEtaria: input.faixaEtaria,
+        });
+
+        return paymentIntent;
+      }),
   }),
+
+  // Métricas e Dashboard de Campeonatos (Admin Liga)
+  metricasCampeonatos: protectedProcedure
+    .input(z.object({
+      periodo: z.enum(["7d", "30d", "90d", "1y", "all"]).optional().default("30d"),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin_liga') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Apenas administradores da liga podem acessar métricas',
+        });
+      }
+
+      return db.getMetricasCampeonatos(input.periodo);
+    }),
 
   // ===== BATERIAS (HEATS) =====
   baterias: router({
