@@ -1604,3 +1604,36 @@
 - [ ] Corrigir bugs encontrados
 - [ ] Atualizar documentação
 - [ ] Salvar checkpoint "Sistema de Campeonatos Completo"
+
+
+## Interfaces de Campeonatos - Sprint 2
+### Página Admin (Cadastro/Edição)
+- [x] Criar componente CampeonatosAdmin.tsx
+- [x] Formulário completo (nome, descrição, tipo, local, datas, capacidade, valor)
+- [x] Validação de datas (fim > início)
+- [x] Listagem de eventos criados (tabela)
+- [x] Ações: Editar, Deletar, Abrir/Fechar inscrições
+- [x] Toast de feedback (sucesso/erro)
+
+### Listagem Pública
+- [x] Criar componente CampeonatosLista.tsx
+- [x] Grid de cards responsivo
+- [x] Filtros: Tipo, Status (abertos/fechados)
+- [x] Card: Nome, tipo, datas, local, vagas, valor
+- [x] Botão "Inscrever-se" (apenas se aberto e atleta)
+- [x] Badge de status (inscrições abertas/fechadas)
+
+### Página de Detalhes
+- [x] Criar componente CampeonatoDetalhes.tsx
+- [x] Header com informações completas
+- [x] Seção Leaderboard (tabela ordenada por pontos)
+- [x] Filtros leaderboard (categoria, faixa etária)
+- [x] Seção Lista de Inscritos
+- [x] Botão Inscrever/Cancelar Inscrição
+- [x] Validações (capacidade, duplicidade)
+
+### Rotas e Navegação
+- [x] Adicionar rotas no App.tsx
+- [ ] Link no sidebar para Campeonatos
+- [x] Navegação entre listagem e detalhes
+- [x] Proteção de rota admin (apenas admin_liga/box_master)

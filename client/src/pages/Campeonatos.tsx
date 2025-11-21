@@ -1,21 +1,33 @@
 import AppLayout from "@/components/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Calendar, MapPin, Users, Trophy, CheckCircle } from "lucide-react";
+import { Calendar, MapPin, Users, Trophy, CheckCircle, Filter } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { Link } from "wouter";
 
 export default function Campeonatos() {
   const { user } = useAuth();
-  const { data: campeonatos } = trpc.campeonatos.getAbertos.useQuery();
-  const inscricaoMutation = trpc.inscricoes.create.useMutation();
+  const { data: campeonatos } = trpc.campeonatos.list.useQuery();
+  const { data: minhasInscricoes } = trpc.campeonatos.minhasInscricoes.useQuery(
+    undefined,
+    { enabled: !!user && user.role === "atleta" }
+  );
+  const inscricaoMutation = trpc.campeonatos.inscrever.useMutation();
   const utils = trpc.useUtils();
   
   const [selectedCampeonato, setSelectedCampeonato] = useState<any>(null);
+  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
+  const [statusFiltro, setStatusFiltro] = useState<string>("abertos");
+
+  const isInscrito = (campeonatoId: number) => {
+    return minhasInscricoes?.some((insc: any) => insc.campeonatoId === campeonatoId);
+  };
 
   const handleInscrever = async (campeonatoId: number) => {
     if (!user) {
@@ -23,20 +35,29 @@ export default function Campeonatos() {
       return;
     }
 
+    if (user.role !== "atleta") {
+      toast.error("Apenas atletas podem se inscrever em campeonatos");
+      return;
+    }
+
     try {
-      await inscricaoMutation.mutateAsync({
-        campeonatoId,
-        categoria: user.categoria || "intermediario",
-        faixaEtaria: user.faixaEtaria || "adulto",
-      });
+      await inscricaoMutation.mutateAsync({ campeonatoId });
       
-      toast.success("Inscrição realizada com sucesso! +50 pontos");
-      utils.campeonatos.getAbertos.invalidate();
+      toast.success("Inscrição realizada com sucesso!");
+      utils.campeonatos.minhasInscricoes.invalidate();
       setSelectedCampeonato(null);
     } catch (error: any) {
       toast.error(error.message || "Erro ao realizar inscrição");
     }
   };
+
+  // Filtros
+  const campeonatosFiltrados = campeonatos?.filter((camp: any) => {
+    if (tipoFiltro !== "todos" && camp.tipo !== tipoFiltro) return false;
+    if (statusFiltro === "abertos" && !camp.inscricoesAbertas) return false;
+    if (statusFiltro === "fechados" && camp.inscricoesAbertas) return false;
+    return true;
+  });
 
   const getTipoBadge = (tipo: string) => {
     const colors: Record<string, string> = {
@@ -60,9 +81,53 @@ export default function Campeonatos() {
           <p className="text-muted-foreground">Eventos e competições disponíveis</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {campeonatos && campeonatos.length > 0 ? (
-            campeonatos.map((camp) => (
+        {/* Filtros */}
+        <Card className="card-impacto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tipo de Campeonato</label>
+                <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="interno">Interno</SelectItem>
+                    <SelectItem value="cidade">Cidade</SelectItem>
+                    <SelectItem value="regional">Regional</SelectItem>
+                    <SelectItem value="estadual">Estadual</SelectItem>
+                    <SelectItem value="nacional">Nacional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Status das Inscrições</label>
+                <Select value={statusFiltro} onValueChange={setStatusFiltro}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="abertos">Abertas</SelectItem>
+                    <SelectItem value="fechados">Fechadas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {campeonatosFiltrados && campeonatosFiltrados.length > 0 ? (
+            campeonatosFiltrados.map((camp: any) => (
               <Card key={camp.id} className="card-impacto hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -105,16 +170,24 @@ export default function Campeonatos() {
                     )}
                   </div>
 
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        className="w-full" 
-                        onClick={() => setSelectedCampeonato(camp)}
-                        disabled={!camp.inscricoesAbertas}
-                      >
-                        {camp.inscricoesAbertas ? "Ver Detalhes e Inscrever-se" : "Inscrições Encerradas"}
+                  <div className="flex gap-2">
+                    <Link href={`/campeonatos/${camp.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        Ver Detalhes
                       </Button>
-                    </DialogTrigger>
+                    </Link>
+
+                    {user?.role === "atleta" && camp.inscricoesAbertas && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            className="flex-1" 
+                            onClick={() => setSelectedCampeonato(camp)}
+                            disabled={isInscrito(camp.id)}
+                          >
+                            {isInscrito(camp.id) ? "Já Inscrito" : "Inscrever-se"}
+                          </Button>
+                        </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>{camp.nome}</DialogTitle>
@@ -157,7 +230,9 @@ export default function Campeonatos() {
                         )}
                       </div>
                     </DialogContent>
-                  </Dialog>
+                      </Dialog>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))
