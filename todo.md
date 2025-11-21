@@ -1247,3 +1247,9 @@
 - [ ] Criar dashboard com métricas da liga
 - [ ] Implementar visualização de ranking entre boxes
 - [ ] Criar testes para gestão de boxes
+
+## Vídeos do YouTube nos WODs
+- [x] Adicionar campo video_youtube_url na tabela wods
+- [x] Atualizar formulário de criação de WOD
+- [x] Adicionar player do YouTube na visualização
+- [x] Testar funcionalidade

@@ -102,6 +102,25 @@ export default function WodDoDia() {
               <CardContent className="space-y-6">
                 <div className="whitespace-pre-wrap text-lg">{wodHoje.descricao}</div>
                 
+                {wodHoje.videoYoutubeUrl && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Dumbbell className="w-5 h-5 text-primary" />
+                      Vídeo Demonstrativo
+                    </h3>
+                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                      <iframe
+                        className="absolute top-0 left-0 w-full h-full rounded-lg"
+                        src={wodHoje.videoYoutubeUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                        title="Vídeo do WOD"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex gap-4">
                   <Button
                     size="lg"

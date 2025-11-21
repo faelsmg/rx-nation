@@ -1,0 +1,1 @@
+ALTER TABLE `wods` ADD `videoYoutubeUrl` text;

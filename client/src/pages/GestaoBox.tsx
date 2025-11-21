@@ -31,6 +31,7 @@ export default function GestaoBox() {
   const [timeCap, setTimeCap] = useState<number | undefined>();
   const [duracao, setDuracao] = useState<number | undefined>();
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
+  const [videoYoutubeUrl, setVideoYoutubeUrl] = useState("");
 
   const utils = trpc.useUtils();
   const { data: wods, isLoading } = trpc.wods.getByBox.useQuery(
@@ -79,6 +80,7 @@ export default function GestaoBox() {
     setTimeCap(undefined);
     setDuracao(undefined);
     setData(new Date().toISOString().split("T")[0]);
+    setVideoYoutubeUrl("");
     setEditingWod(null);
   };
 
@@ -91,6 +93,7 @@ export default function GestaoBox() {
       setTimeCap(wod.timeCap);
       setDuracao(wod.duracao);
       setData(new Date(wod.data).toISOString().split("T")[0]);
+      setVideoYoutubeUrl(wod.videoYoutubeUrl || "");
     } else {
       resetForm();
     }
@@ -113,6 +116,7 @@ export default function GestaoBox() {
       timeCap: timeCap || undefined,
       duracao: duracao || undefined,
       data: new Date(data),
+      videoYoutubeUrl: videoYoutubeUrl || undefined,
     };
 
     if (editingWod) {
@@ -271,6 +275,20 @@ export default function GestaoBox() {
                             rows={8}
                             required
                           />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="videoYoutubeUrl">Vídeo do YouTube (opcional)</Label>
+                          <Input
+                            id="videoYoutubeUrl"
+                            type="url"
+                            value={videoYoutubeUrl}
+                            onChange={(e) => setVideoYoutubeUrl(e.target.value)}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Cole o link do vídeo demonstrativo do YouTube
+                          </p>
                         </div>
 
                         <div className="flex gap-4 pt-4">

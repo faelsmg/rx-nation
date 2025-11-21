@@ -78,6 +78,13 @@
       "when": 1763669372092,
       "tag": "0010_clear_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1763723275855,
+      "tag": "0011_glamorous_smasher",
+      "breakpoints": true
     }
   ]
 }

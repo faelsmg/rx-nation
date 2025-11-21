@@ -56,6 +56,7 @@ export const wods = mysqlTable("wods", {
   timeCap: int("timeCap"), // em minutos
   data: timestamp("data").notNull(), // data do WOD
   oficial: boolean("oficial").default(false).notNull(), // se é da planilha oficial da liga
+  videoYoutubeUrl: text("videoYoutubeUrl"), // URL do vídeo demonstrativo no YouTube
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
