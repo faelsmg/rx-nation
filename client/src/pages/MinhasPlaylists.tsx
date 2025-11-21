@@ -12,9 +12,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { List, Plus, Trash2, Video, Edit } from "lucide-react";
+import { List, Plus, Trash2, Video, Edit, Lock, Users, Crown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function MinhasPlaylists() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -22,6 +25,10 @@ export default function MinhasPlaylists() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<any>(null);
   const [playlistName, setPlaylistName] = useState("");
   const [playlistDesc, setPlaylistDesc] = useState("");
+  const [playlistTipo, setPlaylistTipo] = useState<"pessoal" | "box" | "premium">("pessoal");
+  const [playlistPreco, setPlaylistPreco] = useState("");
+  
+  const { user } = useAuth();
 
   const { data: playlists, isLoading } = trpc.playlists.getByUser.useQuery();
   const { data: playlistDetails } = trpc.playlists.getById.useQuery(
@@ -41,10 +48,26 @@ export default function MinhasPlaylists() {
       return;
     }
 
+    // Validar tipo box
+    if (playlistTipo === "box" && user?.role !== "box_master" && user?.role !== "admin_liga") {
+      toast.error("É necessário ser Box Master para criar playlists do tipo Box");
+      return;
+    }
+
+    // Validar preço premium
+    if (playlistTipo === "premium" && (!playlistPreco || Number(playlistPreco) <= 0)) {
+      toast.error("Digite um preço válido para playlists Premium");
+      return;
+    }
+
     try {
       await createMutation.mutateAsync({
         nome: playlistName,
         descricao: playlistDesc || undefined,
+        tipo: playlistTipo,
+        publica: playlistTipo === "box", // Box sempre pública para membros
+        preco: playlistTipo === "premium" ? Math.round(Number(playlistPreco) * 100) : undefined,
+        boxId: playlistTipo === "box" && user?.boxId ? user.boxId : undefined,
       });
 
       toast.success("Playlist criada!");
@@ -52,6 +75,8 @@ export default function MinhasPlaylists() {
       setCreateDialogOpen(false);
       setPlaylistName("");
       setPlaylistDesc("");
+      setPlaylistTipo("pessoal");
+      setPlaylistPreco("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar playlist");
     }
@@ -151,7 +176,21 @@ export default function MinhasPlaylists() {
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>{playlist.nome}</span>
+                    <div className="flex items-center gap-2">
+                      <span>{playlist.nome}</span>
+                      {playlist.tipo === "box" && (
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          Box
+                        </Badge>
+                      )}
+                      {playlist.tipo === "premium" && (
+                        <Badge variant="default" className="flex items-center gap-1">
+                          <Crown className="w-3 h-3" />
+                          Premium
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="ghost"
@@ -284,6 +323,57 @@ export default function MinhasPlaylists() {
                   placeholder="Ex: Vídeos que quero revisar"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tipo">Tipo de Playlist</Label>
+                <Select value={playlistTipo} onValueChange={(v: any) => setPlaylistTipo(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pessoal">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        Pessoal (apenas você)
+                      </div>
+                    </SelectItem>
+                    {(user?.role === "box_master" || user?.role === "admin_liga") && (
+                      <SelectItem value="box">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          Box (membros do seu box)
+                        </div>
+                      </SelectItem>
+                    )}
+                    <SelectItem value="premium">
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-4 h-4" />
+                        Premium (paga)
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {playlistTipo === "pessoal" && "Apenas você pode ver esta playlist"}
+                  {playlistTipo === "box" && "Todos os membros do seu box poderão ver e copiar"}
+                  {playlistTipo === "premium" && "Outros usuários pagarão para acessar"}
+                </p>
+              </div>
+
+              {playlistTipo === "premium" && (
+                <div className="space-y-2">
+                  <Label htmlFor="preco">Preço (R$)</Label>
+                  <Input
+                    id="preco"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={playlistPreco}
+                    onChange={(e) => setPlaylistPreco(e.target.value)}
+                    placeholder="Ex: 29.90"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={handleCreatePlaylist} disabled={createMutation.isPending}>

@@ -610,6 +610,10 @@ export const playlists = mysqlTable("playlists", {
   userId: int("userId").notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
+  tipo: mysqlEnum("tipo", ["pessoal", "box", "premium"]).default("pessoal").notNull(),
+  publica: boolean("publica").default(false).notNull(),
+  preco: int("preco"), // em centavos para tipo premium
+  boxId: int("boxId"), // para tipo box
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

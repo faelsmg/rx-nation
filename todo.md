@@ -1277,3 +1277,12 @@
 - [x] Criar página "Minhas Playlists"
 - [x] Modal de seleção/criação de playlist
 - [x] Testar funcionalidade completa
+
+## Sistema de Tipos de Playlist (Pessoal, Box, Premium)
+- [x] Adicionar campos tipo, publica, preco, boxId no schema
+- [x] Atualizar procedures tRPC com validações de acesso
+- [x] Modificar formulários de criação/edição
+- [x] Criar página "Descobrir Playlists"
+- [x] Implementar função de copiar playlist
+- [x] Adicionar badges visuais de tipo
+- [x] Testar controle de acesso

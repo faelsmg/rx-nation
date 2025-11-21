@@ -40,6 +40,7 @@ import {
   LineChart,
   BookOpen,
   Video,
+  Compass,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
@@ -87,6 +88,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: BookOpen, label: "Biblioteca de Vídeos", path: "/biblioteca-videos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Video, label: "WODs Famosos", path: "/wods-famosos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: LineChart, label: "Minhas Playlists", path: "/minhas-playlists", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: Compass, label: "Descobrir Playlists", path: "/descobrir-playlists", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Calendar, label: "Eventos", path: "/calendario-eventos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: QrCode, label: "Meu QR Code", path: "/meu-qrcode", roles: ["atleta"] },
     { icon: ScanLine, label: "Scanner Check-in", path: "/scanner-qrcode", roles: ["box_master", "admin_liga"] },

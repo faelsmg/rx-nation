@@ -6872,3 +6872,46 @@ export async function deletePlaylist(id: number) {
   
   return { success: true };
 }
+
+
+export async function getBoxPlaylists(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      p.*,
+      u.name as criador_nome,
+      COUNT(pi.id) as total_itens
+    FROM playlists p
+    INNER JOIN users u ON p.userId = u.id
+    LEFT JOIN playlist_items pi ON p.id = pi.playlistId
+    WHERE p.tipo = 'box' 
+    AND p.boxId = ${boxId}
+    AND p.publica = TRUE
+    GROUP BY p.id
+    ORDER BY p.updatedAt DESC
+  `);
+
+  return rows as any[];
+}
+
+export async function getPremiumPlaylists() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      p.*,
+      u.name as criador_nome,
+      COUNT(pi.id) as total_itens
+    FROM playlists p
+    INNER JOIN users u ON p.userId = u.id
+    LEFT JOIN playlist_items pi ON p.id = pi.playlistId
+    WHERE p.tipo = 'premium'
+    GROUP BY p.id
+    ORDER BY p.updatedAt DESC
+  `);
+
+  return rows as any[];
+}

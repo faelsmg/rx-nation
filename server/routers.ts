@@ -2877,8 +2877,27 @@ export const appRouter = router({
       .input(z.object({
         nome: z.string(),
         descricao: z.string().optional(),
+        tipo: z.enum(["pessoal", "box", "premium"]).default("pessoal"),
+        publica: z.boolean().default(false),
+        preco: z.number().optional(),
+        boxId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Validar tipo box: apenas box_master pode criar
+        if (input.tipo === "box" && ctx.user.role !== "box_master" && ctx.user.role !== "admin_liga") {
+          throw new Error("É necessário ser Box Master para criar playlists do tipo Box");
+        }
+        
+        // Validar boxId para tipo box
+        if (input.tipo === "box" && !input.boxId) {
+          throw new Error("boxId é obrigatório para playlists do tipo Box");
+        }
+        
+        // Validar preço para tipo premium
+        if (input.tipo === "premium" && (!input.preco || input.preco <= 0)) {
+          throw new Error("Preço é obrigatório para playlists Premium");
+        }
+        
         return db.createPlaylist({
           userId: ctx.user.id,
           ...input,
@@ -2891,15 +2910,25 @@ export const appRouter = router({
         return db.getPlaylistsByUser(ctx.user.id);
       }),
 
-    // Obter playlist com itens
+    // Obter playlist com itens (com controle de acesso)
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
         const playlist = await db.getPlaylistById(input.id);
-        if (!playlist || playlist.userId !== ctx.user.id) {
+        if (!playlist) {
           throw new Error("Playlist não encontrada");
         }
-        return playlist;
+        
+        // Verificar permissão de acesso
+        const isOwner = playlist.userId === ctx.user.id;
+        const isBoxMember = playlist.tipo === "box" && playlist.boxId === ctx.user.boxId;
+        const isPremiumPaid = playlist.tipo === "premium"; // TODO: verificar pagamento
+        
+        if (!isOwner && !isBoxMember && !isPremiumPaid) {
+          throw new Error("Você não tem permissão para acessar esta playlist");
+        }
+        
+        return { ...playlist, isOwner };
       }),
 
     // Adicionar item à playlist
@@ -2943,6 +2972,9 @@ export const appRouter = router({
         id: z.number(),
         nome: z.string().optional(),
         descricao: z.string().optional(),
+        tipo: z.enum(["pessoal", "box", "premium"]).optional(),
+        publica: z.boolean().optional(),
+        preco: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const playlist = await db.getPlaylistById(input.id);
@@ -2962,6 +2994,73 @@ export const appRouter = router({
           throw new Error("Playlist não encontrada");
         }
         return db.deletePlaylist(input.id);
+      }),
+
+    // Descobrir playlists do box
+    getBoxPlaylists: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.boxId) {
+          return [];
+        }
+        return db.getBoxPlaylists(ctx.user.boxId);
+      }),
+
+    // Descobrir playlists premium
+    getPremiumPlaylists: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPremiumPlaylists();
+      }),
+
+    // Copiar playlist para minha conta
+    copy: protectedProcedure
+      .input(z.object({
+        playlistId: z.number(),
+        novoNome: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const originalPlaylist = await db.getPlaylistById(input.playlistId);
+        if (!originalPlaylist) {
+          throw new Error("Playlist não encontrada");
+        }
+
+        // Verificar se tem permissão para copiar
+        const isOwner = originalPlaylist.userId === ctx.user.id;
+        const isBoxPlaylist = originalPlaylist.tipo === "box" && originalPlaylist.boxId === ctx.user.boxId;
+        const isPremiumPlaylist = originalPlaylist.tipo === "premium"; // TODO: verificar pagamento
+
+        if (isOwner) {
+          throw new Error("Você já é o dono desta playlist");
+        }
+
+        if (!isBoxPlaylist && !isPremiumPlaylist) {
+          throw new Error("Você não tem permissão para copiar esta playlist");
+        }
+
+        // Criar cópia da playlist
+        const novaPlaylist = await db.createPlaylist({
+          userId: ctx.user.id,
+          nome: input.novoNome || `${originalPlaylist.nome} (Cópia)`,
+          descricao: originalPlaylist.descricao,
+          tipo: "pessoal", // Cópia sempre é pessoal
+          publica: false,
+        });
+
+        // Copiar todos os itens
+        if (originalPlaylist.items && originalPlaylist.items.length > 0) {
+          for (const item of originalPlaylist.items) {
+            await db.addPlaylistItem({
+              playlistId: novaPlaylist.id,
+              tipo: item.tipo,
+              videoId: item.videoId,
+              titulo: item.titulo,
+              descricao: item.descricao,
+              videoUrl: item.videoUrl,
+              categoria: item.categoria,
+            });
+          }
+        }
+
+        return novaPlaylist;
       }),
   }),
 });
