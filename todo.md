@@ -1520,3 +1520,12 @@
 - [x] Criar versão monocromática preta
 - [x] Organizar todos os arquivos em pasta dedicada
 - [x] Atualizar documentação de identidade visual
+
+
+## Manual da Marca RX Nation
+- [x] Copiar logos aprovados para pasta oficial
+- [x] Remover logos não aprovados
+- [x] Criar manual da marca completo (identidade, cores, tipografia, aplicações)
+- [x] Adicionar exemplos de uso correto e incorreto
+- [x] Incluir área de proteção e grid de construção
+- [ ] Salvar checkpoint com manual finalizado
