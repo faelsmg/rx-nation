@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { MessageCircle, Search, Send, Users, Check, CheckCheck } from "lucide-react";
+import { MessageCircle, Search, Send, Users, Check, CheckCheck, Paperclip, X, FileText, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -23,7 +23,11 @@ export default function MensagensDiretas() {
   const [messageText, setMessageText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
   const utils = trpc.useUtils();
@@ -47,6 +51,7 @@ export default function MensagensDiretas() {
   const sendMessageMutation = trpc.chat.enviarMensagem.useMutation();
   const markAsReadMutation = trpc.chat.marcarComoLida.useMutation();
   const createConversationMutation = trpc.chat.getOrCreateConversaIndividual.useMutation();
+  const uploadFileMutation = trpc.chat.uploadArquivo.useMutation();
 
   // Auto-scroll para última mensagem
   useEffect(() => {
@@ -60,19 +65,95 @@ export default function MensagensDiretas() {
     }
   }, [selectedConversation]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamanho (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande! Máximo 10MB");
+      return;
+    }
+
+    // Validar tipo
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Tipo de arquivo não suportado");
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Preview para imagens
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  const handleCancelFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedConversation) return;
+    if ((!messageText.trim() && !selectedFile) || !selectedConversation) return;
 
     try {
+      setIsUploading(true);
+      let arquivoUrl: string | undefined;
+
+      // Upload de arquivo se houver
+      if (selectedFile) {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(selectedFile);
+        });
+
+        const base64Data = await base64Promise;
+        const uploadResult = await uploadFileMutation.mutateAsync({
+          fileName: selectedFile.name,
+          fileData: base64Data,
+          mimeType: selectedFile.type,
+        });
+        arquivoUrl = uploadResult.url;
+      }
+
+      // Enviar mensagem
       await sendMessageMutation.mutateAsync({
         conversaId: selectedConversation.id,
-        conteudo: messageText,
+        conteudo: messageText.trim() || (selectedFile?.name || 'Arquivo'),
+        tipo: selectedFile ? (selectedFile.type.startsWith('image/') ? 'imagem' : 'arquivo') : 'texto',
+        arquivoUrl,
       });
+
       setMessageText("");
+      handleCancelFile();
       utils.chat.getMensagens.invalidate();
       utils.chat.getMinhasConversas.invalidate();
     } catch (error: any) {
       toast.error(error.message || "Erro ao enviar mensagem");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -263,7 +344,38 @@ export default function MensagensDiretas() {
                                     : "bg-muted"
                                 }`}
                               >
-                                <p className="text-sm">{msg.conteudo}</p>
+                                {/* Anexo de Imagem */}
+                                {msg.tipo === 'imagem' && msg.arquivo_url && (
+                                  <a href={msg.arquivo_url} target="_blank" rel="noopener noreferrer">
+                                    <img
+                                      src={msg.arquivo_url}
+                                      alt="Imagem"
+                                      className="max-w-full rounded mb-2 cursor-pointer hover:opacity-90"
+                                      style={{ maxHeight: '300px' }}
+                                    />
+                                  </a>
+                                )}
+
+                                {/* Anexo de Arquivo */}
+                                {msg.tipo === 'arquivo' && msg.arquivo_url && (
+                                  <a
+                                    href={msg.arquivo_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-2 p-2 rounded mb-2 ${
+                                      isOwnMessage ? 'bg-primary-foreground/10' : 'bg-background'
+                                    }`}
+                                  >
+                                    <FileText className="w-5 h-5" />
+                                    <span className="text-sm truncate">{msg.conteudo}</span>
+                                  </a>
+                                )}
+
+                                {/* Texto da Mensagem */}
+                                {msg.tipo === 'texto' && (
+                                  <p className="text-sm">{msg.conteudo}</p>
+                                )}
+
                                 <div
                                   className={`flex items-center gap-1 mt-1 text-xs ${
                                     isOwnMessage
@@ -297,7 +409,42 @@ export default function MensagensDiretas() {
 
                   {/* Input de Mensagem */}
                   <div className="border-t p-4">
+                    {/* Preview de Arquivo */}
+                    {(selectedFile || filePreview) && (
+                      <div className="mb-3 p-3 bg-muted rounded-lg flex items-center gap-3">
+                        {filePreview ? (
+                          <img src={filePreview} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                        ) : (
+                          <FileText className="w-8 h-8 text-muted-foreground" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{selectedFile?.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedFile && `${(selectedFile.size / 1024).toFixed(1)} KB`}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={handleCancelFile}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/*,video/*,application/pdf,.doc,.docx"
+                        onChange={handleFileSelect}
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                      >
+                        <Paperclip className="w-4 h-4" />
+                      </Button>
                       <Input
                         placeholder="Digite sua mensagem..."
                         value={messageText}
@@ -308,12 +455,17 @@ export default function MensagensDiretas() {
                             handleSendMessage();
                           }
                         }}
+                        disabled={isUploading}
                       />
                       <Button
                         onClick={handleSendMessage}
-                        disabled={!messageText.trim() || sendMessageMutation.isPending}
+                        disabled={(!messageText.trim() && !selectedFile) || isUploading}
                       >
-                        <Send className="w-4 h-4" />
+                        {isUploading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>

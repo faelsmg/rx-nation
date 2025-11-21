@@ -2891,6 +2891,30 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getUsuariosDigitando(input.conversaId);
       }),
+
+    // Upload de arquivo para chat
+    uploadArquivo: protectedProcedure
+      .input(z.object({
+        fileName: z.string(),
+        fileData: z.string(), // Base64
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { storagePut } = await import('./storage');
+        
+        // Converter base64 para buffer
+        const buffer = Buffer.from(input.fileData, 'base64');
+        
+        // Gerar nome único
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(7);
+        const fileKey = `chat-files/${ctx.user.id}/${timestamp}-${randomSuffix}-${input.fileName}`;
+        
+        // Upload para S3
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        
+        return { url, fileKey };
+      }),
   }),
 
   // ===== PLAYLISTS PERSONALIZADAS =====

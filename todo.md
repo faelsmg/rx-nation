@@ -1338,3 +1338,34 @@
 - [ ] Enviar push quando atleta recebe badge
 - [ ] Enviar push para novas mensagens no chat
 - [ ] Testar notificações em diferentes navegadores
+
+
+## Upload de Anexos no Chat
+- [x] Criar procedure tRPC para upload de arquivos
+- [x] Integrar com storage S3 existente
+- [x] Adicionar input de arquivo na interface de chat
+- [x] Implementar preview de imagens antes do envio
+- [x] Validação de tamanho (max 10MB) e tipos permitidos
+- [x] Exibir anexos nas mensagens (imagens, documentos)
+- [x] Adicionar indicador de progresso de upload
+
+## Dashboard de Analytics Avançado
+- [x] Instalar biblioteca Chart.js
+- [x] Criar página de Analytics com tabs
+- [x] Gráfico de evolução de pontos ao longo do tempo
+- [x] Gráfico de frequência de check-ins (heatmap)
+- [x] Comparativo de performance entre períodos
+- [x] Gráfico de distribuição de badges
+- [x] Filtros de período (7 dias, 30 dias, 90 dias, ano)
+- [x] Exportar gráficos como imagem
+
+## Notificações Push Web
+- [ ] Criar service worker (sw.js) no public
+- [ ] Registrar service worker no main.tsx
+- [ ] Solicitar permissão de notificações ao usuário
+- [ ] Criar tabela push_subscriptions no schema
+- [ ] Implementar endpoint para salvar subscription
+- [ ] Criar função para enviar push notification
+- [ ] Trigger push ao publicar novo WOD
+- [ ] Trigger push ao atleta receber badge
+- [ ] Testar em diferentes navegadores

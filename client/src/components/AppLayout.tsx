@@ -74,6 +74,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: Dumbbell, label: "WOD do Dia", path: "/wod", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: History, label: "Histórico", path: "/historico", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: TrendingUp, label: "Análise de Performance", path: "/analise-performance", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: BarChart3, label: "Analytics Avançado", path: "/analytics-avancado", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Trophy, label: "Rankings", path: "/rankings", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Award, label: "Badges", path: "/badges", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Target, label: "Metas", path: "/metas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
