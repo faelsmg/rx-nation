@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Users, DollarSign, Trophy, Medal, CheckCircle2, XCircle } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Trophy, Medal, CheckCircle2, XCircle, Clock } from "lucide-react";
+import GestaoBaterias from "@/components/GestaoBaterias";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -43,6 +44,11 @@ export default function CampeonatoDetalhes() {
     { campeonatoId },
     { enabled: !!campeonato }
   );
+  const { data: minhaBateria } = trpc.baterias.minhaBateria.useQuery(
+    { campeonatoId },
+    { enabled: !!user && user.role === 'atleta' }
+  );
+
   const { data: leaderboard } = trpc.campeonatos.leaderboard.useQuery(
     {
       campeonatoId,
@@ -244,9 +250,44 @@ export default function CampeonatoDetalhes() {
           </CardContent>
         </Card>
 
+        {/* Minha Bateria (Atleta) */}
+        {user?.role === 'atleta' && minhaBateria && (
+          <Card className="border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                Sua Bateria
+              </CardTitle>
+              <CardDescription>
+                Você foi alocado em uma bateria!
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Nome</p>
+                  <p className="font-medium">{minhaBateria.bateriaNome || `Bateria ${minhaBateria.bateriaNumero}`}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Horário</p>
+                  <p className="font-medium">
+                    {format(new Date(minhaBateria.bateriaHorario), "dd/MM/yy HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+                {minhaBateria.posicao && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Posição/Lane</p>
+                    <p className="font-medium">{minhaBateria.posicao}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="leaderboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="leaderboard">
               <Trophy className="h-4 w-4 mr-2" />
               Leaderboard
@@ -255,6 +296,12 @@ export default function CampeonatoDetalhes() {
               <Users className="h-4 w-4 mr-2" />
               Inscritos ({inscricoes?.length || 0})
             </TabsTrigger>
+            {(user?.role === 'admin_liga' || user?.role === 'box_master') && (
+              <TabsTrigger value="baterias">
+                <Clock className="h-4 w-4 mr-2" />
+                Baterias
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Leaderboard */}
@@ -394,6 +441,13 @@ export default function CampeonatoDetalhes() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Baterias (Admin/Box Master) */}
+          {(user?.role === 'admin_liga' || user?.role === 'box_master') && (
+            <TabsContent value="baterias">
+              <GestaoBaterias campeonatoId={campeonatoId} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>

@@ -1637,3 +1637,42 @@
 - [ ] Link no sidebar para Campeonatos
 - [x] Navegação entre listagem e detalhes
 - [x] Proteção de rota admin (apenas admin_liga/box_master)
+
+
+## Sistema de Baterias (Heats) - Sprint 3
+### Schema
+- [x] Adicionar campo nome em baterias
+- [x] Criar tabela atletas_baterias (many-to-many)
+- [x] Executar db:push
+
+### Backend - Procedures tRPC
+- [x] Criar procedure: baterias.create (criar bateria)
+- [x] Criar procedure: baterias.update (editar bateria)
+- [x] Criar procedure: baterias.delete (deletar bateria)
+- [x] Criar procedure: baterias.listByCampeonato (listar baterias do campeonato)
+- [x] Criar procedure: baterias.addAtleta (alocar atleta na bateria)
+- [x] Criar procedure: baterias.removeAtleta (remover atleta da bateria)
+- [x] Criar procedure: baterias.minhaBateria (atleta ver sua bateria)
+- [x] Adicionar validações (capacidade, horário, duplicidade)
+- [x] Escrever testes automatizados (10/10 testes passando)
+
+### Interface Admin
+- [x] Criar componente GestãoBaterias.tsx
+- [x] Formulário criar/editar bateria (nome, horário, capacidade, WOD)
+- [x] Listagem de baterias do campeonato
+- [x] Interface de alocação de atletas (select)
+- [x] Visualização de atletas por bateria
+- [x] Ações: Editar, Deletar, Adicionar/Remover atletas
+- [x] Integrar aba "Baterias" na página de detalhes do campeonato
+
+### Interface Atleta
+- [x] Adicionar seção "Minha Bateria" na página de detalhes
+- [x] Card com informações da bateria (horário, posição)
+- [x] Badge de status (alocado/não alocado)
+- [ ] Notificação quando for alocado em bateria (futuro)
+
+### Testes e Entrega
+- [x] Rodar todos os testes (10/10 passando)
+- [x] Testar fluxo completo (criar bateria, alocar atletas, visualizar)
+- [x] Verificar permissões (admin vs atleta)
+- [x] Salvar checkpoint

@@ -676,6 +676,204 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== BATERIAS (HEATS) =====
+  baterias: router({
+    // Criar bateria (admin/box_master)
+    create: protectedProcedure
+      .input(z.object({
+        campeonatoId: z.number(),
+        wodId: z.number().optional(),
+        nome: z.string().optional(),
+        numero: z.number(),
+        horario: z.date(),
+        capacidade: z.number().default(20),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verifica permissão
+        if (ctx.user.role !== 'admin_liga' && ctx.user.role !== 'box_master') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas admins e box masters podem criar baterias',
+          });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(input.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode criar baterias em campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.criarBateria(input);
+      }),
+
+    // Listar baterias de um campeonato
+    listByCampeonato: publicProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .query(async ({ input }) => {
+        return db.listarBateriasPorCampeonato(input.campeonatoId);
+      }),
+
+    // Editar bateria
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        wodId: z.number().optional(),
+        nome: z.string().optional(),
+        numero: z.number().optional(),
+        horario: z.date().optional(),
+        capacidade: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+
+        // Verifica permissão
+        if (ctx.user.role !== 'admin_liga' && ctx.user.role !== 'box_master') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas admins e box masters podem editar baterias',
+          });
+        }
+
+        const bateria = await db.getBateriaById(id);
+        if (!bateria) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Bateria não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(bateria.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode editar baterias de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.atualizarBateria(id, data);
+      }),
+
+    // Deletar bateria
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Verifica permissão
+        if (ctx.user.role !== 'admin_liga' && ctx.user.role !== 'box_master') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas admins e box masters podem deletar baterias',
+          });
+        }
+
+        const bateria = await db.getBateriaById(input.id);
+        if (!bateria) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Bateria não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(bateria.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode deletar baterias de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.deletarBateria(input.id);
+      }),
+
+    // Adicionar atleta na bateria
+    addAtleta: protectedProcedure
+      .input(z.object({
+        bateriaId: z.number(),
+        userId: z.number(),
+        inscricaoId: z.number().optional(),
+        posicao: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verifica permissão
+        if (ctx.user.role !== 'admin_liga' && ctx.user.role !== 'box_master') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas admins e box masters podem alocar atletas',
+          });
+        }
+
+        const bateria = await db.getBateriaById(input.bateriaId);
+        if (!bateria) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Bateria não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(bateria.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode alocar atletas em baterias de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.adicionarAtletaNaBateria(input);
+      }),
+
+    // Remover atleta da bateria
+    removeAtleta: protectedProcedure
+      .input(z.object({
+        bateriaId: z.number(),
+        userId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verifica permissão
+        if (ctx.user.role !== 'admin_liga' && ctx.user.role !== 'box_master') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas admins e box masters podem remover atletas',
+          });
+        }
+
+        const bateria = await db.getBateriaById(input.bateriaId);
+        if (!bateria) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Bateria não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(bateria.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode remover atletas de baterias de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.removerAtletaDaBateria(input.bateriaId, input.userId);
+      }),
+
+    // Listar atletas de uma bateria
+    listAtletas: publicProcedure
+      .input(z.object({ bateriaId: z.number() }))
+      .query(async ({ input }) => {
+        return db.listarAtletasDaBateria(input.bateriaId);
+      }),
+
+    // Minha bateria (atleta)
+    minhaBateria: protectedProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getBateriaPorAtleta(ctx.user.id, input.campeonatoId);
+      }),
+  }),
+
   // ===== PONTUAÇÕES E GAMIFICAÇÃO =====
   pontuacoes: router({
     getByUser: protectedProcedure.query(async ({ ctx }) => {

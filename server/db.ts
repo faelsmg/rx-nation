@@ -19,6 +19,8 @@ import {
   InsertInscricaoCampeonato,
   baterias,
   InsertBateria,
+  atletasBaterias,
+  InsertAtletaBateria,
   pontuacoes,
   InsertPontuacao,
   badges,
@@ -7276,4 +7278,165 @@ export async function getLeaderboardCampeonato(filters: {
 
   const results = await query.orderBy(desc(inscricoesCampeonatos.pontos));
   return results;
+}
+
+
+// ============================================
+// BATERIAS (HEATS)
+// ============================================
+
+export async function criarBateria(data: InsertBateria) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(baterias).values(data);
+  const insertId = Number(result.insertId);
+  
+  const [bateria] = await db.select().from(baterias).where(eq(baterias.id, insertId)).limit(1);
+  return bateria;
+}
+
+export async function listarBateriasPorCampeonato(campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select()
+    .from(baterias)
+    .where(eq(baterias.campeonatoId, campeonatoId))
+    .orderBy(baterias.horario, baterias.numero);
+  
+  return result;
+}
+
+export async function getBateriaById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [bateria] = await db.select().from(baterias).where(eq(baterias.id, id)).limit(1);
+  return bateria;
+}
+
+export async function atualizarBateria(id: number, data: Partial<InsertBateria>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(baterias).set(data).where(eq(baterias.id, id));
+  return getBateriaById(id);
+}
+
+export async function deletarBateria(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Primeiro remove todos os atletas da bateria
+  await db.delete(atletasBaterias).where(eq(atletasBaterias.bateriaId, id));
+  
+  // Depois deleta a bateria
+  await db.delete(baterias).where(eq(baterias.id, id));
+  return true;
+}
+
+// Atletas em Baterias
+
+export async function adicionarAtletaNaBateria(data: InsertAtletaBateria) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verifica se já está alocado
+  const [existente] = await db
+    .select()
+    .from(atletasBaterias)
+    .where(
+      and(
+        eq(atletasBaterias.bateriaId, data.bateriaId),
+        eq(atletasBaterias.userId, data.userId)
+      )
+    )
+    .limit(1);
+
+  if (existente) {
+    throw new Error("Atleta já está alocado nesta bateria");
+  }
+
+  // Verifica capacidade
+  const [bateria] = await db.select().from(baterias).where(eq(baterias.id, data.bateriaId)).limit(1);
+  if (!bateria) throw new Error("Bateria não encontrada");
+
+  const atletasCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(atletasBaterias)
+    .where(eq(atletasBaterias.bateriaId, data.bateriaId));
+
+  if (atletasCount[0]?.count >= bateria.capacidade) {
+    throw new Error("Bateria já está com capacidade máxima");
+  }
+
+  const [result] = await db.insert(atletasBaterias).values(data);
+  return result;
+}
+
+export async function removerAtletaDaBateria(bateriaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .delete(atletasBaterias)
+    .where(
+      and(
+        eq(atletasBaterias.bateriaId, bateriaId),
+        eq(atletasBaterias.userId, userId)
+      )
+    );
+  
+  return true;
+}
+
+export async function listarAtletasDaBateria(bateriaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db
+    .select({
+      id: atletasBaterias.id,
+      userId: atletasBaterias.userId,
+      userName: users.name,
+      userEmail: users.email,
+      posicao: atletasBaterias.posicao,
+      inscricaoId: atletasBaterias.inscricaoId,
+      createdAt: atletasBaterias.createdAt,
+    })
+    .from(atletasBaterias)
+    .leftJoin(users, eq(atletasBaterias.userId, users.id))
+    .where(eq(atletasBaterias.bateriaId, bateriaId))
+    .orderBy(atletasBaterias.posicao, atletasBaterias.createdAt);
+
+  return result;
+}
+
+export async function getBateriaPorAtleta(userId: number, campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select({
+      bateriaId: baterias.id,
+      bateriaNome: baterias.nome,
+      bateriaNumero: baterias.numero,
+      bateriaHorario: baterias.horario,
+      bateriaCapacidade: baterias.capacidade,
+      wodId: baterias.wodId,
+      posicao: atletasBaterias.posicao,
+    })
+    .from(atletasBaterias)
+    .innerJoin(baterias, eq(atletasBaterias.bateriaId, baterias.id))
+    .where(
+      and(
+        eq(atletasBaterias.userId, userId),
+        eq(baterias.campeonatoId, campeonatoId)
+      )
+    )
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
 }

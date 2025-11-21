@@ -169,6 +169,7 @@ export const baterias = mysqlTable("baterias", {
   id: int("id").autoincrement().primaryKey(),
   campeonatoId: int("campeonatoId").notNull(),
   wodId: int("wodId"), // WOD específico da bateria
+  nome: varchar("nome", { length: 255 }), // ex: "Bateria 1 - Manhã", "Heat A"
   numero: int("numero").notNull(), // número da bateria
   horario: timestamp("horario").notNull(),
   capacidade: int("capacidade").default(20).notNull(),
@@ -178,6 +179,21 @@ export const baterias = mysqlTable("baterias", {
 
 export type Bateria = typeof baterias.$inferSelect;
 export type InsertBateria = typeof baterias.$inferInsert;
+
+/**
+ * Atletas alocados em Baterias (many-to-many)
+ */
+export const atletasBaterias = mysqlTable("atletas_baterias", {
+  id: int("id").autoincrement().primaryKey(),
+  bateriaId: int("bateriaId").notNull(),
+  userId: int("userId").notNull(), // atleta
+  inscricaoId: int("inscricaoId"), // referência à inscrição no campeonato
+  posicao: int("posicao"), // posição/lane na bateria (opcional)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AtletaBateria = typeof atletasBaterias.$inferSelect;
+export type InsertAtletaBateria = typeof atletasBaterias.$inferInsert;
 
 /**
  * Pontuação/Gamificação
