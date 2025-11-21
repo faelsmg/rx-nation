@@ -633,6 +633,7 @@ export const playlistItems = mysqlTable("playlist_items", {
   descricao: text("descricao"),
   videoUrl: text("videoUrl").notNull(),
   categoria: varchar("categoria", { length: 100 }), // categoria do vídeo/wod
+  ordem: int("ordem").default(0).notNull(), // ordem de exibição
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -650,6 +651,33 @@ export const playlistsRelations = relations(playlists, ({ one, many }) => ({
 export const playlistItemsRelations = relations(playlistItems, ({ one }) => ({
   playlist: one(playlists, {
     fields: [playlistItems.playlistId],
+    references: [playlists.id],
+  }),
+}));
+
+
+/**
+ * Compras de Playlists Premium (via Stripe)
+ * Armazena apenas IDs essenciais conforme best practices do Stripe
+ */
+export const playlistPurchases = mysqlTable("playlist_purchases", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  playlistId: int("playlistId").notNull(),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }).notNull().unique(),
+  purchasedAt: timestamp("purchasedAt").defaultNow().notNull(),
+});
+
+export type PlaylistPurchase = typeof playlistPurchases.$inferSelect;
+export type InsertPlaylistPurchase = typeof playlistPurchases.$inferInsert;
+
+export const playlistPurchasesRelations = relations(playlistPurchases, ({ one }) => ({
+  user: one(users, {
+    fields: [playlistPurchases.userId],
+    references: [users.id],
+  }),
+  playlist: one(playlists, {
+    fields: [playlistPurchases.playlistId],
     references: [playlists.id],
   }),
 }));

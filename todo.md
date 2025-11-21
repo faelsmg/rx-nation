@@ -1286,3 +1286,27 @@
 - [x] Implementar função de copiar playlist
 - [x] Adicionar badges visuais de tipo
 - [x] Testar controle de acesso
+
+
+## Integração com Stripe para Playlists Premium
+- [x] Adicionar feature Stripe com webdev_add_feature
+- [x] Criar tabela playlist_purchases no schema
+- [x] Criar checkout session para compra de playlist
+- [x] Implementar webhook do Stripe para confirmar pagamento
+- [x] Atualizar validação de acesso em getById
+- [x] Adicionar botão "Comprar" funcional na página Descobrir
+
+## Ordenação Customizada de Vídeos (Drag & Drop)
+- [x] Instalar biblioteca dnd-kit
+- [x] Adicionar campo ordem na tabela playlist_items
+- [x] Criar procedure para reordenar itens
+- [x] Implementar drag & drop na página MinhasPlaylists
+- [x] Salvar nova ordem no backend
+
+## Gestão de Boxes para Admin da Liga
+- [x] Criar página de gestão de boxes
+- [x] CRUD de boxes (criar, editar, desativar)
+- [x] Visualizar métricas consolidadas por box
+- [x] Rankings cross-box (atletas, WODs, engajamento)
+- [x] Filtros e busca de boxes
+- [x] Adicionar rota e link no menu para admin_liga

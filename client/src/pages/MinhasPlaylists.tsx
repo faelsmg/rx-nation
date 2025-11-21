@@ -12,9 +12,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { List, Plus, Trash2, Video, Edit, Lock, Users, Crown } from "lucide-react";
+import { List, Plus, Trash2, Video, Edit, Lock, Users, Crown, GripVertical } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -40,7 +57,40 @@ export default function MinhasPlaylists() {
   const updateMutation = trpc.playlists.update.useMutation();
   const deleteMutation = trpc.playlists.delete.useMutation();
   const removeItemMutation = trpc.playlists.removeItem.useMutation();
+  const reorderItemsMutation = trpc.playlists.reorderItems.useMutation();
   const utils = trpc.useUtils();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || !playlistDetails || !playlistDetails.isOwner) return;
+
+    if (active.id !== over.id) {
+      const oldIndex = playlistDetails.items.findIndex((item: any) => item.id === active.id);
+      const newIndex = playlistDetails.items.findIndex((item: any) => item.id === over.id);
+
+      const newItems = arrayMove(playlistDetails.items, oldIndex, newIndex);
+      const itemIds = newItems.map((item: any) => item.id);
+
+      try {
+        await reorderItemsMutation.mutateAsync({
+          playlistId: playlistDetails.id,
+          itemIds,
+        });
+        utils.playlists.getById.invalidate({ id: playlistDetails.id });
+        toast.success("✅ Ordem atualizada!");
+      } catch (error: any) {
+        toast.error(error.message || "Erro ao reordenar");
+      }
+    }
+  };
 
   const handleCreatePlaylist = async () => {
     if (!playlistName.trim()) {
@@ -245,47 +295,29 @@ export default function MinhasPlaylists() {
             </CardHeader>
             <CardContent>
               {playlistDetails.items && playlistDetails.items.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {playlistDetails.items.map((item: any) => (
-                    <Card key={item.id} className="overflow-hidden">
-                      <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                        <iframe
-                          className="absolute top-0 left-0 w-full h-full"
-                          src={`https://www.youtube.com/embed/${getVideoId(item.videoUrl)}`}
-                          title={item.titulo}
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={playlistDetails.items.map((item: any) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {playlistDetails.items.map((item: any) => (
+                        <SortablePlaylistItem
+                          key={item.id}
+                          item={item}
+                          playlistId={playlistDetails.id}
+                          isOwner={playlistDetails.isOwner}
+                          onRemove={handleRemoveItem}
                         />
-                      </div>
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Video className="w-4 h-4 text-primary" />
-                          {item.titulo}
-                        </CardTitle>
-                        {item.descricao && (
-                          <CardDescription className="text-sm">{item.descricao}</CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          {item.categoria && (
-                            <span className="text-xs text-muted-foreground capitalize">
-                              {item.categoria}
-                            </span>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveItem(playlistDetails.id, item.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+
               ) : (
                 <p className="text-muted-foreground text-center py-8">
                   Esta playlist está vazia. Adicione vídeos da Biblioteca ou WODs Famosos!
@@ -419,5 +451,75 @@ export default function MinhasPlaylists() {
         </Dialog>
       </div>
     </AppLayout>
+  );
+}
+
+// Componente sortable para itens da playlist
+function SortablePlaylistItem({ item, playlistId, isOwner, onRemove }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const getVideoId = (url: string) => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=))([^&?]+)/);
+    return match ? match[1] : url;
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="overflow-hidden">
+      <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+        <iframe
+          className="absolute top-0 left-0 w-full h-full"
+          src={`https://www.youtube.com/embed/${getVideoId(item.videoUrl)}`}
+          title={item.titulo}
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          {isOwner && (
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+              <GripVertical className="w-4 h-4 text-muted-foreground" />
+            </div>
+          )}
+          <Video className="w-4 h-4 text-primary" />
+          {item.titulo}
+        </CardTitle>
+        {item.descricao && (
+          <CardDescription className="text-sm">{item.descricao}</CardDescription>
+        )}
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          {item.categoria && (
+            <span className="text-xs text-muted-foreground capitalize">
+              {item.categoria}
+            </span>
+          )}
+          {isOwner && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRemove(playlistId, item.id)}
+            >
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

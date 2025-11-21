@@ -54,6 +54,7 @@ import BibliotecaVideos from "./pages/BibliotecaVideos";
 import WODsFamosos from "./pages/WODsFamosos";
 import MinhasPlaylists from "./pages/MinhasPlaylists";
 import DescobrirPlaylists from "./pages/DescobrirPlaylists";
+import GestaoBoxesLiga from "./pages/GestaoBoxesLiga";
 
 function Router() {
   return (
@@ -92,6 +93,7 @@ function Router() {
       <Route path={"/wods-famosos"} component={WODsFamosos} />
       <Route path={"/minhas-playlists"} component={MinhasPlaylists} />
       <Route path={"/descobrir-playlists"} component={DescobrirPlaylists} />
+      <Route path={"/gestao-boxes-liga"} component={GestaoBoxesLiga} />
       <Route path={"/calendario-eventos"} component={CalendarioEventos} />
       <Route path={"/meu-qrcode"} component={MeuQRCode} />
       <Route path={"/scanner-qrcode"} component={ScannerQRCode} />

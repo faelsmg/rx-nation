@@ -1,0 +1,1 @@
+ALTER TABLE `playlist_items` ADD `ordem` int DEFAULT 0 NOT NULL;

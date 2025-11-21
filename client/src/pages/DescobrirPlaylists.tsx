@@ -14,9 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Compass, Users, Crown, Copy, Video } from "lucide-react";
+import { Compass, Users, Crown, Copy, Video, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function DescobrirPlaylists() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<any>(null);
@@ -32,6 +33,39 @@ export default function DescobrirPlaylists() {
 
   const copyMutation = trpc.playlists.copy.useMutation();
   const utils = trpc.useUtils();
+  const { user } = useAuth();
+
+  const handleBuyPlaylist = async (playlist: any) => {
+    if (!user) {
+      toast.error("Você precisa estar logado para comprar");
+      return;
+    }
+
+    try {
+      toast.info("💳 Redirecionando para checkout...");
+
+      const response = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playlistId: playlist.id,
+          userId: user.id,
+          userEmail: user.email,
+          userName: user.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        toast.error("Erro ao criar sessão de pagamento");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao processar pagamento");
+    }
+  };
 
   const handleCopyPlaylist = async () => {
     if (!selectedPlaylist) return;
@@ -202,13 +236,13 @@ export default function DescobrirPlaylists() {
                         </p>
                       </div>
                       <Button
-                        onClick={() => toast.info("Integração com Stripe em breve!")}
+                        onClick={() => handleBuyPlaylist(playlist)}
                         variant="default"
                         size="sm"
                         className="w-full"
                       >
-                        <Crown className="w-4 h-4 mr-2" />
-                        Comprar Acesso
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Comprar por {formatPrice(playlist.preco)}
                       </Button>
                     </CardContent>
                   </Card>

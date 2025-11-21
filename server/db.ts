@@ -45,6 +45,8 @@ import {
   InsertPlaylist,
   playlistItems,
   InsertPlaylistItem,
+  playlistPurchases,
+  InsertPlaylistPurchase,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -6826,7 +6828,7 @@ export async function getPlaylistById(id: number) {
   const itemsRows = await db.execute(sql`
     SELECT * FROM playlist_items 
     WHERE playlistId = ${id}
-    ORDER BY createdAt DESC
+    ORDER BY ordem ASC, createdAt DESC
   `);
 
   return {
@@ -6914,4 +6916,119 @@ export async function getPremiumPlaylists() {
   `);
 
   return rows as any[];
+}
+
+
+// ===== PLAYLIST PURCHASES =====
+
+export async function hasUserPurchasedPlaylist(userId: number, playlistId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db
+    .select()
+    .from(playlistPurchases)
+    .where(
+      and(
+        eq(playlistPurchases.userId, userId),
+        eq(playlistPurchases.playlistId, playlistId)
+      )
+    )
+    .limit(1);
+
+  return result.length > 0;
+}
+
+export async function getUserPurchases(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      pp.*,
+      p.nome as playlist_nome,
+      p.descricao as playlist_descricao,
+      u.name as criador_nome
+    FROM playlist_purchases pp
+    INNER JOIN playlists p ON pp.playlistId = p.id
+    INNER JOIN users u ON p.userId = u.id
+    WHERE pp.userId = ${userId}
+    ORDER BY pp.purchasedAt DESC
+  `);
+
+  return rows as any[];
+}
+
+
+export async function reorderPlaylistItems(playlistId: number, itemIds: number[]) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Atualizar ordem de cada item
+  for (let i = 0; i < itemIds.length; i++) {
+    await db
+      .update(playlistItems)
+      .set({ ordem: i })
+      .where(
+        and(
+          eq(playlistItems.id, itemIds[i]),
+          eq(playlistItems.playlistId, playlistId)
+        )
+      );
+  }
+
+  return { success: true };
+}
+
+
+export async function updateBox(id: number, data: Partial<InsertBox>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(boxes).set(data).where(eq(boxes.id, id));
+  return { success: true };
+}
+
+export async function deleteBox(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(boxes).set({ ativo: false }).where(eq(boxes.id, id));
+  return { success: true };
+}
+
+export async function getBoxesMetrics() {
+  const db = await getDb();
+  if (!db) return {
+    totalBoxes: 0,
+    totalAtletas: 0,
+    totalWods: 0,
+    avgEngajamento: 0,
+  };
+
+  const result = await db.execute(sql`
+    SELECT 
+      COUNT(DISTINCT b.id) as totalBoxes,
+      COUNT(DISTINCT u.id) as totalAtletas,
+      COUNT(DISTINCT w.id) as totalWods,
+      COALESCE(AVG(
+        (SELECT COUNT(*) FROM resultados_treinos rt 
+         WHERE rt.boxId = b.id AND rt.createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) * 100.0 /
+        NULLIF((SELECT COUNT(*) FROM wods w2 
+         WHERE w2.boxId = b.id AND w2.data >= DATE_SUB(NOW(), INTERVAL 30 DAY)), 0)
+      ), 0) as avgEngajamento
+    FROM boxes b
+    LEFT JOIN users u ON u.boxId = b.id
+    LEFT JOIN wods w ON w.boxId = b.id AND w.data >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    WHERE b.ativo = 1
+  `);
+
+  const row = (result as any[])[0];
+  
+  return {
+    totalBoxes: Number(row?.totalBoxes || 0),
+    totalAtletas: Number(row?.totalAtletas || 0),
+    totalWods: Number(row?.totalWods || 0),
+    avgEngajamento: Math.round(Number(row?.avgEngajamento || 0)),
+  };
 }
