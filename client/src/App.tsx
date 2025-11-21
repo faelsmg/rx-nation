@@ -63,6 +63,9 @@ import GestaoBoxesLiga from "./pages/GestaoBoxesLiga";
 import MensagensDiretas from "./pages/MensagensDiretas";
 import AnalyticsAvancado from "./pages/AnalyticsAvancado";
 import ArvoreConquistas from "./pages/ArvoreConquistas";
+import GestaoPremios from "./pages/GestaoPremios";
+import MeusPremios from "./pages/MeusPremios";
+import HistoricoPerformance from "./pages/HistoricoPerformance";
 
 function Router() {
   return (
@@ -110,6 +113,9 @@ function Router() {
       <Route path="/mensagens-diretas" component={MensagensDiretas} />
       <Route path="/analytics-avancado" component={AnalyticsAvancado} />
       <Route path="/arvore-conquistas" component={ArvoreConquistas} />
+      <Route path="/gestao-premios" component={GestaoPremios} />
+      <Route path="/meus-premios" component={MeusPremios} />
+      <Route path="/historico-performance" component={HistoricoPerformance} />
       <Route path={"/calendario-eventos"} component={CalendarioEventos} />
       <Route path={"/meu-qrcode"} component={MeuQRCode} />
       <Route path={"/scanner-qrcode"} component={ScannerQRCode} />

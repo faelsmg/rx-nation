@@ -971,6 +971,16 @@ export const appRouter = router({
       }),
   }),
 
+  // Histórico de Performance Individual (Atleta)
+  historicoPerformance: protectedProcedure
+    .input(z.object({
+      userId: z.number().optional(), // Se não informado, usa o próprio usuário
+    }))
+    .query(async ({ ctx, input }) => {
+      const userId = input.userId || ctx.user.id;
+      return db.getHistoricoPerformance(userId);
+    }),
+
   // Ranking Global Anual (Público)
   rankingGlobal: publicProcedure
     .input(z.object({

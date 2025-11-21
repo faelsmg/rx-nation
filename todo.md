@@ -1875,3 +1875,34 @@ NOTA: Backend completo (schema, migrations, procedures tRPC). Falta implementar 
 - [ ] Adicionar gráfico de posições médias por categoria
 - [ ] Adicionar comparação com média geral
 - [ ] Adicionar testes para queries de histórico
+
+
+## Novas Funcionalidades (Sprint 4)
+
+### 1. Interfaces de Premiação
+- [x] Criar página GestaoPremios.tsx (admin)
+- [x] Formulário para criar novos prêmios
+- [x] Botão para distribuir prêmios ao Top 3
+- [x] Criar página MeusPremios.tsx (atleta)
+- [x] Listar prêmios do atleta (resgatados e pendentes)
+- [x] Botão para resgatar prêmio
+- [x] Adicionar rotas no App.tsx
+
+### 2. Histórico de Performance Individual
+- [x] Criar query para evolução temporal do atleta
+- [x] Implementar cálculo de médias e tendências
+- [x] Criar página HistoricoPerformance.tsx
+- [x] Gráfico de pontos ao longo do tempo (Chart.js)
+- [x] Gráfico de posições médias por categoria
+- [x] Comparação com média geral
+- [x] Adicionar rota no App.tsx
+
+### 3. Integração WhatsApp Business
+- [ ] Pesquisar API oficial do WhatsApp Business - NÃO IMPLEMENTADO
+- [ ] Configurar credenciais da API - NÃO IMPLEMENTADO
+- [ ] Criar módulo de envio de mensagens - NÃO IMPLEMENTADO
+- [ ] Integrar com notificações existentes (inscrição, resultado, prêmio) - NÃO IMPLEMENTADO
+- [ ] Adicionar toggle para ativar/desativar WhatsApp - NÃO IMPLEMENTADO
+- [ ] Adicionar testes para integração WhatsApp - NÃO IMPLEMENTADO
+
+NOTA: Integração WhatsApp Business requer conta empresarial, aprovação Meta, configuração de webhooks e custos por mensagem. Recomenda-se implementar em fase futura com planejamento adequado.

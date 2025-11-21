@@ -7600,6 +7600,115 @@ export async function resgatarPremio(userId: number, premioUsuarioId: number) {
   };
 }
 
+// ========== HISTÓRICO DE PERFORMANCE ==========
+
+export async function getHistoricoPerformance(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar todos os resultados do atleta
+  const resultados = await db
+    .select({
+      campeonatoId: inscricoesCampeonatos.campeonatoId,
+      campeonatoNome: campeonatos.nome,
+      campeonatoData: campeonatos.dataInicio,
+      categoria: inscricoesCampeonatos.categoria,
+      posicao: resultadosAtletas.posicao,
+      pontos: resultadosAtletas.pontos,
+      tempo: resultadosAtletas.tempo,
+      createdAt: resultadosAtletas.createdAt,
+    })
+    .from(resultadosAtletas)
+    .innerJoin(
+      inscricoesCampeonatos,
+      eq(resultadosAtletas.inscricaoId, inscricoesCampeonatos.id)
+    )
+    .innerJoin(
+      campeonatos,
+      eq(inscricoesCampeonatos.campeonatoId, campeonatos.id)
+    )
+    .where(eq(inscricoesCampeonatos.userId, userId))
+    .orderBy(campeonatos.dataInicio);
+
+  if (resultados.length === 0) {
+    return {
+      totalCampeonatos: 0,
+      totalPontos: 0,
+      mediaPontos: 0,
+      mediaPosicao: 0,
+      melhorPosicao: null,
+      evolucaoTemporal: [],
+      porCategoria: [],
+    };
+  }
+
+  // Calcular estatísticas gerais
+  const totalCampeonatos = resultados.length;
+  const totalPontos = resultados.reduce((sum, r) => sum + (r.pontos || 0), 0);
+  const mediaPontos = totalPontos / totalCampeonatos;
+  const mediaPosicao =
+    resultados.reduce((sum, r) => sum + (r.posicao || 0), 0) / totalCampeonatos;
+  const melhorPosicao = Math.min(...resultados.map((r) => r.posicao || 999));
+
+  // Evolução temporal (agrupado por mês)
+  const evolucaoMap = new Map<string, { pontos: number; count: number; posicoes: number[] }>();
+
+  resultados.forEach((r) => {
+    const mes = new Date(r.campeonatoData).toISOString().slice(0, 7); // YYYY-MM
+    const atual = evolucaoMap.get(mes) || { pontos: 0, count: 0, posicoes: [] };
+    atual.pontos += r.pontos || 0;
+    atual.count += 1;
+    if (r.posicao) atual.posicoes.push(r.posicao);
+    evolucaoMap.set(mes, atual);
+  });
+
+  const evolucaoTemporal = Array.from(evolucaoMap.entries())
+    .map(([mes, data]) => ({
+      mes,
+      pontos: data.pontos,
+      mediaPontos: data.pontos / data.count,
+      mediaPosicao:
+        data.posicoes.length > 0
+          ? data.posicoes.reduce((a, b) => a + b, 0) / data.posicoes.length
+          : 0,
+      campeonatos: data.count,
+    }))
+    .sort((a, b) => a.mes.localeCompare(b.mes));
+
+  // Estatísticas por categoria
+  const categoriaMap = new Map<string, { pontos: number; count: number; posicoes: number[] }>();
+
+  resultados.forEach((r) => {
+    const cat = r.categoria || 'sem_categoria';
+    const atual = categoriaMap.get(cat) || { pontos: 0, count: 0, posicoes: [] };
+    atual.pontos += r.pontos || 0;
+    atual.count += 1;
+    if (r.posicao) atual.posicoes.push(r.posicao);
+    categoriaMap.set(cat, atual);
+  });
+
+  const porCategoria = Array.from(categoriaMap.entries()).map(([categoria, data]) => ({
+    categoria,
+    totalPontos: data.pontos,
+    mediaPontos: data.pontos / data.count,
+    mediaPosicao:
+      data.posicoes.length > 0
+        ? data.posicoes.reduce((a, b) => a + b, 0) / data.posicoes.length
+        : 0,
+    campeonatos: data.count,
+  }));
+
+  return {
+    totalCampeonatos,
+    totalPontos,
+    mediaPontos,
+    mediaPosicao,
+    melhorPosicao,
+    evolucaoTemporal,
+    porCategoria,
+  };
+}
+
 export async function getRankingGlobal(
   ano?: number,
   categoria?: "iniciante" | "intermediario" | "avancado" | "elite",
