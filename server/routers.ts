@@ -3548,6 +3548,149 @@ export const appRouter = router({
         return novaPlaylist;
       }),
   }),
+
+  // ==================== RESULTADOS E PONTUAÇÃO ====================
+  resultadosCampeonatos: router({
+    // Registrar resultado de atleta
+    registrar: protectedProcedure
+      .input(
+        z.object({
+          inscricaoId: z.number(),
+          bateriaId: z.number(),
+          tempo: z.number().optional(),
+          reps: z.number().optional(),
+          posicao: z.number(),
+          observacoes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Apenas admins e box masters podem registrar resultados
+        if (ctx.user.role !== "admin_liga" && ctx.user.role !== "box_master") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins e box masters podem registrar resultados",
+          });
+        }
+
+        // Verificar se já existe resultado para esta inscrição/bateria
+        const resultadosExistentes = await db.getResultadosByBateria(input.bateriaId);
+        const jaExiste = resultadosExistentes.some((r) => r.inscricaoId === input.inscricaoId);
+        if (jaExiste) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Já existe resultado registrado para este atleta nesta bateria",
+          });
+        }
+
+        // Buscar inscrição para pegar campeonatoId
+        const inscricao = await db.getInscricaoById(input.inscricaoId);
+        if (!inscricao) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Inscrição não encontrada",
+          });
+        }
+
+        // Calcular pontos baseado na posição
+        const pontos = await db.calcularPontosPorPosicao(inscricao.campeonatoId, input.posicao);
+
+        // Registrar resultado
+        const resultado = await db.registrarResultado({
+          inscricaoId: input.inscricaoId,
+          bateriaId: input.bateriaId,
+          tempo: input.tempo,
+          reps: input.reps,
+          posicao: input.posicao,
+          pontos,
+          observacoes: input.observacoes,
+          registradoPor: ctx.user.id,
+        });
+
+        // Atualizar pontos totais da inscrição no leaderboard
+        const pontosAtuais = inscricao.pontos || 0;
+        await db.atualizarPontosInscricao(input.inscricaoId, pontosAtuais + pontos);
+
+        return resultado;
+      }),
+
+    // Listar resultados de uma bateria
+    listByBateria: protectedProcedure
+      .input(z.object({ bateriaId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getResultadosByBateria(input.bateriaId);
+      }),
+
+    // Atualizar resultado
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          tempo: z.number().optional(),
+          reps: z.number().optional(),
+          posicao: z.number().optional(),
+          observacoes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin_liga" && ctx.user.role !== "box_master") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins e box masters podem atualizar resultados",
+          });
+        }
+
+        const { id, ...dados } = input;
+        return db.atualizarResultado(id, dados);
+      }),
+
+    // Deletar resultado
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin_liga" && ctx.user.role !== "box_master") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins e box masters podem deletar resultados",
+          });
+        }
+
+        return db.deletarResultado(input.id);
+      }),
+  }),
+
+  // Configuração de pontuação
+  pontuacao: router({
+    // Configurar pontos por posição
+    configurar: protectedProcedure
+      .input(
+        z.object({
+          campeonatoId: z.number(),
+          configuracoes: z.array(
+            z.object({
+              posicao: z.number(),
+              pontos: z.number(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin_liga") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins da liga podem configurar pontuação",
+          });
+        }
+
+        return db.configurarPontuacao(input.campeonatoId, input.configuracoes);
+      }),
+
+    // Obter configuração de pontuação
+    getConfig: protectedProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getConfiguracaoPontuacao(input.campeonatoId);
+      }),
+  }),
 });
 
 

@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, desc, count, sum } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, asc, count, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -21,6 +21,10 @@ import {
   InsertBateria,
   atletasBaterias,
   InsertAtletaBateria,
+  configuracaoPontuacao,
+  InsertConfiguracaoPontuacao,
+  resultadosAtletas,
+  InsertResultadoAtleta,
   pontuacoes,
   InsertPontuacao,
   badges,
@@ -7439,4 +7443,147 @@ export async function getBateriaPorAtleta(userId: number, campeonatoId: number) 
     .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+
+// ==================== RESULTADOS E PONTUAÇÃO ====================
+
+/**
+ * Registrar resultado de atleta em bateria
+ */
+export async function registrarResultado(resultado: InsertResultadoAtleta) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [novoResultado] = await db.insert(resultadosAtletas).values(resultado);
+  return novoResultado;
+}
+
+/**
+ * Listar resultados de uma bateria
+ */
+export async function getResultadosByBateria(bateriaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const resultados = await db
+    .select({
+      id: resultadosAtletas.id,
+      inscricaoId: resultadosAtletas.inscricaoId,
+      bateriaId: resultadosAtletas.bateriaId,
+      tempo: resultadosAtletas.tempo,
+      reps: resultadosAtletas.reps,
+      posicao: resultadosAtletas.posicao,
+      pontos: resultadosAtletas.pontos,
+      observacoes: resultadosAtletas.observacoes,
+      createdAt: resultadosAtletas.createdAt,
+      // Join com inscrição para pegar dados do atleta
+      userId: inscricoesCampeonatos.userId,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(resultadosAtletas)
+    .leftJoin(inscricoesCampeonatos, eq(resultadosAtletas.inscricaoId, inscricoesCampeonatos.id))
+    .leftJoin(users, eq(inscricoesCampeonatos.userId, users.id))
+    .where(eq(resultadosAtletas.bateriaId, bateriaId))
+    .orderBy(asc(resultadosAtletas.posicao));
+
+  return resultados;
+}
+
+/**
+ * Atualizar resultado
+ */
+export async function atualizarResultado(id: number, dados: Partial<InsertResultadoAtleta>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(resultadosAtletas).set(dados).where(eq(resultadosAtletas.id, id));
+  
+  const [resultado] = await db.select().from(resultadosAtletas).where(eq(resultadosAtletas.id, id));
+  return resultado;
+}
+
+/**
+ * Deletar resultado
+ */
+export async function deletarResultado(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(resultadosAtletas).where(eq(resultadosAtletas.id, id));
+  return true;
+}
+
+/**
+ * Configurar pontuação por posição para um campeonato
+ */
+export async function configurarPontuacao(campeonatoId: number, configuracoes: { posicao: number; pontos: number }[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Deleta configurações antigas
+  await db.delete(configuracaoPontuacao).where(eq(configuracaoPontuacao.campeonatoId, campeonatoId));
+
+  // Insere novas configurações
+  if (configuracoes.length > 0) {
+    await db.insert(configuracaoPontuacao).values(
+      configuracoes.map((config) => ({
+        campeonatoId,
+        posicao: config.posicao,
+        pontos: config.pontos,
+      }))
+    );
+  }
+
+  return true;
+}
+
+/**
+ * Obter configuração de pontuação de um campeonato
+ */
+export async function getConfiguracaoPontuacao(campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const configuracoes = await db
+    .select()
+    .from(configuracaoPontuacao)
+    .where(eq(configuracaoPontuacao.campeonatoId, campeonatoId))
+    .orderBy(asc(configuracaoPontuacao.posicao));
+
+  return configuracoes;
+}
+
+/**
+ * Calcular pontos baseado na posição
+ * Se não houver configuração customizada, usa fórmula padrão: 100 - (posicao - 1) * 5
+ */
+export async function calcularPontosPorPosicao(campeonatoId: number, posicao: number): Promise<number> {
+  const configuracoes = await getConfiguracaoPontuacao(campeonatoId);
+  
+  // Se houver configuração customizada, usa ela
+  const config = configuracoes.find((c) => c.posicao === posicao);
+  if (config) {
+    return config.pontos;
+  }
+
+  // Fórmula padrão: 1º = 100, 2º = 95, 3º = 90, 4º = 85...
+  const pontos = Math.max(0, 100 - (posicao - 1) * 5);
+  return pontos;
+}
+
+/**
+ * Atualizar pontos de uma inscrição no leaderboard
+ */
+export async function atualizarPontosInscricao(inscricaoId: number, pontos: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inscricoesCampeonatos)
+    .set({ pontos })
+    .where(eq(inscricoesCampeonatos.id, inscricaoId));
+
+  return true;
 }

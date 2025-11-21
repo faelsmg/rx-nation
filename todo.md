@@ -1676,3 +1676,40 @@
 - [x] Testar fluxo completo (criar bateria, alocar atletas, visualizar)
 - [x] Verificar permissões (admin vs atleta)
 - [x] Salvar checkpoint
+
+## Sistema de Pontuação Automática - Sprint 4
+
+### Schema e Banco de Dados
+- [x] Criar tabela `configuracao_pontuacao` (campeonatoId, posicao, pontos)
+- [x] Criar tabela `resultados_atletas` (inscricaoId, bateriaId, tempo/reps, pontos, posicao)
+- [x] Adicionar campo `pontos` em `inscricoes_campeonatos` (já existe)
+- [x] Executar db:push
+
+### Backend - Procedures tRPC
+- [x] Criar procedure: resultadosCampeonatos.registrar (registrar resultado de atleta)
+- [x] Criar procedure: resultadosCampeonatos.listByBateria (listar resultados da bateria)
+- [x] Criar procedure: resultadosCampeonatos.update (atualizar resultado)
+- [x] Criar procedure: resultadosCampeonatos.delete (deletar resultado)
+- [x] Criar procedure: pontuacao.configurar (definir pontos por posição)
+- [x] Criar procedure: pontuacao.getConfig (obter configuração)
+- [x] Adicionar validações (resultado único por atleta/bateria)
+- [x] Escrever testes automatizados (10/10 testes passando)
+
+### Lógica de Cálculo
+- [x] Função calcularPontosPorPosicao (1º = 100, 2º = 95, 3º = 90...)
+- [x] Trigger automático ao salvar resultado (na procedure registrar)
+- [x] Atualizar campo `pontos` em `inscricoes_campeonatos`
+- [x] Recalcular leaderboard automaticamente
+
+### Interface Admin
+- [x] Criar componente RegistroResultados.tsx
+- [x] Formulário de registro (atleta, tempo/reps, posição)
+- [x] Listagem de resultados da bateria (ResultadosBateria.tsx)
+- [x] Botão "Registrar Resultado" na gestão de baterias
+- [x] Feedback visual (toast de sucesso, leaderboard atualizado)
+
+### Testes e Entrega
+- [x] Rodar todos os testes (10/10 passando)
+- [x] Testar fluxo completo (registrar resultado, calcular pontos, atualizar leaderboard)
+- [x] Verificar atualização automática do leaderboard
+- [x] Salvar checkpoint

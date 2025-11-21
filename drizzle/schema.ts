@@ -196,6 +196,42 @@ export type AtletaBateria = typeof atletasBaterias.$inferSelect;
 export type InsertAtletaBateria = typeof atletasBaterias.$inferInsert;
 
 /**
+ * Configuração de Pontuação por Posição
+ * Define quantos pontos cada posição recebe em um campeonato
+ */
+export const configuracaoPontuacao = mysqlTable("configuracao_pontuacao", {
+  id: int("id").autoincrement().primaryKey(),
+  campeonatoId: int("campeonatoId").notNull(),
+  posicao: int("posicao").notNull(), // 1º, 2º, 3º...
+  pontos: int("pontos").notNull(), // 100, 95, 90...
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ConfiguracaoPontuacao = typeof configuracaoPontuacao.$inferSelect;
+export type InsertConfiguracaoPontuacao = typeof configuracaoPontuacao.$inferInsert;
+
+/**
+ * Resultados de Atletas em Baterias
+ * Armazena tempo/reps e pontos calculados
+ */
+export const resultadosAtletas = mysqlTable("resultados_atletas", {
+  id: int("id").autoincrement().primaryKey(),
+  inscricaoId: int("inscricaoId").notNull(), // Referência à inscrição
+  bateriaId: int("bateriaId").notNull(), // Bateria onde competiu
+  tempo: int("tempo"), // Tempo em segundos (para WODs For Time)
+  reps: int("reps"), // Repetições (para WODs AMRAP)
+  posicao: int("posicao"), // Posição final na bateria (1º, 2º, 3º...)
+  pontos: int("pontos").default(0).notNull(), // Pontos calculados
+  observacoes: text("observacoes"), // Notas adicionais (penalidades, etc)
+  registradoPor: int("registradoPor").notNull(), // ID do usuário que registrou
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ResultadoAtleta = typeof resultadosAtletas.$inferSelect;
+export type InsertResultadoAtleta = typeof resultadosAtletas.$inferInsert;
+
+/**
  * Pontuação/Gamificação
  */
 export const pontuacoes = mysqlTable("pontuacoes", {

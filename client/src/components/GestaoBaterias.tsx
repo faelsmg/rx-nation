@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Users, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Clock, Trophy } from "lucide-react";
+import RegistroResultados from "./RegistroResultados";
+import ResultadosBateria from "./ResultadosBateria";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -265,6 +267,7 @@ export default function GestaoBaterias({ campeonatoId }: GestaoBateriasProps) {
                   </div>
 
                   <div className="flex gap-2">
+                    <RegistroResultados bateriaId={bateria.id} campeonatoId={campeonatoId} />
                     <Button
                       size="sm"
                       variant="outline"
@@ -296,6 +299,9 @@ export default function GestaoBaterias({ campeonatoId }: GestaoBateriasProps) {
                   </div>
                 </div>
               </CardHeader>
+              <CardContent>
+                <ResultadosBateria bateriaId={bateria.id} />
+              </CardContent>
             </Card>
           ))
         ) : (
