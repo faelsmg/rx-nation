@@ -50,6 +50,14 @@ import {
   InsertNotificationPreference,
   metas,
   feedAtividades,
+  mentorias,
+  agendamentosMentoria,
+  InsertMentoria,
+  InsertAgendamentoMentoria,
+  wearableConnections,
+  wearableData,
+  InsertWearableConnection,
+  InsertWearableData,
   InsertFeedAtividade,
   desafiosSemanais,
   InsertDesafioSemanal,
@@ -9574,4 +9582,684 @@ export async function getRankingSemanalCompleto(filtros?: {
   );
 
   return rankingEnriquecido;
+}
+
+
+// ==================== ESTATÍSTICAS PESSOAIS ====================
+
+/**
+ * Obter estatísticas mensais do atleta
+ */
+export async function getEstatisticasMensais(userId: number, meses: number = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hoje = new Date();
+  const dataInicio = new Date(hoje);
+  dataInicio.setMonth(hoje.getMonth() - meses);
+
+  // Buscar pontuações por mês
+  const pontuacoesMensais = await db
+    .select({
+      mes: sql<string>`DATE_FORMAT(${pontuacoes.data}, '%Y-%m')`,
+      totalPontos: sql<number>`SUM(${pontuacoes.pontos})`,
+    })
+    .from(pontuacoes)
+    .where(and(
+      eq(pontuacoes.userId, userId),
+      sql`${pontuacoes.data} >= ${dataInicio}`
+    ))
+    .groupBy(sql`DATE_FORMAT(${pontuacoes.data}, '%Y-%m')`)
+    .orderBy(sql`DATE_FORMAT(${pontuacoes.data}, '%Y-%m')`);
+
+  // Buscar PRs por mês
+  const prsMensais = await db
+    .select({
+      mes: sql<string>`DATE_FORMAT(${prs.data}, '%Y-%m')`,
+      totalPRs: sql<number>`COUNT(*)`,
+    })
+    .from(prs)
+    .where(and(
+      eq(prs.userId, userId),
+      sql`${prs.data} >= ${dataInicio}`
+    ))
+    .groupBy(sql`DATE_FORMAT(${prs.data}, '%Y-%m')`)
+    .orderBy(sql`DATE_FORMAT(${prs.data}, '%Y-%m')`);
+
+  // Buscar check-ins por mês (frequência)
+  const checkinsMensais = await db
+    .select({
+      mes: sql<string>`DATE_FORMAT(${checkins.dataHora}, '%Y-%m')`,
+      totalCheckins: sql<number>`COUNT(*)`,
+    })
+    .from(checkins)
+    .where(and(
+      eq(checkins.userId, userId),
+      sql`${checkins.dataHora} >= ${dataInicio}`
+    ))
+    .groupBy(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m')`)
+    .orderBy(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m')`);
+
+  // Mesclar dados por mês
+  const mesesUnicos = new Set([
+    ...pontuacoesMensais.map((p) => p.mes),
+    ...prsMensais.map((p) => p.mes),
+    ...checkinsMensais.map((c) => c.mes),
+  ]);
+
+  const estatisticas = Array.from(mesesUnicos).sort().map((mes) => {
+    const pontos = pontuacoesMensais.find((p) => p.mes === mes)?.totalPontos || 0;
+    const prsCount = prsMensais.find((p) => p.mes === mes)?.totalPRs || 0;
+    const frequencia = checkinsMensais.find((c) => c.mes === mes)?.totalCheckins || 0;
+
+    return {
+      mes,
+      pontos,
+      prs: prsCount,
+      frequencia,
+    };
+  });
+
+  return estatisticas;
+}
+
+/**
+ * Obter média do box para comparação
+ */
+export async function getMediaBox(boxId: number, meses: number = 6) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const hoje = new Date();
+  const dataInicio = new Date(hoje);
+  dataInicio.setMonth(hoje.getMonth() - meses);
+
+  // Média de pontos por atleta no box
+  const mediaPontos = await db
+    .select({
+      mediaPontos: sql<number>`AVG(total_pontos)`,
+    })
+    .from(
+      db
+        .select({
+          userId: pontuacoes.userId,
+          total_pontos: sql<number>`SUM(${pontuacoes.pontos})`,
+        })
+        .from(pontuacoes)
+        .leftJoin(users, eq(pontuacoes.userId, users.id))
+        .where(and(
+          eq(users.boxId, boxId),
+          sql`${pontuacoes.data} >= ${dataInicio}`
+        ))
+        .groupBy(pontuacoes.userId)
+        .as('subquery')
+    );
+
+  // Média de PRs por atleta no box
+  const mediaPRs = await db
+    .select({
+      mediaPRs: sql<number>`AVG(total_prs)`,
+    })
+    .from(
+      db
+        .select({
+          userId: prs.userId,
+          total_prs: sql<number>`COUNT(*)`,
+        })
+        .from(prs)
+        .leftJoin(users, eq(prs.userId, users.id))
+        .where(and(
+          eq(users.boxId, boxId),
+          sql`${prs.data} >= ${dataInicio}`
+        ))
+        .groupBy(prs.userId)
+        .as('subquery')
+    );
+
+  // Média de frequência por atleta no box
+  const mediaFrequencia = await db
+    .select({
+      mediaFrequencia: sql<number>`AVG(total_checkins)`,
+    })
+    .from(
+      db
+        .select({
+          userId: checkins.userId,
+          total_checkins: sql<number>`COUNT(*)`,
+        })
+        .from(checkins)
+        .leftJoin(users, eq(checkins.userId, users.id))
+        .where(and(
+          eq(users.boxId, boxId),
+          sql`${checkins.dataHora} >= ${dataInicio}`
+        ))
+        .groupBy(checkins.userId)
+        .as('subquery')
+    );
+
+  return {
+    mediaPontos: mediaPontos[0]?.mediaPontos || 0,
+    mediaPRs: mediaPRs[0]?.mediaPRs || 0,
+    mediaFrequencia: mediaFrequencia[0]?.mediaFrequencia || 0,
+  };
+}
+
+/**
+ * Projetar próximo nível baseado em tendência
+ */
+export async function projetarProximoNivel(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Pontos atuais
+  const pontosAtuais = await getTotalPontosByUser(userId);
+
+  // Calcular nível atual
+  const calcularNivel = (pontos: number) => {
+    if (pontos >= 2000) return { nivel: "Platina", proximoNivel: null, pontosNecessarios: 0 };
+    if (pontos >= 1000) return { nivel: "Ouro", proximoNivel: "Platina", pontosNecessarios: 2000 - pontos };
+    if (pontos >= 500) return { nivel: "Prata", proximoNivel: "Ouro", pontosNecessarios: 1000 - pontos };
+    return { nivel: "Bronze", proximoNivel: "Prata", pontosNecessarios: 500 - pontos };
+  };
+
+  const nivelInfo = calcularNivel(pontosAtuais);
+
+  // Calcular média de pontos dos últimos 30 dias
+  const trintaDiasAtras = new Date();
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+  const pontosUltimos30Dias = await db
+    .select({
+      total: sql<number>`SUM(${pontuacoes.pontos})`,
+    })
+    .from(pontuacoes)
+    .where(and(
+      eq(pontuacoes.userId, userId),
+      sql`${pontuacoes.data} >= ${trintaDiasAtras}`
+    ));
+
+  const pontosMensais = pontosUltimos30Dias[0]?.total || 0;
+
+  // Projeção: quantos dias até o próximo nível
+  let diasEstimados = null;
+  if (nivelInfo.proximoNivel && pontosMensais > 0) {
+    const pontosPorDia = pontosMensais / 30;
+    diasEstimados = Math.ceil(nivelInfo.pontosNecessarios / pontosPorDia);
+  }
+
+  return {
+    nivelAtual: nivelInfo.nivel,
+    proximoNivel: nivelInfo.proximoNivel,
+    pontosAtuais,
+    pontosNecessarios: nivelInfo.pontosNecessarios,
+    pontosMensais,
+    diasEstimados,
+  };
+}
+
+
+// ==================== SISTEMA DE MENTORIA ====================
+
+/**
+ * Matching automático: encontrar mentor ideal para um mentorado
+ */
+export async function encontrarMentorIdeal(mentoradoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar dados do mentorado
+  const mentorado = await getUserById(mentoradoId);
+  if (!mentorado || !mentorado.boxId) return null;
+
+  // Critérios: atletas avançados/elite do mesmo box, sem mentoria ativa
+  const mentoresDisponiveis = await db
+    .select()
+    .from(users)
+    .where(and(
+      eq(users.boxId, mentorado.boxId),
+      or(
+        eq(users.categoria, "avancado"),
+        eq(users.categoria, "elite")
+      ),
+      // Excluir o próprio mentorado
+      sql`${users.id} != ${mentoradoId}`
+    ));
+
+  if (mentoresDisponiveis.length === 0) return null;
+
+  // Filtrar mentores que já têm muitas mentorias ativas (máx 3)
+  const mentoresComCapacidade = await Promise.all(
+    mentoresDisponiveis.map(async (mentor) => {
+      const mentoriasAtivas = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(mentorias)
+        .where(and(
+          eq(mentorias.mentorId, mentor.id),
+          eq(mentorias.status, "ativa")
+        ));
+
+      const count = mentoriasAtivas[0]?.count || 0;
+      return count < 3 ? mentor : null;
+    })
+  );
+
+  const mentoresFiltrados = mentoresComCapacidade.filter((m) => m !== null);
+
+  if (mentoresFiltrados.length === 0) return null;
+
+  // Escolher mentor com melhor avaliação média
+  const mentoresComAvaliacao = await Promise.all(
+    mentoresFiltrados.map(async (mentor) => {
+      const avaliacoes = await db
+        .select({ media: sql<number>`AVG(${mentorias.avaliacaoMentor})` })
+        .from(mentorias)
+        .where(eq(mentorias.mentorId, mentor!.id));
+
+      const mediaAvaliacao = avaliacoes[0]?.media || 0;
+      return { mentor, mediaAvaliacao };
+    })
+  );
+
+  // Ordenar por avaliação (maior primeiro)
+  mentoresComAvaliacao.sort((a, b) => b.mediaAvaliacao - a.mediaAvaliacao);
+
+  return mentoresComAvaliacao[0]?.mentor || null;
+}
+
+/**
+ * Criar mentoria automática
+ */
+export async function criarMentoria(data: InsertMentoria) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [mentoria] = await db.insert(mentorias).values(data).$returningId();
+
+  // Notificar mentor e mentorado
+  await createNotification({
+    userId: data.mentorId,
+    tipo: "mentoria" as any,
+    titulo: "Nova Mentoria! 🤝",
+    mensagem: "Você foi selecionado como mentor. Confira os detalhes na página de Mentoria.",
+    link: "/mentoria",
+  });
+
+  await createNotification({
+    userId: data.mentoradoId,
+    tipo: "mentoria" as any,
+    titulo: "Mentor Encontrado! 🎯",
+    mensagem: "Um mentor foi atribuído a você. Confira os detalhes na página de Mentoria.",
+    link: "/mentoria",
+  });
+
+  return mentoria;
+}
+
+/**
+ * Listar mentorias do usuário (como mentor ou mentorado)
+ */
+export async function getMentoriasByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const mentoriasComoMentor = await db
+    .select({
+      id: mentorias.id,
+      tipo: sql<string>`'mentor'`,
+      outroUsuarioId: mentorias.mentoradoId,
+      outroUsuarioNome: users.name,
+      outroUsuarioEmail: users.email,
+      status: mentorias.status,
+      dataInicio: mentorias.dataInicio,
+      dataFim: mentorias.dataFim,
+      avaliacaoMentor: mentorias.avaliacaoMentor,
+      avaliacaoMentorado: mentorias.avaliacaoMentorado,
+      createdAt: mentorias.createdAt,
+    })
+    .from(mentorias)
+    .leftJoin(users, eq(mentorias.mentoradoId, users.id))
+    .where(eq(mentorias.mentorId, userId));
+
+  const mentoriasComoMentorado = await db
+    .select({
+      id: mentorias.id,
+      tipo: sql<string>`'mentorado'`,
+      outroUsuarioId: mentorias.mentorId,
+      outroUsuarioNome: users.name,
+      outroUsuarioEmail: users.email,
+      status: mentorias.status,
+      dataInicio: mentorias.dataInicio,
+      dataFim: mentorias.dataFim,
+      avaliacaoMentor: mentorias.avaliacaoMentor,
+      avaliacaoMentorado: mentorias.avaliacaoMentorado,
+      createdAt: mentorias.createdAt,
+    })
+    .from(mentorias)
+    .leftJoin(users, eq(mentorias.mentorId, users.id))
+    .where(eq(mentorias.mentoradoId, userId));
+
+  return [...mentoriasComoMentor, ...mentoriasComoMentorado].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+/**
+ * Atualizar status da mentoria
+ */
+export async function atualizarStatusMentoria(id: number, status: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updates: any = { status };
+
+  if (status === "ativa") {
+    updates.dataInicio = new Date();
+  } else if (status === "concluida" || status === "cancelada") {
+    updates.dataFim = new Date();
+  }
+
+  await db.update(mentorias).set(updates).where(eq(mentorias.id, id));
+
+  return { success: true };
+}
+
+/**
+ * Avaliar mentoria
+ */
+export async function avaliarMentoria(
+  id: number,
+  tipo: "mentor" | "mentorado",
+  avaliacao: number,
+  comentario?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updates: any = {};
+
+  if (tipo === "mentor") {
+    updates.avaliacaoMentor = avaliacao;
+    if (comentario) updates.comentarioMentor = comentario;
+  } else {
+    updates.avaliacaoMentorado = avaliacao;
+    if (comentario) updates.comentarioMentorado = comentario;
+  }
+
+  await db.update(mentorias).set(updates).where(eq(mentorias.id, id));
+
+  return { success: true };
+}
+
+/**
+ * Criar agendamento de treino conjunto
+ */
+export async function criarAgendamentoMentoria(data: InsertAgendamentoMentoria) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [agendamento] = await db.insert(agendamentosMentoria).values(data).$returningId();
+
+  // Buscar mentoria para notificar ambos
+  const mentoria = await db
+    .select()
+    .from(mentorias)
+    .where(eq(mentorias.id, data.mentoriaId))
+    .limit(1);
+
+  if (mentoria.length > 0) {
+    const m = mentoria[0];
+    const dataFormatada = new Date(data.dataHora).toLocaleString("pt-BR");
+
+    await createNotification({
+      userId: m.mentorId,
+      tipo: "mentoria" as any,
+      titulo: "Treino Agendado! 📅",
+      mensagem: `Treino conjunto agendado para ${dataFormatada}`,
+      link: "/mentoria",
+    });
+
+    await createNotification({
+      userId: m.mentoradoId,
+      tipo: "mentoria" as any,
+      titulo: "Treino Agendado! 📅",
+      mensagem: `Treino conjunto agendado para ${dataFormatada}`,
+      link: "/mentoria",
+    });
+  }
+
+  return agendamento;
+}
+
+/**
+ * Listar agendamentos de uma mentoria
+ */
+export async function getAgendamentosByMentoria(mentoriaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(agendamentosMentoria)
+    .where(eq(agendamentosMentoria.mentoriaId, mentoriaId))
+    .orderBy(desc(agendamentosMentoria.dataHora));
+}
+
+
+// ==================== INTEGRAÇÃO COM WEARABLES ====================
+
+/**
+ * Conectar wearable (salvar tokens OAuth)
+ */
+export async function conectarWearable(data: InsertWearableConnection) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Verificar se já existe conexão ativa
+  const existente = await db
+    .select()
+    .from(wearableConnections)
+    .where(and(
+      eq(wearableConnections.userId, data.userId),
+      eq(wearableConnections.provider, data.provider)
+    ))
+    .limit(1);
+
+  if (existente.length > 0) {
+    // Atualizar tokens
+    await db
+      .update(wearableConnections)
+      .set({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        tokenExpiry: data.tokenExpiry,
+        ativo: true,
+      })
+      .where(eq(wearableConnections.id, existente[0].id));
+
+    return existente[0];
+  }
+
+  // Criar nova conexão
+  const [conexao] = await db.insert(wearableConnections).values(data).$returningId();
+
+  // Notificar usuário
+  await createNotification({
+    userId: data.userId,
+    tipo: "geral" as any,
+    titulo: "Wearable Conectado! ⌚",
+    mensagem: `${data.provider === "apple_health" ? "Apple Health" : "Google Fit"} conectado com sucesso`,
+    link: "/preferencias",
+  });
+
+  return conexao;
+}
+
+/**
+ * Importar dados de wearable
+ */
+export async function importarDadosWearable(userId: number, provider: string, dados: any[]) {
+  const db = await getDb();
+  if (!db) return { importados: 0 };
+
+  let importados = 0;
+
+  for (const dado of dados) {
+    try {
+      await db.insert(wearableData).values({
+        userId,
+        provider: provider as any,
+        tipo: dado.tipo,
+        valor: dado.valor,
+        unidade: dado.unidade,
+        dataHora: dado.dataHora,
+        sincronizado: false,
+      });
+      importados++;
+    } catch (error) {
+      console.error("Erro ao importar dado:", error);
+    }
+  }
+
+  return { importados };
+}
+
+/**
+ * Validar check-in automaticamente via wearable
+ */
+export async function validarCheckinViaWearable(userId: number, wodId: number, boxId: number) {
+  const db = await getDb();
+  if (!db) return { valido: false };
+
+  // Buscar dados de treino do dia
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const dadosTreino = await db
+    .select()
+    .from(wearableData)
+    .where(and(
+      eq(wearableData.userId, userId),
+      sql`${wearableData.dataHora} >= ${hoje}`,
+      or(
+        eq(wearableData.tipo, "duracao_treino"),
+        eq(wearableData.tipo, "frequencia_cardiaca"),
+        eq(wearableData.tipo, "calorias")
+      )
+    ));
+
+  // Validar se há dados suficientes (pelo menos 2 tipos de dados)
+  const tiposUnicos = new Set(dadosTreino.map((d) => d.tipo));
+  const valido = tiposUnicos.size >= 2;
+
+  if (valido) {
+    // Criar check-in automático
+    await db.insert(checkins).values({
+      userId,
+      wodId,
+      boxId,
+      dataHora: new Date(),
+    });
+
+    // Conceder badge de consistência se aplicável
+    await verificarBadgeConsistencia(userId);
+  }
+
+  return { valido, dadosEncontrados: dadosTreino.length };
+}
+
+/**
+ * Verificar e conceder badge de consistência
+ */
+async function verificarBadgeConsistencia(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Contar check-ins dos últimos 30 dias
+  const trintaDiasAtras = new Date();
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+  const checkins30Dias = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(checkins)
+    .where(and(
+      eq(checkins.userId, userId),
+      sql`${checkins.dataHora} >= ${trintaDiasAtras}`
+    ));
+
+  const count = checkins30Dias[0]?.count || 0;
+
+  // Badge de 20 treinos em 30 dias
+  if (count >= 20) {
+    const badge = await db
+      .select()
+      .from(badges)
+      .where(eq(badges.nome, "Consistência Extrema"))
+      .limit(1);
+
+    if (badge.length > 0) {
+      // Verificar se já tem o badge
+      const jaTemBadge = await db
+        .select()
+        .from(userBadges)
+        .where(and(
+          eq(userBadges.userId, userId),
+          eq(userBadges.badgeId, badge[0].id)
+        ))
+        .limit(1);
+
+      if (jaTemBadge.length === 0) {
+        await assignBadgeToUser({
+          userId,
+          badgeId: badge[0].id,
+          dataConquista: new Date(),
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Obter estatísticas de wearable
+ */
+export async function getEstatisticasWearable(userId: number, dias: number = 7) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const dataInicio = new Date();
+  dataInicio.setDate(dataInicio.getDate() - dias);
+
+  const dados = await db
+    .select()
+    .from(wearableData)
+    .where(and(
+      eq(wearableData.userId, userId),
+      sql`${wearableData.dataHora} >= ${dataInicio}`
+    ))
+    .orderBy(desc(wearableData.dataHora));
+
+  // Agrupar por tipo
+  const porTipo: Record<string, any[]> = {};
+  dados.forEach((d) => {
+    if (!porTipo[d.tipo]) porTipo[d.tipo] = [];
+    porTipo[d.tipo].push(d);
+  });
+
+  // Calcular médias
+  const estatisticas: Record<string, any> = {};
+  Object.keys(porTipo).forEach((tipo) => {
+    const valores = porTipo[tipo].map((d) => d.valor);
+    const media = valores.reduce((a, b) => a + b, 0) / valores.length;
+    const maximo = Math.max(...valores);
+    const minimo = Math.min(...valores);
+
+    estatisticas[tipo] = {
+      media: Math.round(media),
+      maximo,
+      minimo,
+      total: valores.length,
+      unidade: porTipo[tipo][0].unidade,
+    };
+  });
+
+  return estatisticas;
 }

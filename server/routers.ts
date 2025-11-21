@@ -1341,6 +1341,29 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== ESTATÍSTICAS PESSOAIS =====
+  estatisticas: router({
+    getMensais: protectedProcedure
+      .input(z.object({ meses: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getEstatisticasMensais(ctx.user.id, input.meses);
+      }),
+
+    getMediaBox: protectedProcedure
+      .input(z.object({ meses: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não pertence a nenhum box' });
+        }
+        return db.getMediaBox(ctx.user.boxId, input.meses);
+      }),
+
+    getProjecaoNivel: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.projetarProximoNivel(ctx.user.id);
+      }),
+  }),
+
   // ===== RANKINGS =====
   rankings: router({
     getByTipoAndPeriodo: publicProcedure

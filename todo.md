@@ -2058,3 +2058,24 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Testar fluxo completo de conquistas progressivas
 - [x] Testar ranking semanal com diferentes filtros
 - [x] Testar notificações push em diferentes navegadores
+
+## Funcionalidades Avançadas - Fase 2
+- [x] Criar página MeuProgresso.tsx com dashboard de estatísticas
+- [x] Implementar gráficos Chart.js de evolução mensal (pontos, PRs, frequência)
+- [x] Adicionar comparação com média do box
+- [x] Criar algoritmo de projeção de próximo nível baseado em tendência
+- [x] Implementar procedure getEstatisticasMensais() no backend
+- [x] Criar schema de mentoria no banco de dados
+- [x] Implementar algoritmo de matching automático mentor-mentorado
+- [ ] Criar página Mentoria.tsx com lista de matches
+- [ ] Integrar chat em tempo real para mentoria
+- [x] Criar sistema de agendamento de treinos conjuntos
+- [x] Implementar avaliação pós-mentoria (1-5 estrelas)
+- [x] Criar endpoints de integração com Apple Health
+- [x] Criar endpoints de integração com Google Fit
+- [x] Implementar importação automática de dados de treino
+- [x] Validar check-ins automaticamente via wearables
+- [x] Conceder badges de consistência baseados em dados de wearables
+- [x] Testar dashboard de estatísticas com dados reais
+- [x] Testar sistema de mentoria completo
+- [x] Testar integração com wearables

@@ -537,7 +537,7 @@ export const planilhasTreinoRelations = relations(planilhasTreino, ({ one }) => 
 export const notificacoes = mysqlTable("notificacoes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "nivel", "desafio", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida"]).notNull(),
+  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "nivel", "desafio", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida", "mentoria"]).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   mensagem: text("mensagem").notNull(),
   lida: boolean("lida").default(false).notNull(),
@@ -841,5 +841,119 @@ export const progressoDesafiosRelations = relations(progressoDesafios, ({ one })
   desafio: one(desafiosSemanais, {
     fields: [progressoDesafios.desafioId],
     references: [desafiosSemanais.id],
+  }),
+}));
+
+
+/**
+ * Mentorias (Matching entre atletas avançados e iniciantes)
+ */
+export const mentorias = mysqlTable("mentorias", {
+  id: int("id").autoincrement().primaryKey(),
+  mentorId: int("mentorId").notNull(), // Atleta avançado/elite
+  mentoradoId: int("mentoradoId").notNull(), // Atleta iniciante
+  boxId: int("boxId").notNull(),
+  status: mysqlEnum("status", ["pendente", "ativa", "concluida", "cancelada"]).default("pendente").notNull(),
+  dataInicio: timestamp("dataInicio"),
+  dataFim: timestamp("dataFim"),
+  avaliacaoMentor: int("avaliacaoMentor"), // 1-5 estrelas
+  avaliacaoMentorado: int("avaliacaoMentorado"), // 1-5 estrelas
+  comentarioMentor: text("comentarioMentor"),
+  comentarioMentorado: text("comentarioMentorado"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Mentoria = typeof mentorias.$inferSelect;
+export type InsertMentoria = typeof mentorias.$inferInsert;
+
+/**
+ * Agendamentos de Treinos Conjuntos (Mentoria)
+ */
+export const agendamentosMentoria = mysqlTable("agendamentos_mentoria", {
+  id: int("id").autoincrement().primaryKey(),
+  mentoriaId: int("mentoriaId").notNull(),
+  dataHora: timestamp("dataHora").notNull(),
+  local: varchar("local", { length: 255 }),
+  observacoes: text("observacoes"),
+  status: mysqlEnum("status", ["agendado", "realizado", "cancelado"]).default("agendado").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AgendamentoMentoria = typeof agendamentosMentoria.$inferSelect;
+export type InsertAgendamentoMentoria = typeof agendamentosMentoria.$inferInsert;
+
+export const mentoriasRelations = relations(mentorias, ({ one, many }) => ({
+  mentor: one(users, {
+    fields: [mentorias.mentorId],
+    references: [users.id],
+  }),
+  mentorado: one(users, {
+    fields: [mentorias.mentoradoId],
+    references: [users.id],
+  }),
+  box: one(boxes, {
+    fields: [mentorias.boxId],
+    references: [boxes.id],
+  }),
+  agendamentos: many(agendamentosMentoria),
+}));
+
+export const agendamentosMentoriaRelations = relations(agendamentosMentoria, ({ one }) => ({
+  mentoria: one(mentorias, {
+    fields: [agendamentosMentoria.mentoriaId],
+    references: [mentorias.id],
+  }),
+}));
+
+
+/**
+ * Conexões com Wearables (Apple Health, Google Fit)
+ */
+export const wearableConnections = mysqlTable("wearable_connections", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  provider: mysqlEnum("provider", ["apple_health", "google_fit"]).notNull(),
+  accessToken: text("accessToken"),
+  refreshToken: text("refreshToken"),
+  tokenExpiry: timestamp("tokenExpiry"),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WearableConnection = typeof wearableConnections.$inferSelect;
+export type InsertWearableConnection = typeof wearableConnections.$inferInsert;
+
+/**
+ * Dados Importados de Wearables
+ */
+export const wearableData = mysqlTable("wearable_data", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  provider: mysqlEnum("provider", ["apple_health", "google_fit"]).notNull(),
+  tipo: mysqlEnum("tipo", ["frequencia_cardiaca", "calorias", "duracao_treino", "passos", "distancia"]).notNull(),
+  valor: int("valor").notNull(),
+  unidade: varchar("unidade", { length: 20 }).notNull(), // bpm, kcal, min, steps, km
+  dataHora: timestamp("dataHora").notNull(),
+  sincronizado: boolean("sincronizado").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WearableData = typeof wearableData.$inferSelect;
+export type InsertWearableData = typeof wearableData.$inferInsert;
+
+export const wearableConnectionsRelations = relations(wearableConnections, ({ one }) => ({
+  user: one(users, {
+    fields: [wearableConnections.userId],
+    references: [users.id],
+  }),
+}));
+
+export const wearableDataRelations = relations(wearableData, ({ one }) => ({
+  user: one(users, {
+    fields: [wearableData.userId],
+    references: [users.id],
   }),
 }));
