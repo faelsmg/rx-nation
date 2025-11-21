@@ -2242,3 +2242,12 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Implementar checkout Stripe no marketplace
 - [x] Criar webhook Stripe para atualizar status de pedidos
 - [x] Gerar relatório detalhado de funcionalidades faltantes
+
+
+## PREPARAÇÃO PARA LANÇAMENTO V1.0
+
+- [x] Executar bateria completa de testes QA manuais
+- [x] Revisar e otimizar queries críticas com índices
+- [x] Configurar monitoramento de erros (Sentry)
+- [x] Configurar backup automático do banco de dados
+- [x] Documentar fluxos principais para suporte

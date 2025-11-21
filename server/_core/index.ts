@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { initializeSocketIO } from "./socket";
+import { setupMonitoring, errorMonitoringMiddleware } from "./monitoring";
 import stripeRoutes from "../stripe-routes";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -33,6 +34,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  
+  // Configurar monitoramento de erros
+  setupMonitoring(app);
   
   // Stripe webhook MUST be registered BEFORE express.json()
   app.use("/api/stripe", stripeRoutes);
@@ -61,6 +65,9 @@ async function startServer() {
   } else {
     serveStatic(app);
   }
+  
+  // Middleware de erro (deve ser o último)
+  app.use(errorMonitoringMiddleware);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
@@ -75,6 +82,10 @@ async function startServer() {
   // Inicializar jobs agendados
   const { inicializarJobs } = await import('./jobs');
   inicializarJobs();
+  
+  // Inicializar sistema de backup
+  const { scheduleBackups } = await import('./backup');
+  scheduleBackups();
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
