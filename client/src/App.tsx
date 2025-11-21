@@ -16,6 +16,7 @@ import CampeonatoDetalhes from "./pages/CampeonatoDetalhes";
 import CampeonatosAdmin from "./pages/CampeonatosAdmin";
 import GestaoInscricoes from "./pages/GestaoInscricoes";
 import DashboardCampeonatos from "./pages/DashboardCampeonatos";
+import RankingGlobal from "./pages/RankingGlobal";
 import Perfil from "./pages/Perfil";
 import GestaoBox from "./pages/GestaoBox";
 import AdminLiga from "./pages/AdminLiga";
@@ -78,6 +79,7 @@ function Router() {
       <Route path={"/campeonatos/:id/inscricoes"} component={GestaoInscricoes} />
       <Route path={"/admin/campeonatos"} component={CampeonatosAdmin} />
       <Route path={"/admin/dashboard-campeonatos"} component={DashboardCampeonatos} />
+      <Route path={"/ranking-global"} component={RankingGlobal} />
       <Route path={"/perfil"} component={Perfil} />
       <Route path={"/gestao-box"} component={GestaoBox} />
       <Route path={"/admin"} component={AdminLiga} />

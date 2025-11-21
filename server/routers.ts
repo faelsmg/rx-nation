@@ -880,7 +880,38 @@ export const appRouter = router({
 
         return paymentIntent;
       }),
+
+    // Relatório Semanal por Email (Admin Liga)
+    gerarRelatorioSemanal: protectedProcedure
+      .use(({ ctx, next }) => {
+        if (ctx.user.role !== "admin_liga") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins podem gerar relatórios",
+          });
+        }
+        return next({ ctx });
+      })
+      .mutation(async ({ ctx }) => {
+        const relatorio = await db.gerarRelatorioSemanal();
+        
+        // Enviar email para o admin
+        await db.enviarEmailRelatorio(ctx.user.email || '', relatorio);
+        
+        return { success: true, relatorio };
+      }),
   }),
+
+  // Ranking Global Anual (Público)
+  rankingGlobal: publicProcedure
+    .input(z.object({
+      ano: z.number().optional(),
+      categoria: z.enum(["iniciante", "intermediario", "avancado", "elite"]).optional(),
+      limit: z.number().optional().default(50),
+    }))
+    .query(async ({ input }) => {
+      return db.getRankingGlobal(input.ano, input.categoria, input.limit);
+    }),
 
   // Métricas e Dashboard de Campeonatos (Admin Liga)
   metricasCampeonatos: protectedProcedure

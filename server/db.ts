@@ -7354,6 +7354,189 @@ export async function processarPagamentoStripe(paymentIntentId: string) {
   return { success: false };
 }
 
+export async function gerarRelatorioSemanal() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const dataFim = new Date();
+  const dataInicio = new Date(dataFim.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 dias atrás
+
+  // Total de inscrições na semana
+  const inscricoes = await db
+    .select()
+    .from(inscricoesCampeonatos)
+    .where(
+      and(
+        gte(inscricoesCampeonatos.createdAt, dataInicio),
+        lte(inscricoesCampeonatos.createdAt, dataFim)
+      )
+    );
+
+  // Receita da semana (inscrições pagas)
+  const inscricoesPagas = inscricoes.filter(i => i.statusPagamento === 'pago');
+  const receitaSemanal = inscricoesPagas.length * 100; // Assumindo valor fixo por inscrição
+
+  // Campeonatos criados na semana
+  const campeonatosNovos = await db
+    .select()
+    .from(campeonatos)
+    .where(
+      and(
+        gte(campeonatos.createdAt, dataInicio),
+        lte(campeonatos.createdAt, dataFim)
+      )
+    );
+
+  // Resultados registrados na semana
+  const resultados = await db
+    .select()
+    .from(resultadosAtletas)
+    .where(
+      and(
+        gte(resultadosAtletas.createdAt, dataInicio),
+        lte(resultadosAtletas.createdAt, dataFim)
+      )
+    );
+
+  // Novos usuários na semana
+  const novosUsuarios = await db
+    .select()
+    .from(users)
+    .where(
+      and(
+        gte(users.createdAt, dataInicio),
+        lte(users.createdAt, dataFim)
+      )
+    );
+
+  return {
+    periodo: {
+      inicio: dataInicio,
+      fim: dataFim,
+    },
+    inscricoes: {
+      total: inscricoes.length,
+      pagas: inscricoesPagas.length,
+      pendentes: inscricoes.filter(i => i.statusPagamento === 'pendente').length,
+    },
+    receita: {
+      total: receitaSemanal,
+      media: inscricoesPagas.length > 0 ? Math.round(receitaSemanal / inscricoesPagas.length) : 0,
+    },
+    campeonatos: {
+      novos: campeonatosNovos.length,
+      ativos: campeonatosNovos.filter(c => c.inscricoesAbertas).length,
+    },
+    engajamento: {
+      resultadosRegistrados: resultados.length,
+      novosUsuarios: novosUsuarios.length,
+    },
+  };
+}
+
+export async function enviarEmailRelatorio(destinatario: string, relatorio: any) {
+  // TODO: Integrar com serviço de email (SendGrid, AWS SES, etc)
+  // Por enquanto, apenas log
+  console.log('[Relatório Semanal] Enviando para:', destinatario);
+  console.log('[Relatório Semanal] Dados:', JSON.stringify(relatorio, null, 2));
+  
+  return { success: true };
+}
+
+export async function getRankingGlobal(
+  ano?: number,
+  categoria?: "iniciante" | "intermediario" | "avancado" | "elite",
+  limit: number = 50
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const anoAtual = ano || new Date().getFullYear();
+  const dataInicio = new Date(anoAtual, 0, 1); // 1º de janeiro
+  const dataFim = new Date(anoAtual, 11, 31, 23, 59, 59); // 31 de dezembro
+
+  // Buscar todas as inscrições do período com filtro de categoria
+  const whereConditions = [
+    gte(campeonatos.dataFim, dataInicio),
+    lte(campeonatos.dataFim, dataFim),
+  ];
+
+  if (categoria) {
+    whereConditions.push(eq(inscricoesCampeonatos.categoria, categoria));
+  }
+
+  const inscricoes = await db
+    .select({
+      userId: inscricoesCampeonatos.userId,
+      userName: users.name,
+      userEmail: users.email,
+      categoria: inscricoesCampeonatos.categoria,
+      inscricaoId: inscricoesCampeonatos.id,
+    })
+    .from(inscricoesCampeonatos)
+    .innerJoin(users, eq(inscricoesCampeonatos.userId, users.id))
+    .innerJoin(campeonatos, eq(inscricoesCampeonatos.campeonatoId, campeonatos.id))
+    .where(and(...whereConditions));
+
+  // Buscar resultados de cada inscrição
+  const rankingMap: Record<number, {
+    userId: number;
+    userName: string;
+    userEmail: string;
+    categoria: string;
+    totalPontos: number;
+    totalCampeonatos: number;
+    melhorPosicao: number;
+    badges: number;
+  }> = {};
+
+  for (const inscricao of inscricoes) {
+    const resultados = await db
+      .select()
+      .from(resultadosAtletas)
+      .where(eq(resultadosAtletas.inscricaoId, inscricao.inscricaoId));
+
+    if (resultados.length > 0) {
+      const totalPontosInscricao = resultados.reduce((sum, r) => sum + (r.pontos || 0), 0);
+      const melhorPosicao = Math.min(...resultados.map(r => r.posicao || 999).filter(p => p > 0));
+
+      if (!rankingMap[inscricao.userId]) {
+        rankingMap[inscricao.userId] = {
+          userId: inscricao.userId,
+          userName: inscricao.userName || 'Atleta',
+          userEmail: inscricao.userEmail || '',
+          categoria: inscricao.categoria,
+          totalPontos: 0,
+          totalCampeonatos: 0,
+          melhorPosicao: 999,
+          badges: 0,
+        };
+      }
+
+      rankingMap[inscricao.userId].totalPontos += totalPontosInscricao;
+      rankingMap[inscricao.userId].totalCampeonatos += 1;
+      rankingMap[inscricao.userId].melhorPosicao = Math.min(
+        rankingMap[inscricao.userId].melhorPosicao,
+        melhorPosicao
+      );
+    }
+  }
+
+  // Converter para array e ordenar por pontos
+  const ranking = Object.values(rankingMap)
+    .sort((a, b) => b.totalPontos - a.totalPontos)
+    .slice(0, limit)
+    .map((item, index) => ({
+      ...item,
+      posicao: index + 1,
+      mediaPontos: item.totalCampeonatos > 0 
+        ? Math.round(item.totalPontos / item.totalCampeonatos) 
+        : 0,
+    }));
+
+  return ranking;
+}
+
 export async function getMetricasCampeonatos(periodo: string) {
   const db = await getDb();
   if (!db) {

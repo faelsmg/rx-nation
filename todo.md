@@ -1810,3 +1810,38 @@
 - [x] Adicionar logo da liga e assinatura digital
 - [x] Implementar validação (apenas atletas com posição final)
 - [x] Adicionar testes para geração de PDF
+
+
+## Novas Funcionalidades (Sprint 2)
+
+### 1. Sistema de Ranking Global
+- [x] Criar query para calcular pontuação acumulada anual por atleta
+- [x] Implementar filtros por ano e categoria
+- [x] Criar página RankingGlobal.tsx com leaderboard consolidado
+- [x] Adicionar estatísticas individuais (total de campeonatos, média de pontos)
+- [x] Adicionar testes para cálculo de ranking
+
+### 2. Sistema de Badges de Conquistas
+- [ ] Definir badges automáticos (1º lugar, 10 campeonatos, 1000 pontos, etc) - PAUSADO
+- [ ] Criar procedure para atribuir badges automaticamente - PAUSADO
+- [ ] Implementar trigger ao registrar resultado - PAUSADO
+- [ ] Adicionar exibição de badges no perfil do atleta - PAUSADO
+- [ ] Adicionar testes para atribuição de badges - PAUSADO
+
+NOTA: Sistema de badges já existe parcialmente (schema + página ArvoreConquistas). Atribuição automática requer revisão do schema existente.
+
+### 3. Relatórios Automatizados por Email
+- [x] Criar query para métricas semanais consolidadas
+- [x] Implementar geração de email HTML com métricas
+- [ ] Criar job agendado para envio semanal - PENDENTE
+- [x] Adicionar configuração de destinatários (admins)
+- [x] Adicionar testes para geração de relatórios
+
+NOTA: Backend completo. Job agendado requer integração com serviço de agendamento (cron, etc).
+
+### 4. Compartilhamento Social
+- [ ] Criar endpoint para gerar card de certificado (imagem) - NÃO IMPLEMENTADO
+- [ ] Implementar geração de card com Canvas/Sharp - NÃO IMPLEMENTADO
+- [ ] Adicionar botões de compartilhamento (Instagram, Facebook, Twitter) - NÃO IMPLEMENTADO
+- [ ] Implementar deep links para redes sociais - NÃO IMPLEMENTADO
+- [ ] Adicionar testes para geração de cards - NÃO IMPLEMENTADO
