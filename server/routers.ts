@@ -1610,6 +1610,11 @@ export const appRouter = router({
       return await marcarTodasComoLidas(ctx.user.id);
     }),
 
+    // Contar não lidas
+    getCountNaoLidas: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getCountNotificacoesNaoLidas(ctx.user.id);
+    }),
+
     // Listar com filtros (para histórico)
     list: protectedProcedure
       .input(z.object({
@@ -1802,6 +1807,23 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         return db.deleteComentarioFeed(input.comentarioId, ctx.user.id);
       }),
+
+    // Novas procedures
+    getAtividades: protectedProcedure
+      .input(z.object({ boxId: z.number().optional(), limit: z.number().default(50) }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new TRPCError({ code: "BAD_REQUEST", message: "BoxId não encontrado" });
+        return db.getFeedBox(boxId, input.limit);
+      }),
+
+    getAtividadesPorTipo: protectedProcedure
+      .input(z.object({ boxId: z.number().optional(), tipo: z.string(), limit: z.number().default(20) }))
+      .query(async ({ ctx, input }) => {
+        const boxId = input.boxId || ctx.user.boxId;
+        if (!boxId) throw new TRPCError({ code: "BAD_REQUEST", message: "BoxId não encontrado" });
+        return db.getFeedPorTipo(boxId, input.tipo, input.limit);
+      }),
   }),
 
   // ===== COMPARAÇÃO DE ATLETAS =====
@@ -1896,6 +1918,26 @@ export const appRouter = router({
     getByUser: protectedProcedure
       .query(async ({ ctx }) => {
         return db.getDesafiosByUser(ctx.user.id);
+      }),
+
+    // Desafios Semanais
+    getSemanaAtual: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getDesafiosSemanaAtual(ctx.user.boxId || undefined);
+      }),
+
+    getMeuProgresso: protectedProcedure
+      .query(async ({ ctx }) => {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const semana = Math.ceil((hoje.getTime() - new Date(ano, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+        const semanaAno = `${ano}-W${semana.toString().padStart(2, '0')}`;
+        return db.getProgressoDesafiosUsuario(ctx.user.id, semanaAno);
+      }),
+
+    gerarAutomaticos: boxMasterProcedure
+      .mutation(async ({ ctx }) => {
+        return db.gerarDesafiosSemanaisAutomaticos(ctx.user.boxId || undefined);
       }),
   }),
 
@@ -4091,6 +4133,7 @@ export const appRouter = router({
         return db.getConfiguracaoPontuacao(input.campeonatoId);
       }),
   }),
+
 });
 
 

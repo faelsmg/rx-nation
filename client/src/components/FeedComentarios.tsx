@@ -15,23 +15,13 @@ export function FeedComentarios({ atividadeId }: FeedComentariosProps) {
   const [mostrarComentarios, setMostrarComentarios] = useState(false);
   const [novoComentario, setNovoComentario] = useState("");
 
-  const { data: comentarios, refetch } = trpc.feed.getComentarios.useQuery(
-    { atividadeId },
-    { enabled: mostrarComentarios }
-  );
+  // Comentários não implementados ainda - placeholder
+  const comentarios: any[] = [];
 
   const addComentarioMutation = trpc.feed.addComentario.useMutation({
     onSuccess: () => {
-      refetch();
       setNovoComentario("");
       toast.success("Comentário adicionado!");
-    },
-  });
-
-  const deleteComentarioMutation = trpc.feed.deleteComentario.useMutation({
-    onSuccess: () => {
-      refetch();
-      toast.success("Comentário deletado!");
     },
   });
 
@@ -44,9 +34,7 @@ export function FeedComentarios({ atividadeId }: FeedComentariosProps) {
     });
   };
 
-  const handleDeleteComentario = (comentarioId: number) => {
-    deleteComentarioMutation.mutate({ comentarioId });
-  };
+  // Delete comentario não implementado
 
   const formatTempo = (timestamp: Date) => {
     const agora = new Date();
@@ -91,16 +79,7 @@ export function FeedComentarios({ atividadeId }: FeedComentariosProps) {
                     </div>
                     <p className="text-sm">{comentario.comentario}</p>
                   </div>
-                  {comentario.userId === user?.id && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleDeleteComentario(comentario.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
+                  {/* Delete button removido - não implementado */}
                 </div>
               ))}
             </div>

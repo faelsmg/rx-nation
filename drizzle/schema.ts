@@ -238,8 +238,9 @@ export type InsertResultadoAtleta = typeof resultadosAtletas.$inferInsert;
 export const pontuacoes = mysqlTable("pontuacoes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  tipo: mysqlEnum("tipo", ["checkin", "wod_completo", "novo_pr", "participacao_campeonato", "podio"]).notNull(),
+  tipo: mysqlEnum("tipo", ["checkin", "wod_completo", "novo_pr", "participacao_campeonato", "podio", "desafio", "badge"]).notNull(),
   pontos: int("pontos").notNull(),
+  descricao: text("descricao"),
   referencia: varchar("referencia", { length: 255 }), // ID de referência (wodId, campeonatoId, etc)
   data: timestamp("data").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -536,7 +537,7 @@ export const planilhasTreinoRelations = relations(planilhasTreino, ({ one }) => 
 export const notificacoes = mysqlTable("notificacoes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida"]).notNull(),
+  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "nivel", "desafio", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida"]).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   mensagem: text("mensagem").notNull(),
   lida: boolean("lida").default(false).notNull(),
@@ -655,7 +656,7 @@ export const feedAtividades = mysqlTable("feed_atividades", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   boxId: int("boxId").notNull(),
-  tipo: mysqlEnum("tipo", ["wod_completo", "pr_quebrado", "badge_desbloqueado"]).notNull(),
+  tipo: mysqlEnum("tipo", ["wod_completo", "pr_quebrado", "badge_desbloqueado", "nivel_subiu", "desafio_completo"]).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
   metadata: text("metadata"), // JSON com dados específicos (wodId, prId, badgeId, etc)
@@ -783,3 +784,62 @@ export const playlistPurchasesRelations = relations(playlistPurchases, ({ one })
   }),
 }));
 
+
+/**
+ * Desafios Semanais
+ */
+export const desafiosSemanais = mysqlTable("desafios_semanais", {
+  id: int("id").autoincrement().primaryKey(),
+  boxId: int("boxId"), // null = desafio global da liga
+  tipo: mysqlEnum("tipo", ["checkins", "wods", "prs", "streak", "custom"]).notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao").notNull(),
+  meta: int("meta").notNull(), // ex: 5 check-ins, 3 WODs, etc
+  pontosRecompensa: int("pontosRecompensa").default(50).notNull(),
+  icone: varchar("icone", { length: 10 }).default("🎯").notNull(),
+  semanaAno: varchar("semanaAno", { length: 10 }).notNull(), // formato: "2025-W01"
+  dataInicio: timestamp("dataInicio").notNull(),
+  dataFim: timestamp("dataFim").notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DesafioSemanal = typeof desafiosSemanais.$inferSelect;
+export type InsertDesafioSemanal = typeof desafiosSemanais.$inferInsert;
+
+/**
+ * Progresso dos Usuários nos Desafios
+ */
+export const progressoDesafios = mysqlTable("progresso_desafios", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  desafioId: int("desafioId").notNull(),
+  progressoAtual: int("progressoAtual").default(0).notNull(),
+  completado: boolean("completado").default(false).notNull(),
+  dataCompletado: timestamp("dataCompletado"),
+  recompensaRecebida: boolean("recompensaRecebida").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProgressoDesafio = typeof progressoDesafios.$inferSelect;
+export type InsertProgressoDesafio = typeof progressoDesafios.$inferInsert;
+
+export const desafiosSemanaisRelations = relations(desafiosSemanais, ({ one, many }) => ({
+  box: one(boxes, {
+    fields: [desafiosSemanais.boxId],
+    references: [boxes.id],
+  }),
+  progressos: many(progressoDesafios),
+}));
+
+export const progressoDesafiosRelations = relations(progressoDesafios, ({ one }) => ({
+  user: one(users, {
+    fields: [progressoDesafios.userId],
+    references: [users.id],
+  }),
+  desafio: one(desafiosSemanais, {
+    fields: [progressoDesafios.desafioId],
+    references: [desafiosSemanais.id],
+  }),
+}));

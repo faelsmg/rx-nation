@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, desc, asc, count, sum, or } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, asc, count, sum, or, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -48,9 +48,13 @@ import {
   notificationPreferences,
   InsertNotificationPreference,
   metas,
-  InsertMeta,
   feedAtividades,
   InsertFeedAtividade,
+  desafiosSemanais,
+  InsertDesafioSemanal,
+  progressoDesafios,
+  InsertProgressoDesafio,
+  InsertMeta,
   comentariosFeed,
   InsertComentarioFeed,
   playlists,
@@ -8738,4 +8742,455 @@ export async function atualizarPontosInscricao(inscricaoId: number, pontos: numb
     .where(eq(inscricoesCampeonatos.id, inscricaoId));
 
   return true;
+}
+
+
+// ==================== NOTIFICAÇÕES AUTOMÁTICAS ====================
+
+export async function criarNotificacao(data: InsertNotificacao) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(notificacoes).values(data);
+  return result;
+}
+
+export async function notificarSubidaNivel(userId: number, nivelNovo: string, pontosAtuais: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const icones: Record<string, string> = {
+    "Bronze": "🥉",
+    "Prata": "🥈",
+    "Ouro": "🥇",
+    "Platina": "💎"
+  };
+
+  const notificacao: InsertNotificacao = {
+    userId,
+    tipo: "nivel",
+    titulo: `Parabéns! Você subiu para ${icones[nivelNovo]} ${nivelNovo}!`,
+    mensagem: `Você alcançou ${pontosAtuais} pontos e subiu para o nível ${nivelNovo}. Continue treinando forte!`,
+    lida: false,
+    link: "/dashboard"
+  };
+
+  await criarNotificacao(notificacao);
+
+  // Registrar no feed
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user[0] && user[0].boxId) {
+    await registrarAtividadeFeed({
+      userId,
+      boxId: user[0].boxId,
+      tipo: "nivel_subiu",
+      titulo: `${user[0].name} subiu para ${nivelNovo}!`,
+      descricao: `Alcançou ${pontosAtuais} pontos e conquistou o nível ${nivelNovo}`,
+      metadata: JSON.stringify({ nivel: nivelNovo, pontos: pontosAtuais })
+    });
+  }
+
+  return true;
+}
+
+export async function notificarNovoBadge(userId: number, badgeNome: string, badgeIcone: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const notificacao: InsertNotificacao = {
+    userId,
+    tipo: "badge",
+    titulo: `Novo Badge Conquistado! ${badgeIcone}`,
+    mensagem: `Parabéns! Você desbloqueou o badge "${badgeNome}". Continue assim!`,
+    lida: false,
+    link: "/badges"
+  };
+
+  await criarNotificacao(notificacao);
+
+  // Registrar no feed
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user[0] && user[0].boxId) {
+    await registrarAtividadeFeed({
+      userId,
+      boxId: user[0].boxId,
+      tipo: "badge_desbloqueado",
+      titulo: `${user[0].name} desbloqueou ${badgeIcone} ${badgeNome}!`,
+      descricao: `Novo badge conquistado`,
+      metadata: JSON.stringify({ badgeNome, badgeIcone })
+    });
+  }
+
+  return true;
+}
+
+export async function getNotificacoesUsuario(userId: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(notificacoes)
+    .where(eq(notificacoes.userId, userId))
+    .orderBy(desc(notificacoes.createdAt))
+    .limit(limit);
+}
+
+export async function marcarNotificacaoLida(notificacaoId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(notificacoes)
+    .set({ lida: true })
+    .where(eq(notificacoes.id, notificacaoId));
+
+  return true;
+}
+
+export async function marcarTodasNotificacoesLidas(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(notificacoes)
+    .set({ lida: true })
+    .where(and(
+      eq(notificacoes.userId, userId),
+      eq(notificacoes.lida, false)
+    ));
+
+  return true;
+}
+
+export async function getCountNotificacoesNaoLidas(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(notificacoes)
+    .where(and(
+      eq(notificacoes.userId, userId),
+      eq(notificacoes.lida, false)
+    ));
+
+  return result[0]?.count || 0;
+}
+
+// ==================== FEED SOCIAL APRIMORADO ====================
+
+export async function registrarAtividadeFeed(data: InsertFeedAtividade) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(feedAtividades).values(data);
+  return result;
+}
+
+export async function getFeedBox(boxId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: feedAtividades.id,
+      userId: feedAtividades.userId,
+      userName: users.name,
+      boxId: feedAtividades.boxId,
+      tipo: feedAtividades.tipo,
+      titulo: feedAtividades.titulo,
+      descricao: feedAtividades.descricao,
+      metadata: feedAtividades.metadata,
+      curtidas: feedAtividades.curtidas,
+      createdAt: feedAtividades.createdAt,
+    })
+    .from(feedAtividades)
+    .leftJoin(users, eq(feedAtividades.userId, users.id))
+    .where(eq(feedAtividades.boxId, boxId))
+    .orderBy(desc(feedAtividades.createdAt))
+    .limit(limit);
+}
+
+export async function getFeedPorTipo(boxId: number, tipo: string, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: feedAtividades.id,
+      userId: feedAtividades.userId,
+      userName: users.name,
+      boxId: feedAtividades.boxId,
+      tipo: feedAtividades.tipo,
+      titulo: feedAtividades.titulo,
+      descricao: feedAtividades.descricao,
+      metadata: feedAtividades.metadata,
+      curtidas: feedAtividades.curtidas,
+      createdAt: feedAtividades.createdAt,
+    })
+    .from(feedAtividades)
+    .leftJoin(users, eq(feedAtividades.userId, users.id))
+    .where(and(
+      eq(feedAtividades.boxId, boxId),
+      eq(feedAtividades.tipo, tipo as any)
+    ))
+    .orderBy(desc(feedAtividades.createdAt))
+    .limit(limit);
+}
+
+// ==================== DESAFIOS SEMANAIS ====================
+
+export async function criarDesafioSemanal(data: InsertDesafioSemanal) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [result] = await db.insert(desafiosSemanais).values(data);
+  return result;
+}
+
+export async function getDesafiosSemanaAtual(boxId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const semana = getNumeroSemana(hoje);
+  const semanaAno = `${ano}-W${semana.toString().padStart(2, '0')}`;
+
+  const whereConditions = [
+    eq(desafiosSemanais.semanaAno, semanaAno),
+    eq(desafiosSemanais.ativo, true)
+  ];
+
+  if (boxId) {
+    whereConditions.push(
+      or(
+        eq(desafiosSemanais.boxId, boxId),
+        isNull(desafiosSemanais.boxId)
+      ) as any
+    );
+  } else {
+    whereConditions.push(isNull(desafiosSemanais.boxId));
+  }
+
+  return db
+    .select()
+    .from(desafiosSemanais)
+    .where(and(...whereConditions))
+    .orderBy(desafiosSemanais.createdAt);
+}
+
+export async function getProgressoDesafiosUsuario(userId: number, semanaAno: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const desafios = await db
+    .select()
+    .from(desafiosSemanais)
+    .where(and(
+      eq(desafiosSemanais.semanaAno, semanaAno),
+      eq(desafiosSemanais.ativo, true)
+    ));
+
+  const progressos = await db
+    .select()
+    .from(progressoDesafios)
+    .where(eq(progressoDesafios.userId, userId));
+
+  return desafios.map(desafio => {
+    const progresso = progressos.find(p => p.desafioId === desafio.id);
+    return {
+      ...desafio,
+      progressoAtual: progresso?.progressoAtual || 0,
+      completado: progresso?.completado || false,
+      recompensaRecebida: progresso?.recompensaRecebida || false
+    };
+  });
+}
+
+export async function atualizarProgressoDesafioSemanal(userId: number, desafioId: number, incremento: number = 1) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar desafio
+  const desafio = await db.select().from(desafiosSemanais).where(eq(desafiosSemanais.id, desafioId)).limit(1);
+  if (!desafio[0]) return null;
+
+  // Buscar ou criar progresso
+  const progressoExistente = await db
+    .select()
+    .from(progressoDesafios)
+    .where(and(
+      eq(progressoDesafios.userId, userId),
+      eq(progressoDesafios.desafioId, desafioId)
+    ))
+    .limit(1);
+
+  if (progressoExistente[0]) {
+    const novoProgresso = progressoExistente[0].progressoAtual + incremento;
+    const completado = novoProgresso >= desafio[0].meta;
+
+    await db
+      .update(progressoDesafios)
+      .set({
+        progressoAtual: novoProgresso,
+        completado,
+        dataCompletado: completado && !progressoExistente[0].completado ? new Date() : progressoExistente[0].dataCompletado
+      })
+      .where(eq(progressoDesafios.id, progressoExistente[0].id));
+
+    // Se acabou de completar, dar recompensa
+    if (completado && !progressoExistente[0].completado) {
+      await concederRecompensaDesafio(userId, desafio[0]);
+    }
+
+    return { progressoAtual: novoProgresso, completado };
+  } else {
+    const completado = incremento >= desafio[0].meta;
+
+    const [result] = await db.insert(progressoDesafios).values({
+      userId,
+      desafioId,
+      progressoAtual: incremento,
+      completado,
+      dataCompletado: completado ? new Date() : null
+    });
+
+    if (completado) {
+      await concederRecompensaDesafio(userId, desafio[0]);
+    }
+
+    return { progressoAtual: incremento, completado };
+  }
+}
+
+async function concederRecompensaDesafio(userId: number, desafio: any) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Adicionar pontos
+  await db.insert(pontuacoes).values({
+    userId,
+    pontos: desafio.pontosRecompensa,
+    tipo: "desafio",
+    descricao: `Desafio completado: ${desafio.titulo}`,
+    data: new Date()
+  });
+
+  // Marcar recompensa como recebida
+  await db
+    .update(progressoDesafios)
+    .set({ recompensaRecebida: true })
+    .where(and(
+      eq(progressoDesafios.userId, userId),
+      eq(progressoDesafios.desafioId, desafio.id)
+    ));
+
+  // Notificar usuário
+  await criarNotificacao({
+    userId,
+    tipo: "desafio",
+    titulo: `Desafio Completo! ${desafio.icone}`,
+    mensagem: `Parabéns! Você completou "${desafio.titulo}" e ganhou ${desafio.pontosRecompensa} pontos!`,
+    lida: false,
+    link: "/dashboard"
+  });
+
+  // Registrar no feed
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user[0] && user[0].boxId) {
+    await registrarAtividadeFeed({
+      userId,
+      boxId: user[0].boxId,
+      tipo: "desafio_completo",
+      titulo: `${user[0].name} completou o desafio ${desafio.icone}`,
+      descricao: desafio.titulo,
+      metadata: JSON.stringify({ desafioId: desafio.id, pontos: desafio.pontosRecompensa })
+    });
+  }
+}
+
+export async function gerarDesafiosSemanaisAutomaticos(boxId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const semana = getNumeroSemana(hoje);
+  const semanaAno = `${ano}-W${semana.toString().padStart(2, '0')}`;
+
+  // Calcular início e fim da semana
+  const inicioSemana = getInicioSemana(hoje);
+  const fimSemana = getFimSemana(hoje);
+
+  const desafiosTemplate = [
+    {
+      tipo: "checkins" as const,
+      titulo: "Frequência Semanal",
+      descricao: "Complete 5 check-ins esta semana",
+      meta: 5,
+      pontosRecompensa: 100,
+      icone: "🔥"
+    },
+    {
+      tipo: "wods" as const,
+      titulo: "Guerreiro dos WODs",
+      descricao: "Complete 4 WODs esta semana",
+      meta: 4,
+      pontosRecompensa: 80,
+      icone: "💪"
+    },
+    {
+      tipo: "prs" as const,
+      titulo: "Quebrando Limites",
+      descricao: "Registre 2 novos PRs esta semana",
+      meta: 2,
+      pontosRecompensa: 150,
+      icone: "🏆"
+    }
+  ];
+
+  const desafiosCriados = [];
+
+  for (const template of desafiosTemplate) {
+    const [result] = await db.insert(desafiosSemanais).values({
+      boxId: boxId || null,
+      tipo: template.tipo,
+      titulo: template.titulo,
+      descricao: template.descricao,
+      meta: template.meta,
+      pontosRecompensa: template.pontosRecompensa,
+      icone: template.icone,
+      semanaAno,
+      dataInicio: inicioSemana,
+      dataFim: fimSemana,
+      ativo: true
+    });
+
+    desafiosCriados.push(result);
+  }
+
+  return desafiosCriados;
+}
+
+// Funções auxiliares
+function getNumeroSemana(data: Date): number {
+  const d = new Date(Date.UTC(data.getFullYear(), data.getMonth(), data.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function getInicioSemana(data: Date): Date {
+  const d = new Date(data);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+}
+
+function getFimSemana(data: Date): Date {
+  const inicio = getInicioSemana(data);
+  return new Date(inicio.getTime() + 6 * 24 * 60 * 60 * 1000);
 }

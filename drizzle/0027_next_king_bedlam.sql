@@ -1,0 +1,2 @@
+ALTER TABLE `pontuacoes` MODIFY COLUMN `tipo` enum('checkin','wod_completo','novo_pr','participacao_campeonato','podio','desafio','badge') NOT NULL;--> statement-breakpoint
+ALTER TABLE `pontuacoes` ADD `descricao` text;

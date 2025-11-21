@@ -2010,3 +2010,19 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar estatísticas públicas no perfil (badges, campeonatos, PRs)
 - [x] Adicionar gráfico de evolução no perfil público
 - [x] Criar testes para funcionalidades de níveis e perfil público
+
+## Funcionalidades de Engajamento Social - Sprint Atual
+- [x] Criar schema de notificações push no banco de dados
+- [x] Implementar sistema de notificações em tempo real (badges, níveis)
+- [ ] Criar componente NotificationCenter no frontend
+- [x] Adicionar triggers automáticos para notificações (conquista badge, subida de nível)
+- [x] Criar schema de feed social (atividades/conquistas)
+- [x] Implementar procedures para registrar atividades no feed
+- [ ] Criar página Feed.tsx com timeline de conquistas
+- [x] Adicionar filtros por tipo de atividade no feed
+- [x] Criar schema de desafios semanais
+- [x] Implementar sistema de geração automática de desafios
+- [x] Criar procedures para verificar progresso de desafios
+- [ ] Criar componente DesafiosSemana.tsx no Dashboard
+- [x] Adicionar recompensas automáticas ao completar desafios
+- [ ] Criar testes para notificações, feed e desafios
