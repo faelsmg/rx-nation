@@ -1,83 +1,161 @@
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Users, Trophy, TrendingUp, Award, Activity } from "lucide-react";
+import { Users, Trophy, TrendingUp, Award, Activity, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 export default function ComparacaoAtletas() {
-  const [atletasSelecionados, setAtletasSelecionados] = useState<number[]>([]);
+  const [atletasSelecionados, setAtletasSelecionados] = useState<Array<{ id: number; nome: string }>>([]);
+  const [busca, setBusca] = useState("");
+  const [showResults, setShowResults] = useState(false);
 
-  const { data: atletasBox } = trpc.comparacao.getAtletasBox.useQuery();
-  
-  const { data: comparacao, isLoading } = trpc.comparacao.getComparacao.useQuery(
-    { atletasIds: atletasSelecionados },
-    { enabled: atletasSelecionados.length >= 2 }
+  // Busca de atletas com autocomplete
+  const { data: resultadosBusca, isLoading: loadingBusca } = trpc.listarAtletas.useQuery(
+    { busca, limit: 10 },
+    { enabled: busca.length >= 2 && showResults }
   );
 
-  const { data: prs } = trpc.comparacao.getPRs.useQuery(
-    { atletasIds: atletasSelecionados },
-    { enabled: atletasSelecionados.length >= 2 }
+  // Comparação de atletas (apenas quando 2 selecionados)
+  const { data: comparacao, isLoading } = trpc.compararAtletas.useQuery(
+    { 
+      atleta1Id: atletasSelecionados[0]?.id || 0, 
+      atleta2Id: atletasSelecionados[1]?.id || 0 
+    },
+    { enabled: atletasSelecionados.length === 2 }
   );
 
-  const { data: badges } = trpc.comparacao.getBadges.useQuery(
-    { atletasIds: atletasSelecionados },
-    { enabled: atletasSelecionados.length >= 2 }
-  );
-
-  const handleAddAtleta = (atletaId: string) => {
-    const id = parseInt(atletaId);
-    if (atletasSelecionados.includes(id)) {
+  const handleAddAtleta = (id: number, nome: string) => {
+    if (atletasSelecionados.find(a => a.id === id)) {
       toast.error("Atleta já selecionado");
       return;
     }
-    if (atletasSelecionados.length >= 4) {
-      toast.error("Máximo de 4 atletas para comparação");
+    if (atletasSelecionados.length >= 2) {
+      toast.error("Máximo de 2 atletas para comparação");
       return;
     }
-    setAtletasSelecionados([...atletasSelecionados, id]);
+    setAtletasSelecionados([...atletasSelecionados, { id, nome }]);
+    setBusca("");
+    setShowResults(false);
   };
 
   const handleRemoveAtleta = (atletaId: number) => {
-    setAtletasSelecionados(atletasSelecionados.filter(id => id !== atletaId));
+    setAtletasSelecionados(atletasSelecionados.filter(a => a.id !== atletaId));
   };
 
-  // Agrupar PRs por movimento
-  const prsPorMovimento = useMemo(() => {
-    if (!prs) return {};
-    
-    const grupos: Record<string, any[]> = {};
-    prs.forEach((pr: any) => {
-      if (!grupos[pr.movimento]) {
-        grupos[pr.movimento] = [];
-      }
-      grupos[pr.movimento].push(pr);
-    });
-    return grupos;
-  }, [prs]);
+  // Preparar dados para gráfico de evolução de pontos
+  const dadosGrafico = useMemo(() => {
+    if (!comparacao) return null;
 
-  // Agrupar badges por atleta
-  const badgesPorAtleta = useMemo(() => {
-    if (!badges) return {};
-    
-    const grupos: Record<number, any[]> = {};
-    badges.forEach((badge: any) => {
-      if (!grupos[badge.user_id]) {
-        grupos[badge.user_id] = [];
-      }
-      grupos[badge.user_id].push(badge);
+    const atleta1 = comparacao.atleta1;
+    const atleta2 = comparacao.atleta2;
+
+    // Combinar todas as datas únicas
+    const todasDatas = new Set([
+      ...atleta1.historico.evolucaoTemporal.map((h: any) => h.mes),
+      ...atleta2.historico.evolucaoTemporal.map((h: any) => h.mes)
+    ]);
+    const datasOrdenadas = Array.from(todasDatas).sort();
+
+    // Criar datasets
+    const pontosAtleta1 = datasOrdenadas.map(mes => {
+      const registro = atleta1.historico.evolucaoTemporal.find((h: any) => h.mes === mes);
+      return registro ? registro.pontos : 0;
     });
-    return grupos;
-  }, [badges]);
+
+    const pontosAtleta2 = datasOrdenadas.map(mes => {
+      const registro = atleta2.historico.evolucaoTemporal.find((h: any) => h.mes === mes);
+      return registro ? registro.pontos : 0;
+    });
+
+    return {
+      labels: datasOrdenadas.map(mes => {
+        const [ano, mesNum] = mes.split('-');
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        return `${meses[parseInt(mesNum) - 1]}/${ano}`;
+      }),
+      datasets: [
+        {
+          label: atletasSelecionados[0]?.nome || 'Atleta 1',
+          data: pontosAtleta1,
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+          tension: 0.4,
+        },
+        {
+          label: atletasSelecionados[1]?.nome || 'Atleta 2',
+          data: pontosAtleta2,
+          borderColor: 'rgb(234, 179, 8)',
+          backgroundColor: 'rgba(234, 179, 8, 0.1)',
+          fill: true,
+          tension: 0.4,
+        }
+      ]
+    };
+  }, [comparacao, atletasSelecionados]);
+
+  const opcoesGrafico = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: '#fff',
+          font: { size: 12 }
+        }
+      },
+      title: {
+        display: false
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#9ca3af' },
+        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+      },
+      x: {
+        ticks: { color: '#9ca3af' },
+        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+      }
+    },
+    interaction: {
+      mode: 'nearest' as const,
+      axis: 'x' as const,
+      intersect: false
+    }
+  };
 
   return (
     <AppLayout>
@@ -88,50 +166,83 @@ export default function ComparacaoAtletas() {
             Comparação entre Atletas
           </h1>
           <p className="text-muted-foreground">
-            Compare PRs, frequência e badges de até 4 atletas
+            Compare estatísticas, PRs e evolução de 2 atletas lado a lado
           </p>
         </div>
 
-        {/* Seletor de Atletas */}
+        {/* Seletor de Atletas com Autocomplete */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Selecionar Atletas ({atletasSelecionados.length}/4)</CardTitle>
+            <CardTitle>Selecionar Atletas ({atletasSelecionados.length}/2)</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Atletas Selecionados */}
             <div className="flex flex-wrap gap-3 mb-4">
-              {comparacao?.map((atleta: any) => (
+              {atletasSelecionados.map((atleta) => (
                 <div
                   key={atleta.id}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary"
                 >
-                  <span className="font-semibold">{atleta.name}</span>
+                  <span className="font-semibold">{atleta.nome}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveAtleta(atleta.id)}
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 hover:bg-destructive/20"
                   >
-                    ×
+                    <X className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
             </div>
 
-            {atletasSelecionados.length < 4 && (
-              <Select onValueChange={handleAddAtleta}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Adicionar atleta..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {atletasBox
-                    ?.filter((a: any) => !atletasSelecionados.includes(a.id))
-                    .map((atleta: any) => (
-                      <SelectItem key={atleta.id} value={atleta.id.toString()}>
-                        {atleta.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+            {/* Campo de Busca */}
+            {atletasSelecionados.length < 2 && (
+              <div className="relative">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar atleta por nome ou email..."
+                    value={busca}
+                    onChange={(e) => {
+                      setBusca(e.target.value);
+                      setShowResults(true);
+                    }}
+                    onFocus={() => setShowResults(true)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Resultados da Busca */}
+                {showResults && busca.length >= 2 && (
+                  <div className="absolute z-10 w-full mt-2 bg-card border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                    {loadingBusca ? (
+                      <div className="p-4 text-center text-muted-foreground">
+                        Buscando...
+                      </div>
+                    ) : resultadosBusca && resultadosBusca.length > 0 ? (
+                      <div className="py-2">
+                        {resultadosBusca.map((atleta) => (
+                          <button
+                            key={atleta.id}
+                            onClick={() => handleAddAtleta(atleta.id, atleta.nome)}
+                            className="w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="font-medium">{atleta.nome}</div>
+                            {atleta.email && (
+                              <div className="text-sm text-muted-foreground">{atleta.email}</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground">
+                        Nenhum atleta encontrado
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -139,26 +250,28 @@ export default function ComparacaoAtletas() {
         {atletasSelecionados.length < 2 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              Selecione pelo menos 2 atletas para comparar
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg">Selecione 2 atletas para comparar</p>
+              <p className="text-sm mt-2">Use a busca acima para encontrar atletas</p>
             </CardContent>
           </Card>
         )}
 
-        {atletasSelecionados.length >= 2 && (
+        {atletasSelecionados.length === 2 && (
           <>
-            {/* Estatísticas Gerais */}
             {isLoading ? (
-              <div className="animate-pulse">
-                <div className="h-64 bg-muted rounded-lg mb-6" />
+              <div className="animate-pulse space-y-6">
+                <div className="h-64 bg-muted rounded-lg" />
+                <div className="h-96 bg-muted rounded-lg" />
               </div>
             ) : comparacao ? (
-              <div className="grid gap-6 mb-6">
-                {/* Cards de Estatísticas */}
+              <div className="grid gap-6">
+                {/* Estatísticas Gerais */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Activity className="w-5 h-5" />
-                      Estatísticas Gerais (Últimos 30 dias)
+                      Estatísticas Gerais
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -166,200 +279,142 @@ export default function ComparacaoAtletas() {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left p-3">Atleta</th>
-                            <th className="text-center p-3">Check-ins</th>
-                            <th className="text-center p-3">WODs</th>
-                            <th className="text-center p-3">PRs Total</th>
-                            <th className="text-center p-3">Pontos</th>
-                            <th className="text-center p-3">Badges</th>
-                            <th className="text-center p-3">Streak</th>
+                            <th className="text-left p-3">Métrica</th>
+                            <th className="text-center p-3">{atletasSelecionados[0]?.nome}</th>
+                            <th className="text-center p-3">{atletasSelecionados[1]?.nome}</th>
+                            <th className="text-center p-3">Diferença</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {comparacao.map((atleta: any) => (
-                            <tr key={atleta.id} className="border-b hover:bg-muted/50">
-                              <td className="p-3 font-semibold">{atleta.name}</td>
-                              <td className="text-center p-3">{atleta.total_checkins_30d}</td>
-                              <td className="text-center p-3">{atleta.wods_completados_30d}</td>
-                              <td className="text-center p-3">{atleta.total_prs}</td>
-                              <td className="text-center p-3 font-bold text-primary">
-                                {atleta.pontos_30d}
-                              </td>
-                              <td className="text-center p-3">{atleta.total_badges}</td>
-                              <td className="text-center p-3">
-                                {atleta.streak_atual > 0 && (
-                                  <span className="text-orange-500">
-                                    🔥 {atleta.streak_atual}
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          <tr className="border-b hover:bg-muted/50">
+                            <td className="p-3 font-medium">Total de Campeonatos</td>
+                            <td className="text-center p-3">{comparacao.atleta1.historico.totalCampeonatos}</td>
+                            <td className="text-center p-3">{comparacao.atleta2.historico.totalCampeonatos}</td>
+                            <td className="text-center p-3 font-bold text-primary">
+                              {comparacao.diferencas.totalCampeonatos > 0 ? '+' : ''}{comparacao.diferencas.totalCampeonatos}
+                            </td>
+                          </tr>
+                          <tr className="border-b hover:bg-muted/50">
+                            <td className="p-3 font-medium">Pontos Totais</td>
+                            <td className="text-center p-3">{comparacao.atleta1.historico.totalPontos}</td>
+                            <td className="text-center p-3">{comparacao.atleta2.historico.totalPontos}</td>
+                            <td className="text-center p-3 font-bold text-primary">
+                              {comparacao.diferencas.totalPontos > 0 ? '+' : ''}{comparacao.diferencas.totalPontos}
+                            </td>
+                          </tr>
+                          <tr className="border-b hover:bg-muted/50">
+                            <td className="p-3 font-medium">Média de Pontos</td>
+                            <td className="text-center p-3">{comparacao.atleta1.historico.mediaPontos.toFixed(1)}</td>
+                            <td className="text-center p-3">{comparacao.atleta2.historico.mediaPontos.toFixed(1)}</td>
+                            <td className="text-center p-3 font-bold text-primary">
+                              {comparacao.diferencas.mediaPontos > 0 ? '+' : ''}{comparacao.diferencas.mediaPontos.toFixed(1)}
+                            </td>
+                          </tr>
+                          <tr className="border-b hover:bg-muted/50">
+                            <td className="p-3 font-medium">Melhor Posição</td>
+                            <td className="text-center p-3">
+                              {comparacao.atleta1.historico.melhorPosicao ? `${comparacao.atleta1.historico.melhorPosicao}º` : '-'}
+                            </td>
+                            <td className="text-center p-3">
+                              {comparacao.atleta2.historico.melhorPosicao ? `${comparacao.atleta2.historico.melhorPosicao}º` : '-'}
+                            </td>
+                            <td className="text-center p-3 font-bold text-primary">
+                              {comparacao.diferencas.melhorPosicao !== 0 
+                                ? `${Math.abs(comparacao.diferencas.melhorPosicao)} posições`
+                                : 'Empate'}
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Comparação de PRs */}
-                {Object.keys(prsPorMovimento).length > 0 && (
+                {/* Gráfico de Evolução Comparativa */}
+                {dadosGrafico && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Trophy className="w-5 h-5" />
-                        Comparação de PRs por Movimento
+                        <TrendingUp className="w-5 h-5" />
+                        Evolução de Pontos Comparativa
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-6">
-                        {Object.entries(prsPorMovimento).map(([movimento, prsMovimento]: [string, any]) => {
-                          const maxCarga = Math.max(...prsMovimento.map((p: any) => p.melhor_carga));
-                          
-                          return (
-                            <div key={movimento}>
-                              <h3 className="font-semibold mb-3">{movimento}</h3>
-                              <div className="space-y-2">
-                                {prsMovimento.map((pr: any) => {
-                                  const atleta = comparacao.find((a: any) => a.id === pr.user_id);
-                                  const porcentagem = (pr.melhor_carga / maxCarga) * 100;
-                                  const isMax = pr.melhor_carga === maxCarga;
-
-                                  return (
-                                    <div key={pr.user_id}>
-                                      <div className="flex items-center justify-between mb-1">
-                                        <span className="text-sm font-medium">
-                                          {atleta?.name}
-                                        </span>
-                                        <span className={`text-sm font-bold ${
-                                          isMax ? 'text-primary' : 'text-muted-foreground'
-                                        }`}>
-                                          {pr.melhor_carga}kg
-                                          {isMax && ' 👑'}
-                                        </span>
-                                      </div>
-                                      <div className="h-3 bg-muted rounded-full overflow-hidden">
-                                        <div
-                                          className={`h-full ${
-                                            isMax 
-                                              ? 'bg-gradient-to-r from-primary to-primary/60' 
-                                              : 'bg-gradient-to-r from-muted-foreground/50 to-muted-foreground/30'
-                                          }`}
-                                          style={{ width: `${porcentagem}%` }}
-                                        />
-                                      </div>
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {pr.total_tentativas} tentativas • Último: {
-                                          new Date(pr.data_ultimo_pr).toLocaleDateString('pt-BR')
-                                        }
-                                      </p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div className="h-80">
+                        <Line data={dadosGrafico} options={opcoesGrafico} />
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                {/* Gráficos Sincronizados de Evolução */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
-                      Evolução de Pontos Comparativa
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
-                      <Line
-                        data={{
-                          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                          datasets: comparacao.map((atleta: any, index: number) => ({
-                            label: atleta.name,
-                            data: Array(12).fill(0).map(() => Math.floor(Math.random() * 1000)),
-                            borderColor: [
-                              'rgb(59, 130, 246)',
-                              'rgb(16, 185, 129)',
-                              'rgb(245, 158, 11)',
-                              'rgb(139, 92, 246)',
-                            ][index],
-                            backgroundColor: [
-                              'rgba(59, 130, 246, 0.1)',
-                              'rgba(16, 185, 129, 0.1)',
-                              'rgba(245, 158, 11, 0.1)',
-                              'rgba(139, 92, 246, 0.1)',
-                            ][index],
-                            tension: 0.4,
-                            fill: true,
-                          })),
-                        }}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: 'top' as const,
-                            },
-                            title: {
-                              display: false,
-                            },
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                            },
-                          },
-                        }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Histórico Detalhado Lado a Lado */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Atleta 1 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Trophy className="w-5 h-5" />
+                        {atletasSelecionados[0]?.nome}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-semibold mb-2">Histórico de Campeonatos</h4>
+                          {comparacao.atleta1.historico.evolucaoTemporal.length > 0 ? (
+                            <div className="space-y-2">
+                              {comparacao.atleta1.historico.evolucaoTemporal.slice(0, 5).map((h: any, idx: number) => (
+                                <div key={idx} className="flex justify-between text-sm p-2 bg-muted/30 rounded">
+                                  <span>{h.mes}</span>
+                                  <span className="font-bold text-primary">{h.pontos} pts</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Nenhum histórico disponível</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Comparação de Badges */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Award className="w-5 h-5" />
-                      Badges Conquistados
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {comparacao.map((atleta: any) => {
-                        const atletaBadges = badgesPorAtleta[atleta.id] || [];
-
-                        return (
-                          <div key={atleta.id} className="p-4 rounded-lg bg-muted">
-                            <h3 className="font-semibold mb-3">{atleta.name}</h3>
-                            {atletaBadges.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {atletaBadges.map((badge: any) => (
-                                  <div
-                                    key={badge.badge_id}
-                                    className="text-2xl"
-                                    title={badge.nome}
-                                  >
-                                    {badge.icone}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">Nenhum badge</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Total: {atletaBadges.length} badges
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Atleta 2 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Trophy className="w-5 h-5" />
+                        {atletasSelecionados[1]?.nome}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-semibold mb-2">Histórico de Campeonatos</h4>
+                          {comparacao.atleta2.historico.evolucaoTemporal.length > 0 ? (
+                            <div className="space-y-2">
+                              {comparacao.atleta2.historico.evolucaoTemporal.slice(0, 5).map((h: any, idx: number) => (
+                                <div key={idx} className="flex justify-between text-sm p-2 bg-muted/30 rounded">
+                                  <span>{h.mes}</span>
+                                  <span className="font-bold text-primary">{h.pontos} pts</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Nenhum histórico disponível</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  Erro ao carregar comparação
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>

@@ -9,6 +9,7 @@ import { OnboardingTour } from "@/components/OnboardingTour";
 import { ProgressoSemanal } from "@/components/ProgressoSemanal";
 import { StreakIndicator } from "@/components/StreakIndicator";
 import BadgesSection from "@/components/BadgesSection";
+import NivelAtleta from "@/components/NivelAtleta";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -42,9 +43,12 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Streak Indicator */}
+        {/* Streak Indicator e Nível */}
         {user?.role === "atleta" && (
-          <StreakIndicator />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <StreakIndicator />
+            <NivelAtleta pontosTotais={pontuacaoTotal || 0} />
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-onboarding="dashboard-stats">

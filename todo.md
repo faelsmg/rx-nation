@@ -1998,3 +1998,15 @@ NOTA: Backend 100% completo (listarAtletas + compararAtletas). Página existe ma
 - [ ] Adicionar toggle para ativar/desativar notificações - NÃO IMPLEMENTADO
 
 NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do navegador e servidor de push. Implementação complexa recomendada para fase futura.
+
+
+## Funcionalidades Finais - Sprint Atual
+- [x] Adaptar UI de Comparação de Atletas com autocomplete funcional usando trpc.listarAtletas
+- [x] Adicionar gráficos Chart.js sincronizados na página de Comparação
+- [x] Implementar Sistema de Níveis (Bronze/Prata/Ouro/Platina) com cálculo baseado em pontos
+- [x] Criar componente NivelAtleta.tsx com barra de progresso e ícone visual
+- [x] Integrar componente de Níveis no Dashboard do atleta
+- [x] Criar página de Perfil Público (/atleta/:id) compartilhável
+- [x] Adicionar estatísticas públicas no perfil (badges, campeonatos, PRs)
+- [x] Adicionar gráfico de evolução no perfil público
+- [x] Criar testes para funcionalidades de níveis e perfil público
