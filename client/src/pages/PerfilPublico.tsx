@@ -18,7 +18,7 @@ export default function PerfilPublico() {
     if (navigator.share) {
       navigator.share({
         title: `Perfil de ${profile?.user.name}`,
-        text: `Confira o perfil de ${profile?.user.name} no Impacto Pro League!`,
+        text: `Confira o perfil de ${profile?.user.name} no RX Nation!`,
         url,
       });
     } else {

@@ -45,7 +45,7 @@ export default function GestaoBoxesLiga() {
 
     exportToPDF(
       "Relatório de Boxes",
-      "Impacto Pro League - Gestão de Boxes",
+      "RX Nation - Gestão de Boxes",
       boxes.map((box: any) => ({
         id: box.id,
         nome: box.nome,
@@ -199,7 +199,7 @@ export default function GestaoBoxesLiga() {
           <div>
             <h1 className="text-3xl font-bold">Gestão de Boxes</h1>
             <p className="text-muted-foreground mt-2">
-              Gerencie todos os boxes da Impacto Pro League
+              Gerencie todos os boxes da RX Nation
             </p>
           </div>
           <div className="flex gap-2">
@@ -445,7 +445,7 @@ export default function GestaoBoxesLiga() {
             <DialogHeader>
               <DialogTitle>Novo Box</DialogTitle>
               <DialogDescription>
-                Cadastre um novo box na Impacto Pro League
+                Cadastre um novo box na RX Nation
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">

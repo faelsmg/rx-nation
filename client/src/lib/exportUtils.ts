@@ -193,7 +193,7 @@ export function exportMetricasToPDF(
   const pageHeight = doc.internal.pageSize.getHeight();
   doc.setFontSize(8);
   doc.text(
-    "Impacto Pro League - Relatório Confidencial",
+    "RX Nation - Relatório Confidencial",
     doc.internal.pageSize.getWidth() / 2,
     pageHeight - 10,
     { align: "center" }

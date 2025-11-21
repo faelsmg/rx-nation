@@ -17,7 +17,7 @@ interface OnboardingStep {
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "welcome",
-    title: "Bem-vindo à Impacto Pro League! 💪",
+    title: "Bem-vindo à RX Nation! 💪",
     description:
       "Vamos fazer um tour rápido pelas 5 funcionalidades essenciais da plataforma. Você pode pular a qualquer momento.",
     icon: <Trophy className="w-12 h-12 text-primary" />,

@@ -1470,3 +1470,15 @@
 - [x] Implementar download do card como imagem
 - [x] Criar função de compartilhar diretamente no Instagram
 - [x] Testar geração de cards em diferentes resoluções
+
+
+## Rebrand para RX Nation
+- [x] Gerar 3-4 opções de logo com IA (diferentes estilos)
+- [x] Salvar logos gerados na pasta public
+- [x] Atualizar VITE_APP_TITLE para "RX Nation"
+- [x] Atualizar APP_TITLE em const.ts
+- [x] Atualizar APP_LOGO em const.ts com novo logo
+- [x] Atualizar nome em todos os textos da plataforma
+- [x] Atualizar cards FIFA com novo branding
+- [x] Atualizar meta tags e SEO
+- [x] Testar identidade visual completa

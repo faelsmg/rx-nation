@@ -50,8 +50,8 @@ export function useFIFACard() {
       try {
         await navigator.share({
           files: [file],
-          title: "Impacto Pro League",
-          text: "Confira minha conquista na Impacto Pro League! 💪🏆",
+          title: "RX Nation",
+          text: "Confira minha conquista na RX Nation! 💪🏆",
         });
         toast.success("Compartilhado com sucesso!");
       } catch (error: any) {

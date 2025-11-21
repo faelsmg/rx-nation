@@ -96,9 +96,9 @@ export const FIFACard = forwardRef<HTMLDivElement, FIFACardProps>(
             </div>
             <div className="text-right">
               <div className="text-xs font-bold uppercase tracking-wider opacity-90 mb-1">
-                Impacto
+                RX
               </div>
-              <div className="text-lg font-black">PRO LEAGUE</div>
+              <div className="text-lg font-black">NATION</div>
             </div>
           </div>
 

@@ -143,7 +143,7 @@ export default function Badges() {
             onOpenChange={setShareDialogOpen}
             type="badge"
             atletaNome={user.name || "Atleta"}
-            boxNome={"Impacto Pro League"}
+            boxNome={"RX Nation"}
             categoria={user.categoria?.toUpperCase() || "ATLETA"}
             pontosTotais={pontuacao?.reduce((sum, p) => sum + p.pontos, 0) || 0}
             ranking={undefined}

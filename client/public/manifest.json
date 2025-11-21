@@ -1,7 +1,7 @@
 {
-  "name": "Impacto Pro League",
-  "short_name": "Impacto",
-  "description": "Plataforma completa de gestão para boxes de CrossFit",
+  "name": "RX Nation",
+  "short_name": "RX Nation",
+  "description": "RX Nation - Plataforma completa de gestão e gamificação para boxes de CrossFit",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

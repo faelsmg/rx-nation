@@ -11,7 +11,7 @@ export default function AdminLiga() {
             <Shield className="w-10 h-10 text-primary" />
             Admin da Liga
           </h1>
-          <p className="text-muted-foreground">Administração da Impacto Pro League</p>
+          <p className="text-muted-foreground">Administração da RX Nation</p>
         </div>
 
         <Card className="card-impacto">

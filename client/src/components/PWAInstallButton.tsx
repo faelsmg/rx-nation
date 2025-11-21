@@ -38,7 +38,7 @@ export function PWAInstallButton() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-primary" />
-              Instalar Impacto Pro League
+              Instalar RX Nation
             </DialogTitle>
             <DialogDescription>
               Instale o app no seu dispositivo para acesso rápido e experiência nativa

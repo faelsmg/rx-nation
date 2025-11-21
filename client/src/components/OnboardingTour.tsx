@@ -15,7 +15,7 @@ interface OnboardingStep {
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
-    title: "Bem-vindo à Impacto Pro League! 🎉",
+    title: "Bem-vindo à RX Nation! 🎉",
     description: "Vamos fazer um tour rápido pelas principais funcionalidades da plataforma. Você pode pular este tour a qualquer momento.",
     path: "/dashboard",
   },
