@@ -58,6 +58,10 @@ import {
   wearableData,
   InsertWearableConnection,
   InsertWearableData,
+  produtosMarketplace,
+  pedidosMarketplace,
+  InsertProdutoMarketplace,
+  InsertPedidoMarketplace,
   InsertFeedAtividade,
   desafiosSemanais,
   InsertDesafioSemanal,
@@ -10262,4 +10266,503 @@ export async function getEstatisticasWearable(userId: number, dias: number = 7) 
   });
 
   return estatisticas;
+}
+
+
+// ==================== MARKETPLACE DE RECOMPENSAS ====================
+
+/**
+ * Listar produtos do marketplace
+ */
+export async function getProdutosMarketplace(categoria?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let conditions = [eq(produtosMarketplace.ativo, true)];
+
+  if (categoria) {
+    conditions.push(eq(produtosMarketplace.categoria, categoria as any));
+  }
+
+  const query = db.select().from(produtosMarketplace).where(and(...conditions));
+
+  return query.orderBy(produtosMarketplace.pontosNecessarios);
+}
+
+/**
+ * Obter produto do marketplace por ID
+ */
+export async function getProdutoMarketplaceById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const produtos = await db
+    .select()
+    .from(produtosMarketplace)
+    .where(eq(produtosMarketplace.id, id))
+    .limit(1);
+
+  return produtos.length > 0 ? produtos[0] : null;
+}
+
+/**
+ * Criar pedido no marketplace
+ */
+export async function criarPedidoMarketplace(data: {
+  userId: number;
+  produtoId: number;
+  quantidade: number;
+  enderecoEntrega: string;
+  observacoes?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar produto
+  const produto = await getProdutoMarketplaceById(data.produtoId);
+  if (!produto) {
+    throw new Error("Produto não encontrado");
+  }
+
+  // Verificar estoque
+  if (produto.estoque < data.quantidade) {
+    throw new Error("Estoque insuficiente");
+  }
+
+  // Buscar pontos do usuário
+  const pontosResult = await db
+    .select({ total: sql<number>`SUM(${pontuacoes.pontos})` })
+    .from(pontuacoes)
+    .where(eq(pontuacoes.userId, data.userId));
+  const pontosUsuario = pontosResult[0]?.total || 0;
+  const pontosNecessarios = produto.pontosNecessarios * data.quantidade;
+
+  // Calcular valor a pagar (se pontos insuficientes)
+  let valorPago = 0;
+  let pontosUsados = pontosNecessarios;
+
+  if (pontosUsuario < pontosNecessarios) {
+    const pontosFaltando = pontosNecessarios - pontosUsuario;
+    pontosUsados = pontosUsuario;
+    // Cada ponto vale R$ 1,00 (100 centavos)
+    valorPago = pontosFaltando * 100;
+  }
+
+  // Criar pedido
+  const [pedido] = await db.insert(pedidosMarketplace).values({
+    userId: data.userId,
+    produtoId: data.produtoId,
+    quantidade: data.quantidade,
+    pontosUsados,
+    valorPago,
+    status: "pendente",
+    enderecoEntrega: data.enderecoEntrega,
+    observacoes: data.observacoes,
+  }).$returningId();
+
+  // Atualizar estoque
+  await db
+    .update(produtosMarketplace)
+    .set({ estoque: sql`${produtosMarketplace.estoque} - ${data.quantidade}` })
+    .where(eq(produtosMarketplace.id, data.produtoId));
+
+  // Debitar pontos
+  if (pontosUsados > 0) {
+    await createPontuacao({
+      userId: data.userId,
+      pontos: -pontosUsados,
+      tipo: "desafio",
+      descricao: `Resgate de ${produto.nome}`,
+    });
+  }
+
+  // Notificar usuário
+  await createNotification({
+    userId: data.userId,
+    tipo: "geral" as any,
+    titulo: "Pedido Realizado! 🎁",
+    mensagem: `Seu pedido de ${produto.nome} foi confirmado`,
+    link: "/marketplace/meus-pedidos",
+  });
+
+  return { pedido, valorPago };
+}
+
+/**
+ * Listar pedidos do usuário
+ */
+export async function getPedidosByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: pedidosMarketplace.id,
+      quantidade: pedidosMarketplace.quantidade,
+      pontosUsados: pedidosMarketplace.pontosUsados,
+      valorPago: pedidosMarketplace.valorPago,
+      status: pedidosMarketplace.status,
+      enderecoEntrega: pedidosMarketplace.enderecoEntrega,
+      createdAt: pedidosMarketplace.createdAt,
+      produtoNome: produtosMarketplace.nome,
+      produtoImagem: produtosMarketplace.imagemUrl,
+    })
+    .from(pedidosMarketplace)
+    .leftJoin(produtosMarketplace, eq(pedidosMarketplace.produtoId, produtosMarketplace.id))
+    .where(eq(pedidosMarketplace.userId, userId))
+    .orderBy(desc(pedidosMarketplace.createdAt));
+}
+
+/**
+ * Atualizar status do pedido
+ */
+export async function atualizarStatusPedido(id: number, status: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(pedidosMarketplace)
+    .set({ status: status as any })
+    .where(eq(pedidosMarketplace.id, id));
+
+  // Notificar usuário
+  const pedido = await db
+    .select()
+    .from(pedidosMarketplace)
+    .where(eq(pedidosMarketplace.id, id))
+    .limit(1);
+
+  if (pedido.length > 0) {
+    const statusMessages: Record<string, string> = {
+      processando: "Seu pedido está sendo processado",
+      enviado: "Seu pedido foi enviado!",
+      entregue: "Seu pedido foi entregue!",
+      cancelado: "Seu pedido foi cancelado",
+    };
+
+    await createNotification({
+      userId: pedido[0].userId,
+      tipo: "geral" as any,
+      titulo: "Atualização de Pedido 📦",
+      mensagem: statusMessages[status] || "Status do pedido atualizado",
+      link: "/marketplace/meus-pedidos",
+    });
+  }
+
+  return { success: true };
+}
+
+/**
+ * Criar produto (admin)
+ */
+export async function criarProduto(data: InsertProdutoMarketplace) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [produto] = await db.insert(produtosMarketplace).values(data).$returningId();
+
+  return produto;
+}
+
+/**
+ * Atualizar estoque (admin)
+ */
+export async function atualizarEstoque(id: number, quantidade: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(produtosMarketplace)
+    .set({ estoque: quantidade })
+    .where(eq(produtosMarketplace.id, id));
+
+  return { success: true };
+}
+
+/**
+ * Listar todos os pedidos (admin)
+ */
+export async function getAllPedidos() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: pedidosMarketplace.id,
+      quantidade: pedidosMarketplace.quantidade,
+      pontosUsados: pedidosMarketplace.pontosUsados,
+      valorPago: pedidosMarketplace.valorPago,
+      status: pedidosMarketplace.status,
+      enderecoEntrega: pedidosMarketplace.enderecoEntrega,
+      createdAt: pedidosMarketplace.createdAt,
+      produtoNome: produtosMarketplace.nome,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(pedidosMarketplace)
+    .leftJoin(produtosMarketplace, eq(pedidosMarketplace.produtoId, produtosMarketplace.id))
+    .leftJoin(users, eq(pedidosMarketplace.userId, users.id))
+    .orderBy(desc(pedidosMarketplace.createdAt));
+}
+
+
+// ==================== ANÁLISE PREDITIVA COM IA ====================
+
+/**
+ * Gerar insights personalizados sobre performance usando LLM
+ */
+export async function gerarInsightsPerformance(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar dados do atleta
+  const usuario = await getUserById(userId);
+  if (!usuario) return null;
+
+  // Buscar histórico de PRs (últimos 6 meses)
+  const seisMesesAtras = new Date();
+  seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+
+  const prsRecentes = await db
+    .select()
+    .from(prs)
+    .where(and(
+      eq(prs.userId, userId),
+      sql`${prs.data} >= ${seisMesesAtras}`
+    ))
+    .orderBy(desc(prs.data));
+
+  // Buscar check-ins (frequência)
+  const checkinsCount = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(checkins)
+    .where(and(
+      eq(checkins.userId, userId),
+      sql`${checkins.dataHora} >= ${seisMesesAtras}`
+    ));
+
+  const frequencia = checkinsCount[0]?.count || 0;
+
+  // Buscar badges conquistados
+  const badgesUsuario = await db
+    .select({
+      nome: badges.nome,
+      descricao: badges.descricao,
+      dataConquista: userBadges.dataConquista,
+    })
+    .from(userBadges)
+    .leftJoin(badges, eq(userBadges.badgeId, badges.id))
+    .where(eq(userBadges.userId, userId))
+    .orderBy(desc(userBadges.dataConquista))
+    .limit(5);
+
+  // Preparar contexto para LLM
+  const contexto = `
+Atleta: ${usuario.name}
+Categoria: ${usuario.categoria}
+Frequência (últimos 6 meses): ${frequencia} treinos
+
+PRs Recentes:
+${prsRecentes.map(pr => `- ${pr.movimento}: ${pr.carga}kg (${new Date(pr.data).toLocaleDateString('pt-BR')})`).join('\n')}
+
+Badges Conquistados:
+${badgesUsuario.map(b => `- ${b.nome}: ${b.descricao}`).join('\n')}
+  `.trim();
+
+  // Chamar LLM para análise
+  const { invokeLLM } = await import("./_core/llm");
+
+  const response = await invokeLLM({
+    messages: [
+      {
+        role: "system",
+        content: "Você é um coach especializado em CrossFit e análise de performance atlética. Analise os dados do atleta e forneça insights acionáveis, específicos e motivadores em português brasileiro."
+      },
+      {
+        role: "user",
+        content: `Analise a performance deste atleta e forneça 3-4 insights específicos sobre:\n1. Pontos fortes identificados\n2. Áreas de melhoria\n3. Padrões de progresso\n4. Recomendações práticas\n\n${contexto}`
+      }
+    ]
+  });
+
+  const insights = response.choices[0].message.content;
+
+  return {
+    insights,
+    dadosAnalisados: {
+      frequencia,
+      totalPRs: prsRecentes.length,
+      totalBadges: badgesUsuario.length,
+    },
+    geradoEm: new Date(),
+  };
+}
+
+/**
+ * Sugerir treinos complementares baseados em histórico
+ */
+export async function sugerirTreinosComplementares(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar PRs do atleta
+  const prsAtleta = await db
+    .select()
+    .from(prs)
+    .where(eq(prs.userId, userId))
+    .orderBy(desc(prs.data))
+    .limit(20);
+
+  // Agrupar por movimento
+  const movimentosPraticados = new Set(prsAtleta.map(pr => pr.movimento));
+
+  // Movimentos fundamentais do CrossFit
+  const movimentosFundamentais = [
+    "Snatch", "Clean & Jerk", "Back Squat", "Front Squat", "Deadlift",
+    "Overhead Squat", "Bench Press", "Strict Pull-up", "Muscle-up",
+    "Handstand Push-up", "Thruster", "Wall Ball"
+  ];
+
+  // Identificar lacunas
+  const movimentosFaltando = movimentosFundamentais.filter(m => !movimentosPraticados.has(m));
+
+  // Preparar contexto para LLM
+  const contexto = `
+Movimentos praticados recentemente:
+${Array.from(movimentosPraticados).join(', ')}
+
+Movimentos fundamentais não praticados:
+${movimentosFaltando.join(', ')}
+  `.trim();
+
+  const { invokeLLM } = await import("./_core/llm");
+
+  const response = await invokeLLM({
+    messages: [
+      {
+        role: "system",
+        content: "Você é um programador de treinos de CrossFit. Sugira treinos complementares específicos e balanceados."
+      },
+      {
+        role: "user",
+        content: `Com base no histórico do atleta, sugira 3 treinos complementares (WODs) que trabalhem os movimentos não praticados e melhorem o equilíbrio geral. Forneça nome do WOD, descrição e objetivo.\n\n${contexto}`
+      }
+    ]
+  });
+
+  const sugestoes = response.choices[0].message.content;
+
+  return {
+    sugestoes,
+    movimentosFaltando,
+    geradoEm: new Date(),
+  };
+}
+
+/**
+ * Prever risco de lesões baseado em padrões de treino
+ */
+export async function preverRiscoLesoes(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar frequência de treinos (últimos 30 dias)
+  const trintaDiasAtras = new Date();
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+  const checkins30Dias = await db
+    .select({
+      data: sql<string>`DATE(${checkins.dataHora})`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(checkins)
+    .where(and(
+      eq(checkins.userId, userId),
+      sql`${checkins.dataHora} >= ${trintaDiasAtras}`
+    ))
+    .groupBy(sql`DATE(${checkins.dataHora})`)
+    .orderBy(sql`DATE(${checkins.dataHora})`);
+
+  // Calcular padrões
+  const totalTreinos = checkins30Dias.reduce((sum, c) => sum + c.count, 0);
+  const diasComTreino = checkins30Dias.length;
+  const mediaTreinosPorDia = totalTreinos / diasComTreino;
+
+  // Detectar treinos consecutivos sem descanso
+  let maxTreinosConsecutivos = 0;
+  let consecutivosAtual = 0;
+  let ultimaData: Date | null = null;
+
+  checkins30Dias.forEach(c => {
+    const dataAtual = new Date(c.data);
+    if (ultimaData) {
+      const diffDias = Math.floor((dataAtual.getTime() - ultimaData.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDias === 1) {
+        consecutivosAtual++;
+        maxTreinosConsecutivos = Math.max(maxTreinosConsecutivos, consecutivosAtual);
+      } else {
+        consecutivosAtual = 1;
+      }
+    } else {
+      consecutivosAtual = 1;
+    }
+    ultimaData = dataAtual;
+  });
+
+  // Buscar PRs recentes (possível sobrecarga)
+  const prsUltimos7Dias = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prs)
+    .where(and(
+      eq(prs.userId, userId),
+      sql`${prs.data} >= DATE_SUB(NOW(), INTERVAL 7 DAYS)`
+    ));
+
+  const countPrsRecentes = prsUltimos7Dias[0]?.count || 0;
+
+  // Preparar contexto para LLM
+  const contexto = `
+Treinos últimos 30 dias: ${totalTreinos}
+Dias com treino: ${diasComTreino}
+Média de treinos por dia: ${mediaTreinosPorDia.toFixed(1)}
+Máximo de treinos consecutivos: ${maxTreinosConsecutivos}
+PRs nos últimos 7 dias: ${countPrsRecentes}
+  `.trim();
+
+  const { invokeLLM } = await import("./_core/llm");
+
+  const response = await invokeLLM({
+    messages: [
+      {
+        role: "system",
+        content: "Você é um fisioterapeuta especializado em CrossFit e prevenção de lesões. Analise os padrões de treino e identifique riscos potenciais."
+      },
+      {
+        role: "user",
+        content: `Analise os padrões de treino e forneça:\n1. Nível de risco (Baixo/Médio/Alto)\n2. Fatores de risco identificados\n3. Recomendações preventivas específicas\n4. Sinais de alerta para observar\n\n${contexto}`
+      }
+    ]
+  });
+
+  const analise = response.choices[0].message.content;
+
+  // Determinar nível de risco baseado em heurísticas
+  let nivelRisco = "Baixo";
+  if (maxTreinosConsecutivos >= 7 || countPrsRecentes >= 3) {
+    nivelRisco = "Alto";
+  } else if (maxTreinosConsecutivos >= 5 || mediaTreinosPorDia > 1.5) {
+    nivelRisco = "Médio";
+  }
+
+  return {
+    nivelRisco,
+    analise,
+    metricas: {
+      totalTreinos,
+      diasComTreino,
+      maxTreinosConsecutivos,
+      prsRecentes: countPrsRecentes,
+    },
+    geradoEm: new Date(),
+  };
 }

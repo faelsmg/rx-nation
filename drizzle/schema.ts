@@ -957,3 +957,60 @@ export const wearableDataRelations = relations(wearableData, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+
+/**
+ * Produtos do Marketplace (Recompensas Tangíveis)
+ */
+export const produtosMarketplace = mysqlTable("produtos_marketplace", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  categoria: mysqlEnum("categoria", ["vestuario", "acessorios", "suplementos", "equipamentos"]).notNull(),
+  pontosNecessarios: int("pontosNecessarios").notNull(),
+  precoReal: int("precoReal").notNull(), // em centavos
+  estoque: int("estoque").default(0).notNull(),
+  imagemUrl: varchar("imagemUrl", { length: 500 }),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProdutoMarketplace = typeof produtosMarketplace.$inferSelect;
+export type InsertProdutoMarketplace = typeof produtosMarketplace.$inferInsert;
+
+/**
+ * Pedidos do Marketplace
+ */
+export const pedidosMarketplace = mysqlTable("pedidos_marketplace", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  produtoId: int("produtoId").notNull(),
+  quantidade: int("quantidade").default(1).notNull(),
+  pontosUsados: int("pontosUsados").notNull(),
+  valorPago: int("valorPago").notNull(), // em centavos (se pagou diferença)
+  status: mysqlEnum("status", ["pendente", "processando", "enviado", "entregue", "cancelado"]).default("pendente").notNull(),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  enderecoEntrega: text("enderecoEntrega"),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PedidoMarketplace = typeof pedidosMarketplace.$inferSelect;
+export type InsertPedidoMarketplace = typeof pedidosMarketplace.$inferInsert;
+
+export const produtosMarketplaceRelations = relations(produtosMarketplace, ({ many }) => ({
+  pedidos: many(pedidosMarketplace),
+}));
+
+export const pedidosMarketplaceRelations = relations(pedidosMarketplace, ({ one }) => ({
+  user: one(users, {
+    fields: [pedidosMarketplace.userId],
+    references: [users.id],
+  }),
+  produto: one(produtosMarketplace, {
+    fields: [pedidosMarketplace.produtoId],
+    references: [produtosMarketplace.id],
+  }),
+}));

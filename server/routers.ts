@@ -4177,6 +4177,79 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== MENTORIA =====
+  mentoria: router({
+    // Encontrar mentor ideal
+    encontrarMentor: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.encontrarMentorIdeal(ctx.user.id);
+      }),
+
+    // Criar mentoria
+    criar: protectedProcedure
+      .input(z.object({
+        mentoradoId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não pertence a nenhum box' });
+        }
+        return db.criarMentoria({
+          mentorId: ctx.user.id,
+          mentoradoId: input.mentoradoId,
+          boxId: ctx.user.boxId,
+          status: 'pendente',
+        });
+      }),
+
+    // Listar mentorias do usuário
+    listar: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getMentoriasByUser(ctx.user.id);
+      }),
+
+    // Atualizar status
+    atualizarStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['pendente', 'ativa', 'concluida', 'cancelada']),
+      }))
+      .mutation(async ({ input }) => {
+        return db.atualizarStatusMentoria(input.id, input.status);
+      }),
+
+    // Avaliar mentoria
+    avaliar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        tipo: z.enum(['mentor', 'mentorado']),
+        avaliacao: z.number().min(1).max(5),
+        comentario: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.avaliarMentoria(input.id, input.tipo, input.avaliacao, input.comentario);
+      }),
+
+    // Criar agendamento
+    criarAgendamento: protectedProcedure
+      .input(z.object({
+        mentoriaId: z.number(),
+        dataHora: z.date(),
+        local: z.string().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.criarAgendamentoMentoria(input);
+      }),
+
+    // Listar agendamentos
+    listarAgendamentos: protectedProcedure
+      .input(z.object({ mentoriaId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getAgendamentosByMentoria(input.mentoriaId);
+      }),
+  }),
+
 });
 
 

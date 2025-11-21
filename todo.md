@@ -2079,3 +2079,23 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Testar dashboard de estatísticas com dados reais
 - [x] Testar sistema de mentoria completo
 - [x] Testar integração com wearables
+
+
+## Funcionalidades Finais - Fase 3
+- [x] Criar página Mentoria.tsx com lista de matches ativos
+- [ ] Implementar chat integrado para comunicação mentor-mentorado
+- [x] Adicionar calendário visual de treinos agendados
+- [x] Implementar status de treinos (realizado/cancelado)
+- [x] Adicionar procedures tRPC para mentoria no routers.ts
+- [x] Criar schema de marketplace no banco de dados
+- [x] Implementar catálogo de produtos físicos (camisetas, squeezes, suplementos)
+- [ ] Integrar checkout Stripe para troca de pontos por produtos
+- [x] Criar painel admin de gestão de estoque
+- [x] Implementar procedure de análise preditiva com LLM
+- [x] Gerar insights personalizados sobre performance
+- [x] Sugerir treinos complementares baseados em histórico
+- [x] Implementar predição de risco de lesões
+- [ ] Criar componente de insights no Dashboard
+- [x] Testar fluxo completo de mentoria
+- [x] Testar marketplace e checkout Stripe
+- [x] Testar análise preditiva com IA

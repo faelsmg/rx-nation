@@ -68,6 +68,7 @@ import MeusPremios from "./pages/MeusPremios";
 import HistoricoPerformance from "./pages/HistoricoPerformance";
 import RankingSemanal from "./pages/RankingSemanal";
 import MeuProgresso from "./pages/MeuProgresso";
+import Mentoria from "./pages/Mentoria";
 
 function Router() {
   return (
@@ -96,6 +97,7 @@ function Router() {
       <Route path={"/atleta/:id"} component={PerfilPublico} />
       <Route path={"/metas"} component={Metas} />
       <Route path={"/meu-progresso"} component={MeuProgresso} />
+      <Route path={"/mentoria"} component={Mentoria} />
       <Route path={"/feed"} component={Feed} />
 
       <Route path={"/desafios"} component={Desafios} />
