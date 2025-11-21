@@ -238,7 +238,7 @@ export default function Agenda() {
               Próximos 7 dias
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6" data-onboarding="agenda-list">
             {proximosDias.map((data) => {
               const diaSemana = DIAS_SEMANA[data.getDay()];
               const horariosdia = horarios?.filter(

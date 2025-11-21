@@ -90,7 +90,7 @@ export default function WodDoDia() {
           </Card>
         ) : wodHoje ? (
           <>
-            <Card className="card-impacto">
+            <Card className="card-impacto" data-onboarding="wod-card">
               <CardHeader>
                 <CardTitle className="text-3xl text-primary">{wodHoje.titulo}</CardTitle>
                 <p className="text-muted-foreground">
@@ -136,6 +136,7 @@ export default function WodDoDia() {
                     size="lg"
                     variant="outline"
                     onClick={() => setShowResultForm(!showResultForm)}
+                    data-onboarding="register-result-btn"
                   >
                     <Trophy className="mr-2 h-5 w-5" />
                     {showResultForm ? "Cancelar" : "Registrar Resultado"}

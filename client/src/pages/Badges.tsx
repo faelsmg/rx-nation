@@ -1,16 +1,24 @@
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Award, Lock, FileDown } from "lucide-react";
+import { Award, Lock, FileDown, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { gerarCertificadoBadge } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { ShareCardDialog } from "@/components/ShareCardDialog";
+import { useState } from "react";
 
 export default function Badges() {
   const { data: userBadges } = trpc.badges.getUserBadges.useQuery();
   const { data: allBadges } = trpc.badges.getAll.useQuery();
   const { data: user } = trpc.auth.me.useQuery();
+  const { data: pontuacao } = trpc.pontuacoes.getByUser.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<any>(null);
 
   const handleExportarCertificado = (badge: any, dataConquista: string) => {
     if (!user) return;
@@ -51,7 +59,7 @@ export default function Badges() {
               <h2 className="text-2xl font-bold">Conquistados</h2>
               <p className="text-muted-foreground">{userBadges.length} badge{userBadges.length > 1 ? 's' : ''} desbloqueado{userBadges.length > 1 ? 's' : ''}</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-onboarding="badges-grid">
               {userBadges.map((ub) => (
                 <Card key={ub.id} className="card-impacto border-primary/50 bg-primary/5">
                   <CardContent className="pt-6 text-center space-y-3">
@@ -62,15 +70,29 @@ export default function Badges() {
                     <p className="text-xs text-muted-foreground">
                       {new Date(ub.dataConquista).toLocaleDateString('pt-BR')}
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleExportarCertificado(ub.badge, ub.dataConquista.toString())}
-                      className="mt-2"
-                    >
-                      <FileDown className="mr-2 h-3 w-3" />
-                      Exportar Certificado
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleExportarCertificado(ub.badge, ub.dataConquista.toString())}
+                        className="flex-1"
+                      >
+                        <FileDown className="mr-2 h-3 w-3" />
+                        Certificado
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBadge(ub);
+                          setShareDialogOpen(true);
+                        }}
+                        className="flex-1"
+                      >
+                        <Share2 className="mr-2 h-3 w-3" />
+                        Compartilhar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -85,7 +107,7 @@ export default function Badges() {
               <h2 className="text-2xl font-bold">Disponíveis</h2>
               <p className="text-muted-foreground">Continue treinando para desbloquear</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-onboarding="badges-grid">
               {allBadges
                 .filter((badge: any) => !unlockedBadgeIds.has(badge.id))
                 .map((badge: any) => (
@@ -112,6 +134,23 @@ export default function Badges() {
               <p className="text-muted-foreground">Nenhuma badge disponível no momento.</p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Share Card Dialog */}
+        {selectedBadge && user && (
+          <ShareCardDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            type="badge"
+            atletaNome={user.name || "Atleta"}
+            boxNome={"Impacto Pro League"}
+            categoria={user.categoria?.toUpperCase() || "ATLETA"}
+            pontosTotais={pontuacao?.reduce((sum, p) => sum + p.pontos, 0) || 0}
+            ranking={undefined}
+            badgeNome={selectedBadge.badge?.nome}
+            badgeIcone={selectedBadge.badge?.icone}
+            badgeDescricao={selectedBadge.badge?.descricao}
+          />
         )}
       </div>
     </AppLayout>

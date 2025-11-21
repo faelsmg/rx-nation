@@ -12,11 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Trophy, Plus, TrendingUp, Video } from "lucide-react";
+import { Trophy, Plus, TrendingUp, Video, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MOVIMENTOS_PR } from "@/const";
 import PREvolutionChart from "@/components/PREvolutionChart";
+import { ShareCardDialog } from "@/components/ShareCardDialog";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function PRs() {
   const { data: prs, isLoading } = trpc.prs.getByUser.useQuery();
@@ -28,6 +30,13 @@ export default function PRs() {
   const [carga, setCarga] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedPR, setSelectedPR] = useState<any>(null);
+  const { user } = useAuth();
+  const { data: pontuacao } = trpc.pontuacoes.getByUser.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,6 +234,19 @@ export default function PRs() {
                       </div>
                     )}
                     
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={() => {
+                        setSelectedPR(melhorPr);
+                        setShareDialogOpen(true);
+                      }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Compartilhar PR
+                    </Button>
+                    
                     {historico.length > 0 && (
                       <div className="pt-4 border-t space-y-4">
                         <p className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -249,12 +271,30 @@ export default function PRs() {
           </div>
         ) : (
           <Card className="card-impacto">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 text-center">
               <p className="text-muted-foreground">
-                Você ainda não registrou nenhum PR. Clique em "Novo PR" para começar!
+                Nenhum PR registrado ainda. Comece registrando seu primeiro recorde!
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Share Card Dialog */}
+        {selectedPR && user && (
+          <ShareCardDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            type="pr"
+            atletaNome={user.name || "Atleta"}
+            boxNome={"Impacto Pro League"}
+            categoria={user.categoria?.toUpperCase() || "ATLETA"}
+            pontosTotais={pontuacao?.reduce((sum, p) => sum + p.pontos, 0) || 0}
+            ranking={undefined}
+            movimento={selectedPR.movimento}
+            carga={selectedPR.carga}
+            unidade="kg"
+            dataRecorde={selectedPR.data.toString()}
+          />
         )}
       </div>
     </AppLayout>

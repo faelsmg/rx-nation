@@ -1441,3 +1441,32 @@
 - [ ] Criar página de Configurações de Notificações Push
 - [ ] Testar em diferentes navegadores
 - [ ] Criar testes para push notifications
+
+
+## Onboarding Interativo Completo
+- [x] Expandir tour de boas-vindas existente
+- [x] Passo 1: Bem-vindo à plataforma (overview)
+- [x] Passo 2: WOD do Dia (como visualizar e entender)
+- [x] Passo 3: Registrar Resultado (como registrar performance)
+- [x] Passo 4: Check-in (como fazer check-in nas aulas)
+- [x] Passo 5: Badges e Gamificação (como ganhar pontos e badges)
+- [x] Adicionar highlights visuais em cada passo
+- [x] Implementar navegação entre passos (anterior/próximo/pular)
+- [x] Salvar progresso do onboarding no localStorage
+- [x] Adicionar opção "Não mostrar novamente"
+
+## Cards Visuais Estilo FIFA para Compartilhamento
+- [x] Criar componente de geração de card visual
+- [x] Design de card para PRs (estilo FIFA Ultimate Team)
+- [x] Design de card para Badges conquistados
+- [x] Design de card para Conquistas/Achievements
+- [x] Adicionar foto do atleta no card
+- [x] Adicionar estatísticas principais (pontos, rank, categoria)
+- [x] Adicionar gradiente de fundo baseado em raridade
+- [x] Implementar função de gerar imagem PNG do card
+- [x] Adicionar botão "Compartilhar" em PRs
+- [x] Adicionar botão "Compartilhar" em Badges
+- [ ] Adicionar botão "Compartilhar" em Conquistas
+- [x] Implementar download do card como imagem
+- [x] Criar função de compartilhar diretamente no Instagram
+- [x] Testar geração de cards em diferentes resoluções
