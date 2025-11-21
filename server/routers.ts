@@ -566,6 +566,12 @@ export const appRouter = router({
           assignedBadges,
         };
       }),
+
+    getUserStats: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getUserStatsForBadges(input.userId);
+      }),
   }),
 
   // ===== RANKINGS =====

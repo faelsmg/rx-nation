@@ -7059,3 +7059,26 @@ export async function getBoxesMetrics() {
     avgEngajamento: Math.round(Number(row?.avgEngajamento || 0)),
   };
 }
+
+// ===== STATS PARA BADGES PROGRESSIVOS =====
+export async function getUserStatsForBadges(userId: number) {
+  const db = await getDb();
+  if (!db) return { totalWods: 0, totalPRs: 0, totalCheckins: 0, totalCurtidas: 0 };
+
+  const result = await db.execute(sql`
+    SELECT
+      (SELECT COUNT(*) FROM resultados_treinos WHERE userId = ${userId}) as totalWods,
+      (SELECT COUNT(*) FROM prs WHERE userId = ${userId}) as totalPRs,
+      (SELECT COUNT(*) FROM checkins WHERE userId = ${userId}) as totalCheckins,
+      (SELECT COUNT(*) FROM comentarios_feed WHERE userId = ${userId}) as totalCurtidas
+  `);
+
+  const row = (result as any[])[0];
+  
+  return {
+    totalWods: Number(row?.totalWods || 0),
+    totalPRs: Number(row?.totalPRs || 0),
+    totalCheckins: Number(row?.totalCheckins || 0),
+    totalCurtidas: Number(row?.totalCurtidas || 0),
+  };
+}

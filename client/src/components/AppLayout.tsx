@@ -83,6 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: Users, label: "Equipes", path: "/equipes", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Trophy, label: "Leaderboard Equipes", path: "/leaderboard-equipes", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Target, label: "Conquistas", path: "/conquistas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: Trophy, label: "Árvore de Conquistas", path: "/arvore-conquistas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Users, label: "Comparar Atletas", path: "/comparacao", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: MessageCircle, label: "Mensagens", path: "/mensagens", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: MessageCircle, label: "Chat", path: "/chat", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },

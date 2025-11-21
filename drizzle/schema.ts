@@ -199,6 +199,10 @@ export const badges = mysqlTable("badges", {
   descricao: text("descricao").notNull(),
   icone: varchar("icone", { length: 255 }), // URL do ícone
   criterio: text("criterio").notNull(), // descrição do critério para ganhar
+  nivel: mysqlEnum("nivel", ["bronze", "prata", "ouro", "platina"]).default("bronze").notNull(),
+  categoria: mysqlEnum("categoria", ["wods", "prs", "frequencia", "social", "especial"]).default("especial").notNull(),
+  badgePrerequisito: int("badgePrerequisito"), // ID do badge que deve ser conquistado antes
+  valorObjetivo: int("valorObjetivo"), // Valor numérico do objetivo (ex: 10 WODs, 5 PRs)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

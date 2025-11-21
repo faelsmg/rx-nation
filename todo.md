@@ -1403,3 +1403,41 @@
 - [ ] Trigger push ao atleta receber badge
 - [ ] Trigger push ao completar meta
 - [ ] Testar em diferentes navegadores
+
+
+## Sistema de Conquistas Progressivas - ✅ CONCLUÍDO
+- [x] Criar schema de conquistas com níveis (Bronze, Prata, Ouro, Platina)
+- [x] Adicionar campo nivel na tabela badges
+- [x] Adicionar campo badge_prerequisito para dependências
+- [x] Criar árvore de conquistas por categoria (WODs, PRs, Frequência, Social)
+- [x] Implementar lógica de desbloqueio sequencial
+- [x] Criar página de Árvore de Conquistas com visualização hierárquica
+- [x] Adicionar indicadores visuais de progresso para próximo nível
+- [x] Implementar celebração especial para conquistas Platina
+- [ ] Criar testes para sistema de conquistas
+
+## Integração com Wearables (Apple Health / Google Fit)
+- [ ] Pesquisar APIs de Apple Health e Google Fit
+- [ ] Criar schema para armazenar dados de wearables
+- [ ] Implementar OAuth para Apple Health
+- [ ] Implementar OAuth para Google Fit
+- [ ] Criar procedures para importar dados de treinos
+- [ ] Criar procedures para importar frequência cardíaca
+- [ ] Criar procedures para importar calorias queimadas
+- [ ] Criar página de Configurações de Wearables
+- [ ] Adicionar gráficos de dados de wearables no Analytics
+- [ ] Criar testes para integração com wearables
+
+## Notificações Push Web com Service Worker
+- [ ] Criar service worker (sw.js) no public
+- [ ] Registrar service worker no main.tsx
+- [ ] Gerar VAPID keys para push notifications
+- [ ] Criar schema para armazenar subscriptions de push
+- [ ] Implementar endpoint de subscribe no backend
+- [ ] Implementar endpoint de unsubscribe no backend
+- [ ] Criar função para enviar push notification
+- [ ] Integrar push ao criar novo WOD
+- [ ] Integrar push ao desbloquear badge
+- [ ] Criar página de Configurações de Notificações Push
+- [ ] Testar em diferentes navegadores
+- [ ] Criar testes para push notifications

@@ -57,6 +57,7 @@ import DescobrirPlaylists from "./pages/DescobrirPlaylists";
 import GestaoBoxesLiga from "./pages/GestaoBoxesLiga";
 import MensagensDiretas from "./pages/MensagensDiretas";
 import AnalyticsAvancado from "./pages/AnalyticsAvancado";
+import ArvoreConquistas from "./pages/ArvoreConquistas";
 
 function Router() {
   return (
@@ -98,6 +99,7 @@ function Router() {
       <Route path={"/gestao-boxes-liga"} component={GestaoBoxesLiga} />
       <Route path="/mensagens-diretas" component={MensagensDiretas} />
       <Route path="/analytics-avancado" component={AnalyticsAvancado} />
+      <Route path="/arvore-conquistas" component={ArvoreConquistas} />
       <Route path={"/calendario-eventos"} component={CalendarioEventos} />
       <Route path={"/meu-qrcode"} component={MeuQRCode} />
       <Route path={"/scanner-qrcode"} component={ScannerQRCode} />
