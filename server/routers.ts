@@ -972,6 +972,17 @@ export const appRouter = router({
   }),
 
   // Histórico de Performance Individual (Atleta)
+  compararAtletas: protectedProcedure
+    .input(
+      z.object({
+        atleta1Id: z.number(),
+        atleta2Id: z.number(),
+      })
+    )
+    .query(async ({ input }) => {
+      return db.compararAtletas(input.atleta1Id, input.atleta2Id);
+    }),
+
   historicoPerformance: protectedProcedure
     .input(z.object({
       userId: z.number().optional(), // Se não informado, usa o próprio usuário
@@ -3962,6 +3973,9 @@ export const appRouter = router({
           mensagem: `Seu resultado foi registrado: ${input.posicao}º lugar com ${pontos} pontos!`,
           link: `/campeonatos/${inscricao.campeonatoId}`,
         });
+
+        // Verificar conquistas automáticas
+        await db.verificarConquistas(inscricao.userId);
 
         return resultado;
       }),

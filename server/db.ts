@@ -7600,6 +7600,141 @@ export async function resgatarPremio(userId: number, premioUsuarioId: number) {
   };
 }
 
+// ========== CONQUISTAS AUTOMÁTICAS ==========
+
+export async function verificarConquistas(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conquistasNovas: string[] = [];
+
+  // Buscar estatísticas do atleta no ranking global
+  const rankingCompleto = await getRankingGlobal(
+    new Date().getFullYear(),
+    undefined,
+    999
+  );
+
+  const atletaRanking = rankingCompleto?.find((r) => r.userId === userId);
+  if (!atletaRanking) return [];
+
+  // Buscar badges já conquistados
+  const badgesExistentes = await db
+    .select()
+    .from(userBadges)
+    .where(eq(userBadges.userId, userId));
+
+  const badgesIds = badgesExistentes.map((b) => b.badgeId);
+
+  // Definir conquistas e seus critérios
+  const conquistas = [
+    {
+      nome: "Primeiro Lugar",
+      descricao: "Conquistou o 1º lugar em um campeonato",
+      icone: "🥇",
+      criterio: () => atletaRanking.melhorPosicao === 1,
+      badgeId: 1, // ID do badge correspondente
+    },
+    {
+      nome: "Veterano",
+      descricao: "Participou de 10 campeonatos",
+      icone: "🏆",
+      criterio: () => atletaRanking.totalCampeonatos >= 10,
+      badgeId: 2,
+    },
+    {
+      nome: "Mil Pontos",
+      descricao: "Acumulou 1000 pontos no ranking",
+      icone: "💯",
+      criterio: () => atletaRanking.totalPontos >= 1000,
+      badgeId: 3,
+    },
+    {
+      nome: "Elite",
+      descricao: "Ficou entre os Top 3 do ranking global",
+      icone: "⭐",
+      criterio: () => atletaRanking.posicao <= 3,
+      badgeId: 4,
+    },
+    {
+      nome: "Consistente",
+      descricao: "Mantém média acima de 80 pontos por campeonato",
+      icone: "📊",
+      criterio: () => atletaRanking.mediaPontos >= 80,
+      badgeId: 5,
+    },
+  ];
+
+  // Verificar cada conquista
+  for (const conquista of conquistas) {
+    // Se já tem o badge, pular
+    if (badgesIds.includes(conquista.badgeId)) continue;
+
+    // Verificar se atende ao critério
+    if (conquista.criterio()) {
+      // Atribuir badge
+      await db.insert(userBadges).values({
+        userId,
+        badgeId: conquista.badgeId,
+        dataConquista: new Date(),
+      });
+
+      // Criar notificação
+      await createNotification({
+        userId,
+        tipo: "badge",
+        titulo: `🎉 Nova Conquista: ${conquista.nome}!`,
+        mensagem: conquista.descricao,
+      });
+
+      conquistasNovas.push(conquista.nome);
+    }
+  }
+
+  return conquistasNovas;
+}
+
+// ========== COMPARAÇÃO DE ATLETAS ==========
+
+export async function compararAtletas(atleta1Id: number, atleta2Id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar histórico de ambos os atletas
+  const historico1 = await getHistoricoPerformance(atleta1Id);
+  const historico2 = await getHistoricoPerformance(atleta2Id);
+
+  if (!historico1 || !historico2) return null;
+
+  // Buscar dados dos atletas
+  const atleta1 = await db.select().from(users).where(eq(users.id, atleta1Id)).limit(1);
+  const atleta2 = await db.select().from(users).where(eq(users.id, atleta2Id)).limit(1);
+
+  if (atleta1.length === 0 || atleta2.length === 0) return null;
+
+  // Calcular diferenças
+  const diferencas = {
+    totalCampeonatos: historico1.totalCampeonatos - historico2.totalCampeonatos,
+    totalPontos: historico1.totalPontos - historico2.totalPontos,
+    mediaPontos: historico1.mediaPontos - historico2.mediaPontos,
+    melhorPosicao: (historico1.melhorPosicao || 999) - (historico2.melhorPosicao || 999), // Negativo = atleta1 melhor
+  };
+
+  return {
+    atleta1: {
+      id: atleta1[0].id,
+      nome: atleta1[0].name || "Atleta 1",
+      historico: historico1,
+    },
+    atleta2: {
+      id: atleta2[0].id,
+      nome: atleta2[0].name || "Atleta 2",
+      historico: historico2,
+    },
+    diferencas,
+  };
+}
+
 // ========== HISTÓRICO DE PERFORMANCE ==========
 
 export async function getHistoricoPerformance(userId: number) {

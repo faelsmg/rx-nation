@@ -1906,3 +1906,37 @@ NOTA: Backend completo (schema, migrations, procedures tRPC). Falta implementar 
 - [ ] Adicionar testes para integração WhatsApp - NÃO IMPLEMENTADO
 
 NOTA: Integração WhatsApp Business requer conta empresarial, aprovação Meta, configuração de webhooks e custos por mensagem. Recomenda-se implementar em fase futura com planejamento adequado.
+
+
+## Novas Funcionalidades (Sprint 5)
+
+### 1. Sistema de Conquistas Automáticas
+- [x] Definir marcos de conquistas (1º lugar, 10 campeonatos, 1000 pontos, etc)
+- [x] Criar função para verificar conquistas após registrar resultado
+- [x] Implementar atribuição automática de badges
+- [x] Adicionar notificação quando atleta ganha badge
+- [ ] Exibir badges no perfil do atleta - PENDENTE
+- [ ] Adicionar testes para verificação de conquistas - PENDENTE
+
+NOTA: Backend completo (5 conquistas definidas, verificação automática, notificações). Falta apenas UI de exibição no perfil.
+
+### 2. Comparação de Atletas
+- [x] Criar query para comparar 2 atletas
+- [x] Implementar cálculo de diferenças e tendências
+- [ ] Criar página ComparacaoAtletas.tsx - PENDENTE
+- [ ] Seletor de atletas (busca por nome) - PENDENTE
+- [ ] Gráficos lado a lado (evolução, categorias) - PENDENTE
+- [ ] Tabela comparativa de estatísticas - PENDENTE
+- [ ] Adicionar rota no App.tsx - PENDENTE
+
+NOTA: Backend completo (procedure compararAtletas com cálculo de diferenças). Falta apenas UI.
+
+### 3. Exportação de Relatórios
+- [ ] Adicionar botão de exportação PDF no HistoricoPerformance - NÃO IMPLEMENTADO
+- [ ] Adicionar botão de exportação Excel no HistoricoPerformance - NÃO IMPLEMENTADO
+- [ ] Adicionar botão de exportação PDF no RankingGlobal - NÃO IMPLEMENTADO
+- [ ] Adicionar botão de exportação Excel no RankingGlobal - NÃO IMPLEMENTADO
+- [ ] Implementar geração de PDF com gráficos (PDFKit ou Puppeteer) - NÃO IMPLEMENTADO
+- [ ] Implementar geração de Excel (xlsx library) - NÃO IMPLEMENTADO
+
+NOTA: Exportação de relatórios requer bibliotecas adicionais e processamento complexo de gráficos. Recomenda-se implementar em fase futura.
