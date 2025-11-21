@@ -1268,3 +1268,12 @@
 - [x] Criar página de WODs famosos
 - [x] Adicionar WODs clássicos (Fran, Murph, Helen, etc.)
 - [x] Vídeos demonstrativos e recordes mundiais
+
+## Sistema de Playlists Personalizadas
+- [x] Criar tabelas de playlists e playlist_items no schema
+- [x] Criar procedures tRPC para CRUD de playlists
+- [x] Adicionar botões de favoritar na Biblioteca de Vídeos
+- [x] Adicionar botões de favoritar em WODs Famosos
+- [x] Criar página "Minhas Playlists"
+- [x] Modal de seleção/criação de playlist
+- [x] Testar funcionalidade completa

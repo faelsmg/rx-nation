@@ -2,8 +2,10 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Clock, Zap, Target, Video } from "lucide-react";
+import { Trophy, Clock, Zap, Target, Video, Plus } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 // Galeria curada de WODs clássicos do CrossFit
 const WODS_FAMOSOS = {
@@ -129,6 +131,20 @@ type Categoria = keyof typeof WODS_FAMOSOS;
 
 export default function WODsFamosos() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>("heroes");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedWod, setSelectedWod] = useState<any>(null);
+
+  const handleAddToPlaylist = (wod: any) => {
+    setSelectedWod({
+      tipo: "wod_famoso" as const,
+      videoId: String(wod.id),
+      titulo: wod.nome,
+      descricao: wod.descricao,
+      videoUrl: wod.videoUrl,
+      categoria: wod.categoria,
+    });
+    setDialogOpen(true);
+  };
 
   const getDifficultyColor = (dificuldade: string) => {
     switch (dificuldade) {
@@ -210,6 +226,16 @@ export default function WODsFamosos() {
                             <span className="font-semibold">Recorde Mundial:</span>
                             <span className="text-muted-foreground">{wod.recordeMundial}</span>
                           </div>
+
+                          <Button
+                            onClick={() => handleAddToPlaylist(wod)}
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar à Playlist
+                          </Button>
                         </div>
 
                         {/* Video */}
@@ -237,6 +263,14 @@ export default function WODsFamosos() {
             </TabsContent>
           ))}
         </Tabs>
+
+        {selectedWod && (
+          <AddToPlaylistDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            videoData={selectedWod}
+          />
+        )}
       </div>
     </AppLayout>
   );

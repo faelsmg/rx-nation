@@ -2869,6 +2869,101 @@ export const appRouter = router({
         return db.getUsuariosDigitando(input.conversaId);
       }),
   }),
+
+  // ===== PLAYLISTS PERSONALIZADAS =====
+  playlists: router({
+    // Criar playlist
+    create: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createPlaylist({
+          userId: ctx.user.id,
+          ...input,
+        });
+      }),
+
+    // Listar playlists do usuário
+    getByUser: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPlaylistsByUser(ctx.user.id);
+      }),
+
+    // Obter playlist com itens
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const playlist = await db.getPlaylistById(input.id);
+        if (!playlist || playlist.userId !== ctx.user.id) {
+          throw new Error("Playlist não encontrada");
+        }
+        return playlist;
+      }),
+
+    // Adicionar item à playlist
+    addItem: protectedProcedure
+      .input(z.object({
+        playlistId: z.number(),
+        tipo: z.enum(["video_educacional", "wod_famoso"]),
+        videoId: z.string(),
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        videoUrl: z.string(),
+        categoria: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verificar se a playlist pertence ao usuário
+        const playlist = await db.getPlaylistById(input.playlistId);
+        if (!playlist || playlist.userId !== ctx.user.id) {
+          throw new Error("Playlist não encontrada");
+        }
+        return db.addPlaylistItem(input);
+      }),
+
+    // Remover item da playlist
+    removeItem: protectedProcedure
+      .input(z.object({
+        playlistId: z.number(),
+        itemId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verificar se a playlist pertence ao usuário
+        const playlist = await db.getPlaylistById(input.playlistId);
+        if (!playlist || playlist.userId !== ctx.user.id) {
+          throw new Error("Playlist não encontrada");
+        }
+        return db.removePlaylistItem(input.itemId);
+      }),
+
+    // Atualizar playlist
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        descricao: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const playlist = await db.getPlaylistById(input.id);
+        if (!playlist || playlist.userId !== ctx.user.id) {
+          throw new Error("Playlist não encontrada");
+        }
+        const { id, ...data } = input;
+        return db.updatePlaylist(id, data);
+      }),
+
+    // Deletar playlist
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const playlist = await db.getPlaylistById(input.id);
+        if (!playlist || playlist.userId !== ctx.user.id) {
+          throw new Error("Playlist não encontrada");
+        }
+        return db.deletePlaylist(input.id);
+      }),
+  }),
 });
 
 

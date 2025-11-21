@@ -600,3 +600,52 @@ export const comentariosFeedRelations = relations(comentariosFeed, ({ one }) => 
     references: [users.id],
   }),
 }));
+
+
+/**
+ * Playlists de Vídeos Personalizadas
+ */
+export const playlists = mysqlTable("playlists", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Playlist = typeof playlists.$inferSelect;
+export type InsertPlaylist = typeof playlists.$inferInsert;
+
+/**
+ * Itens das Playlists (vídeos salvos)
+ */
+export const playlistItems = mysqlTable("playlist_items", {
+  id: int("id").autoincrement().primaryKey(),
+  playlistId: int("playlistId").notNull(),
+  tipo: mysqlEnum("tipo", ["video_educacional", "wod_famoso"]).notNull(),
+  videoId: varchar("videoId", { length: 100 }), // ID do vídeo na biblioteca ou WOD
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  videoUrl: text("videoUrl").notNull(),
+  categoria: varchar("categoria", { length: 100 }), // categoria do vídeo/wod
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PlaylistItem = typeof playlistItems.$inferSelect;
+export type InsertPlaylistItem = typeof playlistItems.$inferInsert;
+
+export const playlistsRelations = relations(playlists, ({ one, many }) => ({
+  user: one(users, {
+    fields: [playlists.userId],
+    references: [users.id],
+  }),
+  items: many(playlistItems),
+}));
+
+export const playlistItemsRelations = relations(playlistItems, ({ one }) => ({
+  playlist: one(playlists, {
+    fields: [playlistItems.playlistId],
+    references: [playlists.id],
+  }),
+}));

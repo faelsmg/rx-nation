@@ -41,6 +41,10 @@ import {
   InsertFeedAtividade,
   comentariosFeed,
   InsertComentarioFeed,
+  playlists,
+  InsertPlaylist,
+  playlistItems,
+  InsertPlaylistItem,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -6775,4 +6779,96 @@ export async function getParticipantesConversa(conversaId: number) {
   `);
 
   return rows as any[];
+}
+
+
+// ===== PLAYLISTS =====
+export async function createPlaylist(data: InsertPlaylist) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(playlists).values(data);
+  const resultArray = result as any;
+  return { id: Number(resultArray[0]?.insertId || 0), ...data };
+}
+
+export async function getPlaylistsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      p.*,
+      COUNT(pi.id) as total_itens
+    FROM playlists p
+    LEFT JOIN playlist_items pi ON p.id = pi.playlistId
+    WHERE p.userId = ${userId}
+    GROUP BY p.id
+    ORDER BY p.updatedAt DESC
+  `);
+
+  return rows as any[];
+}
+
+export async function getPlaylistById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const playlistRows = await db.execute(sql`
+    SELECT * FROM playlists WHERE id = ${id} LIMIT 1
+  `);
+
+  const playlistArray = playlistRows as any[];
+  if (playlistArray.length === 0) return null;
+
+  const playlist = playlistArray[0];
+
+  const itemsRows = await db.execute(sql`
+    SELECT * FROM playlist_items 
+    WHERE playlistId = ${id}
+    ORDER BY createdAt DESC
+  `);
+
+  return {
+    ...playlist,
+    items: itemsRows as any[],
+  };
+}
+
+export async function addPlaylistItem(data: InsertPlaylistItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(playlistItems).values(data);
+  const resultArray = result as any;
+  return { id: Number(resultArray[0]?.insertId || 0), ...data };
+}
+
+export async function removePlaylistItem(itemId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(playlistItems).where(eq(playlistItems.id, itemId));
+  return { success: true };
+}
+
+export async function updatePlaylist(id: number, data: Partial<InsertPlaylist>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(playlists).set(data).where(eq(playlists.id, id));
+  return { id, ...data };
+}
+
+export async function deletePlaylist(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Deletar itens primeiro (cascade)
+  await db.delete(playlistItems).where(eq(playlistItems.playlistId, id));
+  
+  // Deletar playlist
+  await db.delete(playlists).where(eq(playlists.id, id));
+  
+  return { success: true };
 }

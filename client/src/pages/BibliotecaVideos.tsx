@@ -2,8 +2,10 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Search, Video } from "lucide-react";
+import { BookOpen, Search, Video, Plus } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 // Biblioteca curada de vídeos educacionais
 const VIDEOS_EDUCACIONAIS = {
@@ -129,6 +131,20 @@ type Categoria = keyof typeof VIDEOS_EDUCACIONAIS;
 export default function BibliotecaVideos() {
   const [busca, setBusca] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>("olimpicos");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+
+  const handleAddToPlaylist = (video: any, categoria: string) => {
+    setSelectedVideo({
+      tipo: "video_educacional" as const,
+      videoId: String(video.id),
+      titulo: video.titulo,
+      descricao: video.descricao,
+      videoUrl: video.url,
+      categoria,
+    });
+    setDialogOpen(true);
+  };
 
   const videosFiltrados = VIDEOS_EDUCACIONAIS[categoriaAtiva].filter(
     (video) =>
@@ -196,10 +212,19 @@ export default function BibliotecaVideos() {
                         </CardTitle>
                         <CardDescription>{video.descricao}</CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-3">
                         <p className="text-sm text-muted-foreground">
                           Duração: {video.duracao}
                         </p>
+                        <Button
+                          onClick={() => handleAddToPlaylist(video, cat)}
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar à Playlist
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -216,6 +241,14 @@ export default function BibliotecaVideos() {
             </TabsContent>
           ))}
         </Tabs>
+
+        {selectedVideo && (
+          <AddToPlaylistDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            videoData={selectedVideo}
+          />
+        )}
       </div>
     </AppLayout>
   );
