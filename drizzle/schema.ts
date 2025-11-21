@@ -123,11 +123,16 @@ export type InsertPr = typeof prs.$inferInsert;
 export const campeonatos = mysqlTable("campeonatos", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
   tipo: mysqlEnum("tipo", ["interno", "cidade", "regional", "estadual", "nacional"]).default("interno").notNull(),
+  boxId: int("boxId"), // Box organizador (null = liga organiza)
   local: text("local"),
   dataInicio: timestamp("dataInicio").notNull(),
   dataFim: timestamp("dataFim").notNull(),
+  dataAberturaInscricoes: timestamp("dataAberturaInscricoes"),
+  dataFechamentoInscricoes: timestamp("dataFechamentoInscricoes"),
   capacidade: int("capacidade"),
+  valorInscricao: int("valorInscricao").default(0).notNull(), // em centavos (R$ 50,00 = 5000)
   inscricoesAbertas: boolean("inscricoesAbertas").default(true).notNull(),
   pesoRankingAnual: int("pesoRankingAnual").default(1).notNull(), // peso para cálculo do ranking anual
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -420,18 +420,14 @@ export const appRouter = router({
 
   // ===== CAMPEONATOS =====
   campeonatos: router({
-    create: adminProcedure
+    // Listar campeonatos com filtros
+    list: publicProcedure
       .input(z.object({
-        nome: z.string(),
-        tipo: z.enum(["interno", "cidade", "regional", "estadual", "nacional"]),
-        local: z.string().optional(),
-        dataInicio: z.date(),
-        dataFim: z.date(),
-        capacidade: z.number().optional(),
-        pesoRankingAnual: z.number().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        return db.createCampeonato(input);
+        tipo: z.enum(["interno", "cidade", "regional", "estadual", "nacional"]).optional(),
+        apenasAbertos: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.listarCampeonatos(input);
       }),
 
     getAll: publicProcedure.query(async () => {
@@ -446,6 +442,200 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return db.getCampeonatoById(input.id);
+      }),
+
+    // Criar campeonato (Admin ou Box Master)
+    create: protectedProcedure
+      .input(z.object({
+        nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+        descricao: z.string().optional(),
+        tipo: z.enum(["interno", "cidade", "regional", "estadual", "nacional"]),
+        boxId: z.number().nullable().optional(),
+        local: z.string().optional(),
+        dataInicio: z.date(),
+        dataFim: z.date(),
+        dataAberturaInscricoes: z.date().optional(),
+        dataFechamentoInscricoes: z.date().optional(),
+        capacidade: z.number().positive().optional(),
+        valorInscricao: z.number().min(0).optional(),
+        pesoRankingAnual: z.number().min(1).max(10).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem criar campeonatos',
+          });
+        }
+
+        if (ctx.user.role === 'box_master' && !input.boxId) {
+          input.boxId = ctx.user.boxId;
+        }
+
+        if (input.dataFim < input.dataInicio) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Data de fim deve ser posterior à data de início',
+          });
+        }
+
+        return db.criarCampeonato(input);
+      }),
+
+    // Atualizar campeonato
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().min(3).optional(),
+        descricao: z.string().optional(),
+        inscricoesAbertas: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const campeonato = await db.getCampeonatoById(input.id);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        if (ctx.user.role === 'box_master' && campeonato.boxId !== ctx.user.boxId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Você só pode editar campeonatos do seu box',
+          });
+        }
+
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem editar campeonatos',
+          });
+        }
+
+        return db.atualizarCampeonato(input.id, input);
+      }),
+
+    // Deletar campeonato
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const campeonato = await db.getCampeonatoById(input.id);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        if (ctx.user.role === 'box_master' && campeonato.boxId !== ctx.user.boxId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Você só pode deletar campeonatos do seu box',
+          });
+        }
+
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem deletar campeonatos',
+          });
+        }
+
+        return db.deletarCampeonato(input.id);
+      }),
+
+    // Listar inscrições de um campeonato
+    listInscricoes: protectedProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const campeonato = await db.getCampeonatoById(input.campeonatoId);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        if (ctx.user.role === 'box_master' && campeonato.boxId !== ctx.user.boxId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Você só pode ver inscrições de campeonatos do seu box',
+          });
+        }
+
+        return db.listarInscricoesCampeonato(input.campeonatoId);
+      }),
+
+    // Inscrever-se em campeonato
+    inscrever: protectedProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'atleta') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas atletas podem se inscrever em campeonatos',
+          });
+        }
+
+        const campeonato = await db.getCampeonatoById(input.campeonatoId);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        if (!campeonato.inscricoesAbertas) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Inscrições fechadas para este campeonato',
+          });
+        }
+
+        const inscricoes = await db.listarInscricoesCampeonato(input.campeonatoId);
+        if (campeonato.capacidade && inscricoes.length >= campeonato.capacidade) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Campeonato lotado' });
+        }
+
+        const jaInscrito = inscricoes.find(i => i.userId === ctx.user.id);
+        if (jaInscrito) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Você já está inscrito neste campeonato',
+          });
+        }
+
+        return db.inscreverCampeonato({
+          campeonatoId: input.campeonatoId,
+          userId: ctx.user.id,
+          categoria: ctx.user.categoria || 'iniciante',
+          faixaEtaria: ctx.user.faixaEtaria || '18-29',
+        });
+      }),
+
+    // Cancelar inscrição
+    cancelarInscricao: protectedProcedure
+      .input(z.object({ inscricaoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const inscricao = await db.getInscricaoById(input.inscricaoId);
+        if (!inscricao) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Inscrição não encontrada' });
+        }
+
+        if (inscricao.userId !== ctx.user.id) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Você só pode cancelar suas próprias inscrições',
+          });
+        }
+
+        return db.cancelarInscricaoCampeonato(input.inscricaoId);
+      }),
+
+    // Minhas inscrições
+    minhasInscricoes: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.listarMinhasInscricoes(ctx.user.id);
+      }),
+
+    // Leaderboard
+    leaderboard: publicProcedure
+      .input(z.object({
+        campeonatoId: z.number(),
+        categoria: z.enum(["iniciante", "intermediario", "avancado", "elite"]).optional(),
+        faixaEtaria: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getLeaderboardCampeonato(input);
       }),
   }),
 

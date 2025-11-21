@@ -17,6 +17,8 @@ import {
   InsertCampeonato,
   inscricoesCampeonatos,
   InsertInscricaoCampeonato,
+  baterias,
+  InsertBateria,
   pontuacoes,
   InsertPontuacao,
   badges,
@@ -7081,4 +7083,197 @@ export async function getUserStatsForBadges(userId: number) {
     totalCheckins: Number(row?.totalCheckins || 0),
     totalCurtidas: Number(row?.totalCurtidas || 0),
   };
+}
+
+
+
+// ===== CAMPEONATOS - FUNÇÕES ADICIONAIS =====
+
+export async function listarCampeonatos(filters?: { tipo?: string; apenasAbertos?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  if (filters?.apenasAbertos) {
+    return getCampeonatosAbertos();
+  }
+
+  if (filters?.tipo) {
+    return db.select().from(campeonatos).where(eq(campeonatos.tipo, filters.tipo as any)).orderBy(desc(campeonatos.dataInicio));
+  }
+
+  return getAllCampeonatos();
+}
+
+export async function criarCampeonato(data: InsertCampeonato) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(campeonatos).values(data);
+  const insertId = Number(result[0].insertId);
+  
+  return getCampeonatoById(insertId);
+}
+
+export async function atualizarCampeonato(id: number, data: Partial<InsertCampeonato>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(campeonatos).set(data).where(eq(campeonatos.id, id));
+  return getCampeonatoById(id);
+}
+
+export async function deletarCampeonato(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Deletar inscrições primeiro (cascade)
+  await db.delete(inscricoesCampeonatos).where(eq(inscricoesCampeonatos.campeonatoId, id));
+  
+  // Deletar baterias
+  await db.delete(baterias).where(eq(baterias.campeonatoId, id));
+  
+  // Deletar campeonato
+  await db.delete(campeonatos).where(eq(campeonatos.id, id));
+  
+  return { success: true };
+}
+
+export async function listarInscricoesCampeonato(campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      id: inscricoesCampeonatos.id,
+      campeonatoId: inscricoesCampeonatos.campeonatoId,
+      userId: inscricoesCampeonatos.userId,
+      categoria: inscricoesCampeonatos.categoria,
+      faixaEtaria: inscricoesCampeonatos.faixaEtaria,
+      statusPagamento: inscricoesCampeonatos.statusPagamento,
+      posicaoFinal: inscricoesCampeonatos.posicaoFinal,
+      pontos: inscricoesCampeonatos.pontos,
+      dataInscricao: inscricoesCampeonatos.dataInscricao,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(inscricoesCampeonatos)
+    .leftJoin(users, eq(inscricoesCampeonatos.userId, users.id))
+    .where(eq(inscricoesCampeonatos.campeonatoId, campeonatoId))
+    .orderBy(desc(inscricoesCampeonatos.dataInscricao));
+
+  return results;
+}
+
+export async function inscreverCampeonato(data: {
+  campeonatoId: number;
+  userId: number;
+  categoria: string;
+  faixaEtaria: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(inscricoesCampeonatos).values({
+    campeonatoId: data.campeonatoId,
+    userId: data.userId,
+    categoria: data.categoria as any,
+    faixaEtaria: data.faixaEtaria,
+    statusPagamento: "pendente",
+  });
+
+  const insertId = Number(result[0].insertId);
+  const inscricao = await db
+    .select()
+    .from(inscricoesCampeonatos)
+    .where(eq(inscricoesCampeonatos.id, insertId))
+    .limit(1);
+
+  return inscricao[0];
+}
+
+export async function getInscricaoById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db
+    .select()
+    .from(inscricoesCampeonatos)
+    .where(eq(inscricoesCampeonatos.id, id))
+    .limit(1);
+
+  return results[0] || null;
+}
+
+export async function cancelarInscricaoCampeonato(inscricaoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inscricoesCampeonatos)
+    .set({ statusPagamento: "cancelado" })
+    .where(eq(inscricoesCampeonatos.id, inscricaoId));
+
+  return { success: true };
+}
+
+export async function listarMinhasInscricoes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      id: inscricoesCampeonatos.id,
+      campeonatoId: inscricoesCampeonatos.campeonatoId,
+      categoria: inscricoesCampeonatos.categoria,
+      faixaEtaria: inscricoesCampeonatos.faixaEtaria,
+      statusPagamento: inscricoesCampeonatos.statusPagamento,
+      posicaoFinal: inscricoesCampeonatos.posicaoFinal,
+      pontos: inscricoesCampeonatos.pontos,
+      dataInscricao: inscricoesCampeonatos.dataInscricao,
+      campeonatoNome: campeonatos.nome,
+      campeonatoTipo: campeonatos.tipo,
+      campeonatoDataInicio: campeonatos.dataInicio,
+      campeonatoDataFim: campeonatos.dataFim,
+      campeonatoLocal: campeonatos.local,
+    })
+    .from(inscricoesCampeonatos)
+    .leftJoin(campeonatos, eq(inscricoesCampeonatos.campeonatoId, campeonatos.id))
+    .where(eq(inscricoesCampeonatos.userId, userId))
+    .orderBy(desc(campeonatos.dataInicio));
+
+  return results;
+}
+
+export async function getLeaderboardCampeonato(filters: {
+  campeonatoId: number;
+  categoria?: string;
+  faixaEtaria?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      posicao: inscricoesCampeonatos.posicaoFinal,
+      pontos: inscricoesCampeonatos.pontos,
+      userId: inscricoesCampeonatos.userId,
+      userName: users.name,
+      categoria: inscricoesCampeonatos.categoria,
+      faixaEtaria: inscricoesCampeonatos.faixaEtaria,
+    })
+    .from(inscricoesCampeonatos)
+    .leftJoin(users, eq(inscricoesCampeonatos.userId, users.id))
+    .where(eq(inscricoesCampeonatos.campeonatoId, filters.campeonatoId))
+    .$dynamic();
+
+  if (filters.categoria) {
+    query = query.where(eq(inscricoesCampeonatos.categoria, filters.categoria as any));
+  }
+
+  if (filters.faixaEtaria) {
+    query = query.where(eq(inscricoesCampeonatos.faixaEtaria, filters.faixaEtaria));
+  }
+
+  const results = await query.orderBy(desc(inscricoesCampeonatos.pontos));
+  return results;
 }

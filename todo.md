@@ -1529,3 +1529,78 @@
 - [x] Adicionar exemplos de uso correto e incorreto
 - [x] Incluir área de proteção e grid de construção
 - [ ] Salvar checkpoint com manual finalizado
+
+
+## Implementação do Sistema de Campeonatos - Sprint 1
+### Schema e Banco de Dados
+- [x] Revisar schema de eventos (campeonatos)
+- [x] Revisar schema de inscrições
+- [x] Revisar schema de baterias (heats)
+- [x] Adicionar campos faltantes (tipo pagamento, status, etc)
+- [x] Executar db:push para aplicar mudan### Procedures tRPC - Admin
+- [x] Criar procedure: campeonatos.create (cadastrar evento)
+- [x] Criar procedure: campeonatos.list (listar eventos)
+- [x] Criar procedure: campeonatos.update (editar evento)
+- [x] Criar procedure: campeonatos.delete (deletar evento)
+- [x] Criar procedure: campeonatos.listInscricoes (listar inscritos)
+- [x] Escrever testes para procedures de adminoes (inscrições do evento)
+
+### Procedures tRPC - Atleta
+- [x] Criar procedure: campeonatos.inscrever (inscrição em evento)
+- [x] Criar procedure: campeonatos.cancelarInscricao (cancelar inscrição)
+- [x] Criar procedure: campeonatos.minhasInscricoes (listar minhas inscrições)
+- [x] Criar procedure: campeonatos.leaderboard (ranking do evento)
+- [x] Escrever testes para procedures de atleta: campeonatos.leaderboard (ranking do evento)
+- [ ] Criar procedure: campeonatos.registrarResultado (registrar resultado)
+- [ ] Criar procedure: campeonatos.baterias.create (criar bateria)
+- [ ] Criar procedure: campeonatos.baterias.list (listar baterias)
+
+### Testes Automatizados
+- [ ] Criar testes para campeonatos.create
+- [ ] Criar testes para campeonatos.inscrever
+- [ ] Criar testes para campeonatos.leaderboard
+- [ ] Criar testes para validações (capacidade, datas, etc)
+- [ ] Executar pnpm test e garantir 100% de aprovação
+
+### Interface - Página de Gestão de Campeonatos (Admin)
+- [ ] Criar página /admin/campeonatos
+- [ ] Implementar formulário de cadastro de evento
+- [ ] Implementar listagem de eventos com filtros
+- [ ] Implementar edição de evento
+- [ ] Implementar visualização de inscrições
+- [ ] Adicionar gestão de baterias
+
+### Interface - Página de Campeonatos (Atleta)
+- [ ] Atualizar página /campeonatos existente
+- [ ] Implementar listagem de eventos disponíveis
+- [ ] Implementar modal de inscrição
+- [ ] Implementar visualização de eventos inscritos
+- [ ] Implementar cancelamento de inscrição
+- [ ] Adicionar filtros (categoria, data, tipo)
+
+### Interface - Leaderboard
+- [ ] Criar página /campeonatos/[id]/leaderboard
+- [ ] Implementar tabela de classificação
+- [ ] Adicionar filtros por categoria e bateria
+- [ ] Mostrar posição do atleta logado
+- [ ] Implementar registro de resultado (Admin)
+
+### Validações e Regras de Negócio
+- [ ] Validar capacidade máxima de inscrições
+- [ ] Validar período de inscrições (abertura/fechamento)
+- [ ] Validar categoria do atleta
+- [ ] Validar duplicidade de inscrição
+- [ ] Implementar lógica de lista de espera (opcional)
+
+### Integração e Fluxo Completo
+- [ ] Testar fluxo: Admin cria evento → Atleta se inscreve
+- [ ] Testar fluxo: Admin cria baterias → Registra resultados
+- [ ] Testar fluxo: Leaderboard atualiza em tempo real
+- [ ] Verificar notificações de novos eventos
+- [ ] Testar cancelamento e reembolso
+
+### Checkpoint
+- [ ] Executar QA manual completo
+- [ ] Corrigir bugs encontrados
+- [ ] Atualizar documentação
+- [ ] Salvar checkpoint "Sistema de Campeonatos Completo"
