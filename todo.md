@@ -1845,3 +1845,33 @@ NOTA: Backend completo. Job agendado requer integração com serviço de agendam
 - [ ] Adicionar botões de compartilhamento (Instagram, Facebook, Twitter) - NÃO IMPLEMENTADO
 - [ ] Implementar deep links para redes sociais - NÃO IMPLEMENTADO
 - [ ] Adicionar testes para geração de cards - NÃO IMPLEMENTADO
+
+
+## Novas Funcionalidades (Sprint 3)
+
+### 1. Agendamento Automático de Relatórios
+- [x] Integrar com serviço de email (SendGrid ou AWS SES)
+- [x] Criar template HTML de email para relatórios
+- [x] Implementar job cron para envio semanal automático
+- [x] Adicionar configuração de destinatários na interface
+- [x] Adicionar logs de envios de relatórios
+- [x] Adicionar testes para integração de email
+
+### 2. Sistema de Premiação
+- [x] Criar schema de prêmios (vouchers, descontos, produtos)
+- [x] Implementar procedure para distribuir prêmios ao Top 3
+- [ ] Criar página de gestão de prêmios (admin) - PENDENTE
+- [x] Adicionar notificação quando atleta ganha prêmio
+- [x] Implementar resgate de vouchers/descontos
+- [ ] Adicionar testes para sistema de premiação - PENDENTE
+
+NOTA: Backend completo (schema, migrations, procedures tRPC). Falta implementar interfaces de usuário.
+
+### 3. Histórico de Performance Individual
+- [ ] Criar query para evolução temporal do atleta
+- [ ] Implementar cálculo de médias e tendências
+- [ ] Criar página HistoricoPerformance.tsx com gráficos
+- [ ] Adicionar gráfico de pontos ao longo do tempo
+- [ ] Adicionar gráfico de posições médias por categoria
+- [ ] Adicionar comparação com média geral
+- [ ] Adicionar testes para queries de histórico

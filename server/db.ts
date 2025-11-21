@@ -38,6 +38,10 @@ import {
   agendaAulas,
   notificacoes,
   InsertNotificacao,
+  premios,
+  InsertPremio,
+  premiosUsuarios,
+  InsertPremioUsuario,
   InsertAgendaAula,
   reservasAulas,
   InsertReservaAula,
@@ -7435,12 +7439,165 @@ export async function gerarRelatorioSemanal() {
 }
 
 export async function enviarEmailRelatorio(destinatario: string, relatorio: any) {
-  // TODO: Integrar com serviço de email (SendGrid, AWS SES, etc)
-  // Por enquanto, apenas log
-  console.log('[Relatório Semanal] Enviando para:', destinatario);
-  console.log('[Relatório Semanal] Dados:', JSON.stringify(relatorio, null, 2));
+  const { enviarEmailRelatorio: enviar } = await import('./_core/email');
+  return enviar(destinatario, relatorio);
+}
+
+// ========== PRÊM IOS ==========
+
+export async function listarPremios() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(premios).where(eq(premios.ativo, true));
+}
+
+export async function criarPremio(data: InsertPremio) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const [premio] = await db.insert(premios).values(data);
+  return premio;
+}
+
+export async function distribuirPremiosTop3(input: {
+  ano: number;
+  categoria?: "iniciante" | "intermediario" | "avancado" | "elite";
+  premioId1: number;
+  premioId2: number;
+  premioId3: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  // Buscar Top 3 do ranking
+  const ranking = await getRankingGlobal(input.ano, input.categoria, 3);
   
-  return { success: true };
+  if (ranking.length < 3) {
+    throw new Error('Ranking não possui 3 atletas');
+  }
+
+  const distribuicoes = [];
+
+  // Distribuir prêmios
+  for (let i = 0; i < 3; i++) {
+    const atleta = ranking[i];
+    const premioId = i === 0 ? input.premioId1 : i === 1 ? input.premioId2 : input.premioId3;
+    
+    // Verificar se já recebeu prêmio neste ranking
+    const jaRecebeu = await db
+      .select()
+      .from(premiosUsuarios)
+      .where(
+        and(
+          eq(premiosUsuarios.userId, atleta.userId),
+          eq(premiosUsuarios.rankingAno, input.ano),
+          eq(premiosUsuarios.rankingPosicao, i + 1)
+        )
+      )
+      .limit(1);
+
+    if (jaRecebeu.length > 0) {
+      continue; // Já recebeu
+    }
+
+    // Gerar código único de resgate
+    const codigoResgate = `PREMIO-${input.ano}-${i + 1}-${atleta.userId}-${Date.now()}`;
+
+    // Distribuir prêmio
+    await db.insert(premiosUsuarios).values({
+      userId: atleta.userId,
+      premioId,
+      rankingPosicao: i + 1,
+      rankingAno: input.ano,
+      codigoResgate,
+    });
+
+    // Criar notificação
+    await createNotification({
+      userId: atleta.userId,
+      tipo: 'conquista',
+      titulo: `🏆 Parabéns! Você ganhou um prêmio!`,
+      mensagem: `Você ficou em ${i + 1}º lugar no ranking ${input.ano} e ganhou um prêmio! Acesse "Meus Prêmios" para resgatar.`,
+    });
+
+    distribuicoes.push({
+      userId: atleta.userId,
+      nome: atleta.userName,
+      posicao: i + 1,
+      premioId,
+    });
+  }
+
+  return {
+    success: true,
+    distribuicoes,
+  };
+}
+
+export async function getPremiosUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: premiosUsuarios.id,
+      premioId: premiosUsuarios.premioId,
+      premioNome: premios.nome,
+      premioDescricao: premios.descricao,
+      premioTipo: premios.tipo,
+      premioValor: premios.valor,
+      premioCodigo: premios.codigo,
+      premioValidoAte: premios.validoAte,
+      rankingPosicao: premiosUsuarios.rankingPosicao,
+      rankingAno: premiosUsuarios.rankingAno,
+      resgatado: premiosUsuarios.resgatado,
+      resgatadoEm: premiosUsuarios.resgatadoEm,
+      codigoResgate: premiosUsuarios.codigoResgate,
+      createdAt: premiosUsuarios.createdAt,
+    })
+    .from(premiosUsuarios)
+    .innerJoin(premios, eq(premiosUsuarios.premioId, premios.id))
+    .where(eq(premiosUsuarios.userId, userId));
+}
+
+export async function resgatarPremio(userId: number, premioUsuarioId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  // Verificar se o prêmio pertence ao usuário
+  const [premioUsuario] = await db
+    .select()
+    .from(premiosUsuarios)
+    .where(
+      and(
+        eq(premiosUsuarios.id, premioUsuarioId),
+        eq(premiosUsuarios.userId, userId)
+      )
+    )
+    .limit(1);
+
+  if (!premioUsuario) {
+    throw new Error('Prêmio não encontrado');
+  }
+
+  if (premioUsuario.resgatado) {
+    throw new Error('Prêmio já foi resgatado');
+  }
+
+  // Marcar como resgatado
+  await db
+    .update(premiosUsuarios)
+    .set({
+      resgatado: true,
+      resgatadoEm: new Date(),
+    })
+    .where(eq(premiosUsuarios.id, premioUsuarioId));
+
+  return {
+    success: true,
+    codigoResgate: premioUsuario.codigoResgate,
+  };
 }
 
 export async function getRankingGlobal(

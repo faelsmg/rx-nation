@@ -72,6 +72,10 @@ async function startServer() {
   // Inicializar Socket.IO
   initializeSocketIO(server);
 
+  // Inicializar jobs agendados
+  const { inicializarJobs } = await import('./jobs');
+  inicializarJobs();
+
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });

@@ -547,6 +547,42 @@ export const notificacoes = mysqlTable("notificacoes", {
 export type Notificacao = typeof notificacoes.$inferSelect;
 export type InsertNotificacao = typeof notificacoes.$inferInsert;
 
+/**
+ * Prêmios (Vouchers, Descontos, Produtos)
+ */
+export const premios = mysqlTable("premios", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao").notNull(),
+  tipo: mysqlEnum("tipo", ["voucher", "desconto", "produto", "outro"]).notNull(),
+  valor: int("valor"), // Valor em centavos (para descontos) ou null
+  codigo: varchar("codigo", { length: 100 }), // Código do voucher/cupom
+  ativo: boolean("ativo").default(true).notNull(),
+  validoAte: timestamp("validoAte"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Premio = typeof premios.$inferSelect;
+export type InsertPremio = typeof premios.$inferInsert;
+
+/**
+ * Prêmios distribuídos aos usuários
+ */
+export const premiosUsuarios = mysqlTable("premios_usuarios", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  premioId: int("premioId").notNull(),
+  rankingPosicao: int("rankingPosicao"), // Posição no ranking que garantiu o prêmio
+  rankingAno: int("rankingAno"), // Ano do ranking
+  resgatado: boolean("resgatado").default(false).notNull(),
+  resgatadoEm: timestamp("resgatadoEm"),
+  codigoResgate: varchar("codigoResgate", { length: 100 }), // Código único para resgate
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PremioUsuario = typeof premiosUsuarios.$inferSelect;
+export type InsertPremioUsuario = typeof premiosUsuarios.$inferInsert;
+
 export const notificacoesRelations = relations(notificacoes, ({ one }) => ({
   user: one(users, {
     fields: [notificacoes.userId],

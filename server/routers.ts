@@ -902,6 +902,75 @@ export const appRouter = router({
       }),
   }),
 
+  // Sistema de Premiação (Admin Liga)
+  premios: router({
+    // Listar prêmios
+    list: protectedProcedure
+      .query(async () => {
+        return db.listarPremios();
+      }),
+
+    // Criar prêmio
+    criar: protectedProcedure
+      .use(({ ctx, next }) => {
+        if (ctx.user.role !== "admin_liga") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins podem criar prêmios",
+          });
+        }
+        return next({ ctx });
+      })
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string(),
+        tipo: z.enum(["voucher", "desconto", "produto", "outro"]),
+        valor: z.number().optional(),
+        codigo: z.string().optional(),
+        validoAte: z.date().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return db.criarPremio(input);
+      }),
+
+    // Distribuir prêmios para Top 3 do ranking
+    distribuirTop3: protectedProcedure
+      .use(({ ctx, next }) => {
+        if (ctx.user.role !== "admin_liga") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Apenas admins podem distribuir prêmios",
+          });
+        }
+        return next({ ctx });
+      })
+      .input(z.object({
+        ano: z.number(),
+        categoria: z.enum(["iniciante", "intermediario", "avancado", "elite"]).optional(),
+        premioId1: z.number(), // Prêmio para 1º lugar
+        premioId2: z.number(), // Prêmio para 2º lugar
+        premioId3: z.number(), // Prêmio para 3º lugar
+      }))
+      .mutation(async ({ input }) => {
+        return db.distribuirPremiosTop3(input);
+      }),
+
+    // Meus prêmios (Atleta)
+    meusPremios: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPremiosUsuario(ctx.user.id);
+      }),
+
+    // Resgatar prêmio (Atleta)
+    resgatar: protectedProcedure
+      .input(z.object({
+        premioUsuarioId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.resgatarPremio(ctx.user.id, input.premioUsuarioId);
+      }),
+  }),
+
   // Ranking Global Anual (Público)
   rankingGlobal: publicProcedure
     .input(z.object({
