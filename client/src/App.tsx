@@ -49,6 +49,7 @@ import GestaoCompras from "./pages/GestaoCompras";
 import GestaoEstoque from "./pages/GestaoEstoque";
 import DashboardFinanceiroGeral from "./pages/DashboardFinanceiroGeral";
 import PDV from "./pages/PDV";
+import Chat from "./pages/Chat";
 
 function Router() {
   return (
@@ -82,6 +83,7 @@ function Router() {
       <Route path={"/dashboard-coach"} component={DashboardCoach} />
       <Route path={"/comparacao"} component={ComparacaoAtletas} />
       <Route path={"/mensagens"} component={Mensagens} />
+      <Route path={"/chat"} component={Chat} />
       <Route path={"/calendario-eventos"} component={CalendarioEventos} />
       <Route path={"/meu-qrcode"} component={MeuQRCode} />
       <Route path={"/scanner-qrcode"} component={ScannerQRCode} />

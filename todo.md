@@ -1213,3 +1213,37 @@
 - [ ] Implementar notificações de novas mensagens
 - [ ] Adicionar indicador de mensagens não lidas
 - [ ] Criar testes para chat em tempo real
+
+
+## Chat em Tempo Real - ✅ CONCLUÍDO
+- [x] Verificar se Socket.IO já está configurado no servidor
+- [x] Criar schema de mensagens no banco de dados
+- [x] Criar schema de conversas
+- [x] Implementar eventos Socket.IO (message, typing, read)
+- [x] Criar procedures para salvar mensagens
+- [x] Criar procedures para carregar histórico
+- [x] Criar procedures para listar conversas
+- [x] Criar componente de Chat com lista de conversas
+- [x] Criar componente de janela de mensagens
+- [x] Implementar indicador de "digitando..."
+- [x] Implementar notificações de novas mensagens
+- [x] Criar testes para Chat
+
+## Integração com Stripe
+- [ ] Usar webdev_add_feature para adicionar Stripe
+- [ ] Configurar produtos e preços no Stripe
+- [ ] Criar checkout de mensalidades
+- [ ] Implementar webhook para atualizar status de assinaturas
+- [ ] Criar página de gerenciamento de assinatura
+- [ ] Adicionar suporte a PIX
+- [ ] Criar testes para fluxo de pagamento
+
+## Gestão de Boxes Parceiros (Admin Liga)
+- [ ] Verificar schema de boxes existente
+- [ ] Criar procedures para CRUD de boxes
+- [ ] Criar procedures para métricas consolidadas
+- [ ] Criar procedures para ranking entre boxes
+- [ ] Criar página de gestão de boxes (admin_liga)
+- [ ] Criar dashboard com métricas da liga
+- [ ] Implementar visualização de ranking entre boxes
+- [ ] Criar testes para gestão de boxes

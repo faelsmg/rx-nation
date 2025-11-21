@@ -73,6 +73,32 @@ export function initializeSocketIO(httpServer: HttpServer) {
       console.log(`[Socket.IO] User ${socket.userId} joined team ${teamId}`);
     });
 
+    // ==================== EVENTOS DE CHAT ====================
+    
+    // Entrar em uma conversa
+    socket.on("chat:join", (conversaId: number) => {
+      socket.join(`chat:${conversaId}`);
+      console.log(`[Socket.IO] User ${socket.userId} joined chat ${conversaId}`);
+    });
+
+    // Sair de uma conversa
+    socket.on("chat:leave", (conversaId: number) => {
+      socket.leave(`chat:${conversaId}`);
+      console.log(`[Socket.IO] User ${socket.userId} left chat ${conversaId}`);
+    });
+
+    // Indicador de "digitando..."
+    socket.on("chat:typing", (data: { conversaId: number; digitando: boolean }) => {
+      socket.to(`chat:${data.conversaId}`).emit("chat:typing", {
+        userId: socket.userId,
+        conversaId: data.conversaId,
+        digitando: data.digitando,
+      });
+    });
+
+    // Nova mensagem (emitida pelo servidor após salvar no banco)
+    // Este evento é tratado via tRPC procedure
+
     // Desconexão
     socket.on("disconnect", () => {
       console.log(`[Socket.IO] User ${socket.userId} disconnected`);

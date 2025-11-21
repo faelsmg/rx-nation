@@ -2724,6 +2724,150 @@ export const appRouter = router({
         return db.getTotalEmCaixa(boxId);
       }),
   }),
+
+  // ===== CHAT EM TEMPO REAL =====
+  chat: router({
+    // Criar ou buscar conversa individual entre dois usuários
+    getOrCreateConversaIndividual: protectedProcedure
+      .input(z.object({
+        outroUserId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = ctx.user.boxId;
+        if (!boxId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não vinculado a um box' });
+
+        // Verificar se já existe conversa entre os dois usuários
+        let conversa = await db.getConversaEntreUsuarios(boxId, ctx.user.id, input.outroUserId);
+
+        if (!conversa) {
+          // Criar nova conversa
+          const conversaId = await db.criarConversa(boxId, 'individual');
+          await db.adicionarParticipante(conversaId, ctx.user.id);
+          await db.adicionarParticipante(conversaId, input.outroUserId);
+          
+          // Buscar conversa criada
+          conversa = await db.getConversaEntreUsuarios(boxId, ctx.user.id, input.outroUserId);
+        }
+
+        return conversa;
+      }),
+
+    // Criar conversa em grupo
+    criarGrupo: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        participantesIds: z.array(z.number()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const boxId = ctx.user.boxId;
+        if (!boxId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não vinculado a um box' });
+
+        const conversaId = await db.criarConversa(boxId, 'grupo', input.nome);
+        
+        // Adicionar criador
+        await db.adicionarParticipante(conversaId, ctx.user.id);
+        
+        // Adicionar demais participantes
+        for (const userId of input.participantesIds) {
+          await db.adicionarParticipante(conversaId, userId);
+        }
+
+        return { conversaId };
+      }),
+
+    // Listar conversas do usuário
+    getMinhasConversas: protectedProcedure
+      .query(async ({ ctx }) => {
+        const conversas = await db.getConversasDoUsuario(ctx.user.id);
+        
+        // Buscar participantes de cada conversa
+        const conversasComParticipantes = await Promise.all(
+          conversas.map(async (conversa: any) => {
+            const participantes = await db.getParticipantesConversa(conversa.id);
+            return {
+              ...conversa,
+              participantes,
+            };
+          })
+        );
+
+        return conversasComParticipantes;
+      }),
+
+    // Enviar mensagem
+    enviarMensagem: protectedProcedure
+      .input(z.object({
+        conversaId: z.number(),
+        conteudo: z.string(),
+        tipo: z.enum(['texto', 'imagem', 'arquivo']).optional(),
+        arquivoUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const mensagemId = await db.enviarMensagem(
+          input.conversaId,
+          ctx.user.id,
+          input.conteudo,
+          input.tipo || 'texto',
+          input.arquivoUrl
+        );
+
+        // Buscar mensagem completa para emitir via Socket.IO
+        const mensagens = await db.getMensagensConversa(input.conversaId, 1, 0);
+        const mensagem = mensagens[0];
+
+        // Emitir evento Socket.IO para todos na conversa
+        const { getIO } = await import('./_core/socket');
+        const io = getIO();
+        io.to(`chat:${input.conversaId}`).emit('chat:nova-mensagem', mensagem);
+
+        return { mensagemId, mensagem };
+      }),
+
+    // Buscar mensagens de uma conversa
+    getMensagens: protectedProcedure
+      .input(z.object({
+        conversaId: z.number(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getMensagensConversa(
+          input.conversaId,
+          input.limit || 50,
+          input.offset || 0
+        );
+      }),
+
+    // Marcar mensagens como lidas
+    marcarComoLida: protectedProcedure
+      .input(z.object({
+        conversaId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.marcarMensagensComoLidas(input.conversaId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Indicador de digitação
+    setDigitando: protectedProcedure
+      .input(z.object({
+        conversaId: z.number(),
+        digitando: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.setUsuarioDigitando(input.conversaId, ctx.user.id, input.digitando);
+        return { success: true };
+      }),
+
+    // Buscar usuários digitando
+    getDigitando: protectedProcedure
+      .input(z.object({
+        conversaId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getUsuariosDigitando(input.conversaId);
+      }),
+  }),
 });
 
 

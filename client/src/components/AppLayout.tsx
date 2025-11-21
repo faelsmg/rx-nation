@@ -81,6 +81,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { icon: Target, label: "Conquistas", path: "/conquistas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Users, label: "Comparar Atletas", path: "/comparacao", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: MessageCircle, label: "Mensagens", path: "/mensagens", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
+    { icon: MessageCircle, label: "Chat", path: "/chat", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: Calendar, label: "Eventos", path: "/calendario-eventos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
     { icon: QrCode, label: "Meu QR Code", path: "/meu-qrcode", roles: ["atleta"] },
     { icon: ScanLine, label: "Scanner Check-in", path: "/scanner-qrcode", roles: ["box_master", "admin_liga"] },

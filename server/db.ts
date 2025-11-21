@@ -6612,3 +6612,167 @@ export async function contarPessoasNaFila(aulaId: number) {
 
   return rows[0]?.total || 0;
 }
+
+
+// ==================== CHAT ====================
+
+export async function criarConversa(boxId: number, tipo: 'individual' | 'grupo', nome?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.execute(sql`
+    INSERT INTO conversas (box_id, tipo, nome) VALUES (${boxId}, ${tipo}, ${nome || null})
+  `);
+
+  return (result as any).insertId;
+}
+
+export async function adicionarParticipante(conversaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    INSERT INTO conversas_participantes (conversa_id, user_id) VALUES (${conversaId}, ${userId})
+    ON DUPLICATE KEY UPDATE conversa_id = conversa_id
+  `);
+}
+
+export async function getConversaEntreUsuarios(boxId: number, userId1: number, userId2: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const rows = await db.execute(sql`
+    SELECT c.* FROM conversas c
+    INNER JOIN conversas_participantes cp1 ON c.id = cp1.conversa_id AND cp1.user_id = ${userId1}
+    INNER JOIN conversas_participantes cp2 ON c.id = cp2.conversa_id AND cp2.user_id = ${userId2}
+    WHERE c.box_id = ${boxId} AND c.tipo = 'individual'
+    LIMIT 1
+  `);
+
+  return (rows as any)[0] || null;
+}
+
+export async function getConversasDoUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      c.*,
+      (SELECT COUNT(*) FROM mensagens m 
+       WHERE m.conversa_id = c.id 
+       AND m.remetente_id != ${userId}
+       AND m.criado_em > COALESCE(cp.ultima_leitura, '1970-01-01')) as mensagens_nao_lidas,
+      (SELECT conteudo FROM mensagens m2 
+       WHERE m2.conversa_id = c.id 
+       ORDER BY m2.criado_em DESC LIMIT 1) as ultima_mensagem,
+      (SELECT criado_em FROM mensagens m3 
+       WHERE m3.conversa_id = c.id 
+       ORDER BY m3.criado_em DESC LIMIT 1) as ultima_mensagem_em
+    FROM conversas c
+    INNER JOIN conversas_participantes cp ON c.id = cp.conversa_id
+    WHERE cp.user_id = ${userId}
+    ORDER BY c.atualizado_em DESC
+  `);
+
+  return rows as any[];
+}
+
+export async function enviarMensagem(conversaId: number, remetenteId: number, conteudo: string, tipo: 'texto' | 'imagem' | 'arquivo' = 'texto', arquivoUrl?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.execute(sql`
+    INSERT INTO mensagens (conversa_id, remetente_id, conteudo, tipo, arquivo_url) 
+    VALUES (${conversaId}, ${remetenteId}, ${conteudo}, ${tipo}, ${arquivoUrl || null})
+  `);
+
+  // Atualizar timestamp da conversa
+  await db.execute(sql`
+    UPDATE conversas SET atualizado_em = CURRENT_TIMESTAMP WHERE id = ${conversaId}
+  `);
+
+  return (result as any).insertId;
+}
+
+export async function getMensagensConversa(conversaId: number, limit: number = 50, offset: number = 0) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      m.*,
+      u.name as remetente_nome,
+      u.email as remetente_email
+    FROM mensagens m
+    INNER JOIN users u ON m.remetente_id = u.id
+    WHERE m.conversa_id = ${conversaId}
+    ORDER BY m.criado_em DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `);
+
+  return (rows as any[]).reverse(); // Retornar em ordem cronológica
+}
+
+export async function marcarMensagensComoLidas(conversaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.execute(sql`
+    UPDATE conversas_participantes 
+    SET ultima_leitura = CURRENT_TIMESTAMP 
+    WHERE conversa_id = ${conversaId} AND user_id = ${userId}
+  `);
+}
+
+export async function setUsuarioDigitando(conversaId: number, userId: number, digitando: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (digitando) {
+    await db.execute(sql`
+      INSERT INTO chat_typing (conversa_id, user_id, digitando) 
+      VALUES (${conversaId}, ${userId}, TRUE)
+      ON DUPLICATE KEY UPDATE digitando = TRUE, atualizado_em = CURRENT_TIMESTAMP
+    `);
+  } else {
+    await db.execute(sql`
+      DELETE FROM chat_typing WHERE conversa_id = ${conversaId} AND user_id = ${userId}
+    `);
+  }
+}
+
+export async function getUsuariosDigitando(conversaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      ct.user_id,
+      u.name as user_nome
+    FROM chat_typing ct
+    INNER JOIN users u ON ct.user_id = u.id
+    WHERE ct.conversa_id = ${conversaId}
+    AND ct.digitando = TRUE
+    AND ct.atualizado_em > DATE_SUB(NOW(), INTERVAL 5 SECOND)
+  `);
+
+  return rows as any[];
+}
+
+export async function getParticipantesConversa(conversaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.execute(sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.email
+    FROM conversas_participantes cp
+    INNER JOIN users u ON cp.user_id = u.id
+    WHERE cp.conversa_id = ${conversaId}
+  `);
+
+  return rows as any[];
+}
