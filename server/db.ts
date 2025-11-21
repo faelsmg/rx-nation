@@ -829,7 +829,7 @@ export async function marcarTodasComoLidas(userId: number) {
 // Helper para criar notificações
 export async function createNotification(data: {
   userId: number;
-  tipo: "wod" | "comunicado" | "aula" | "badge" | "geral" | "conquista";
+  tipo: "wod" | "comunicado" | "aula" | "badge" | "geral" | "conquista" | "campeonato";
   titulo: string;
   mensagem: string;
   link?: string;
@@ -7216,10 +7216,89 @@ export async function cancelarInscricaoCampeonato(inscricaoId: number) {
 
   await db
     .update(inscricoesCampeonatos)
-    .set({ statusPagamento: "cancelado" })
+    .set({ status: "rejeitada" as any, statusPagamento: "reembolsado" as any })
     .where(eq(inscricoesCampeonatos.id, inscricaoId));
 
   return { success: true };
+}
+
+export async function aprovarInscricao(inscricaoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inscricoesCampeonatos)
+    .set({ status: "aprovada" as any })
+    .where(eq(inscricoesCampeonatos.id, inscricaoId));
+
+  return { success: true };
+}
+
+export async function rejeitarInscricao(inscricaoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inscricoesCampeonatos)
+    .set({ status: "rejeitada" as any })
+    .where(eq(inscricoesCampeonatos.id, inscricaoId));
+
+  return { success: true };
+}
+
+export async function confirmarPagamentoInscricao(inscricaoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(inscricoesCampeonatos)
+    .set({ statusPagamento: "pago" as any })
+    .where(eq(inscricoesCampeonatos.id, inscricaoId));
+
+  return { success: true };
+}
+
+export async function gerarRelatorioInscricoes(campeonatoId: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, porCategoria: {}, porFaixaEtaria: {}, porStatus: {}, porStatusPagamento: {} };
+
+  const inscricoes = await db
+    .select({
+      id: inscricoesCampeonatos.id,
+      userId: inscricoesCampeonatos.userId,
+      userName: users.name,
+      userEmail: users.email,
+      categoria: inscricoesCampeonatos.categoria,
+      faixaEtaria: inscricoesCampeonatos.faixaEtaria,
+      status: inscricoesCampeonatos.status,
+      statusPagamento: inscricoesCampeonatos.statusPagamento,
+      dataInscricao: inscricoesCampeonatos.dataInscricao,
+    })
+    .from(inscricoesCampeonatos)
+    .leftJoin(users, eq(inscricoesCampeonatos.userId, users.id))
+    .where(eq(inscricoesCampeonatos.campeonatoId, campeonatoId));
+
+  // Agrupar por categoria
+  const porCategoria: Record<string, number> = {};
+  const porFaixaEtaria: Record<string, number> = {};
+  const porStatus: Record<string, number> = {};
+  const porStatusPagamento: Record<string, number> = {};
+
+  for (const inscricao of inscricoes) {
+    porCategoria[inscricao.categoria] = (porCategoria[inscricao.categoria] || 0) + 1;
+    porFaixaEtaria[inscricao.faixaEtaria] = (porFaixaEtaria[inscricao.faixaEtaria] || 0) + 1;
+    porStatus[inscricao.status] = (porStatus[inscricao.status] || 0) + 1;
+    porStatusPagamento[inscricao.statusPagamento] = (porStatusPagamento[inscricao.statusPagamento] || 0) + 1;
+  }
+
+  return {
+    total: inscricoes.length,
+    inscricoes,
+    porCategoria,
+    porFaixaEtaria,
+    porStatus,
+    porStatusPagamento,
+  };
 }
 
 export async function listarMinhasInscricoes(userId: number) {

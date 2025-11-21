@@ -155,6 +155,20 @@
       "when": 1763742652362,
       "tag": "0021_dry_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1763744068406,
+      "tag": "0022_lyrical_galactus",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1763744517469,
+      "tag": "0023_chief_firebird",
+      "breakpoints": true
     }
   ]
 }

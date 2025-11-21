@@ -100,6 +100,93 @@ describe("Sistema de Pontuação Automática", () => {
         })
       ).rejects.toThrow("Apenas admins da liga podem configurar pontuação");
     });
+
+    it("valida pontos decrescentes", async () => {
+      const ctx = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      // Criar campeonato
+      const campeonato = await caller.campeonatos.create({
+        nome: "Teste Validação",
+        tipo: "interno",
+        local: "Box Test",
+        dataInicio: new Date(),
+        dataFim: new Date(),
+        capacidade: 50,
+      });
+
+      // Tentar configurar com pontos crescentes (inválido)
+      await expect(
+        caller.pontuacao.configurar({
+          campeonatoId: campeonato.id,
+          configuracoes: [
+            { posicao: 1, pontos: 90 },
+            { posicao: 2, pontos: 95 }, // Erro: 2º tem mais pontos que 1º
+            { posicao: 3, pontos: 100 },
+          ],
+        })
+      ).rejects.toThrow("Os pontos devem ser decrescentes");
+    });
+
+    it("valida pontos não negativos", async () => {
+      const ctx = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      // Criar campeonato
+      const campeonato = await caller.campeonatos.create({
+        nome: "Teste Negativos",
+        tipo: "interno",
+        local: "Box Test",
+        dataInicio: new Date(),
+        dataFim: new Date(),
+        capacidade: 50,
+      });
+
+      // Tentar configurar com pontos negativos
+      await expect(
+        caller.pontuacao.configurar({
+          campeonatoId: campeonato.id,
+          configuracoes: [
+            { posicao: 1, pontos: 100 },
+            { posicao: 2, pontos: -10 }, // Erro: pontos negativos
+          ],
+        })
+      ).rejects.toThrow("Pontos não podem ser negativos");
+    });
+
+    it("usa configuração customizada no cálculo", async () => {
+      const ctx = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      // Criar campeonato
+      const campeonato = await caller.campeonatos.create({
+        nome: "Teste Custom",
+        tipo: "interno",
+        local: "Box Test",
+        dataInicio: new Date(),
+        dataFim: new Date(),
+        capacidade: 50,
+      });
+
+      // Configurar pontos customizados
+      await caller.pontuacao.configurar({
+        campeonatoId: campeonato.id,
+        configuracoes: [
+          { posicao: 1, pontos: 150 },
+          { posicao: 2, pontos: 120 },
+          { posicao: 3, pontos: 100 },
+        ],
+      });
+
+      // Verificar que configuração foi salva
+      const config = await caller.pontuacao.getConfig({
+        campeonatoId: campeonato.id,
+      });
+
+      expect(config[0]?.pontos).toBe(150);
+      expect(config[1]?.pontos).toBe(120);
+      expect(config[2]?.pontos).toBe(100);
+    });
   });
 
   describe("Registro de Resultados", () => {

@@ -21,8 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Users, DollarSign, Trophy, Medal, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Trophy, Medal, CheckCircle2, XCircle, Clock, Settings } from "lucide-react";
 import GestaoBaterias from "@/components/GestaoBaterias";
+import ConfiguracaoPontuacao from "@/components/ConfiguracaoPontuacao";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -287,7 +288,7 @@ export default function CampeonatoDetalhes() {
 
         {/* Tabs */}
         <Tabs defaultValue="leaderboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${user?.role === 'admin_liga' ? 'grid-cols-4' : 'grid-cols-3'}`}>
             <TabsTrigger value="leaderboard">
               <Trophy className="h-4 w-4 mr-2" />
               Leaderboard
@@ -300,6 +301,12 @@ export default function CampeonatoDetalhes() {
               <TabsTrigger value="baterias">
                 <Clock className="h-4 w-4 mr-2" />
                 Baterias
+              </TabsTrigger>
+            )}
+            {user?.role === 'admin_liga' && (
+              <TabsTrigger value="config">
+                <Settings className="h-4 w-4 mr-2" />
+                Configuração
               </TabsTrigger>
             )}
           </TabsList>
@@ -446,6 +453,13 @@ export default function CampeonatoDetalhes() {
           {(user?.role === 'admin_liga' || user?.role === 'box_master') && (
             <TabsContent value="baterias">
               <GestaoBaterias campeonatoId={campeonatoId} />
+            </TabsContent>
+          )}
+
+          {/* Configuração de Pontuação (Admin Liga) */}
+          {user?.role === 'admin_liga' && (
+            <TabsContent value="config">
+              <ConfiguracaoPontuacao campeonatoId={campeonatoId} />
             </TabsContent>
           )}
         </Tabs>

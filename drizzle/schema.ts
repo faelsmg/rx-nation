@@ -151,7 +151,8 @@ export const inscricoesCampeonatos = mysqlTable("inscricoes_campeonatos", {
   userId: int("userId").notNull(),
   categoria: mysqlEnum("categoria", ["iniciante", "intermediario", "avancado", "elite"]).notNull(),
   faixaEtaria: varchar("faixaEtaria", { length: 20 }).notNull(),
-  statusPagamento: mysqlEnum("statusPagamento", ["pendente", "pago", "cancelado"]).default("pendente").notNull(),
+  status: mysqlEnum("status", ["pendente", "aprovada", "rejeitada"]).default("pendente").notNull(),
+  statusPagamento: mysqlEnum("statusPagamento", ["pendente", "pago", "reembolsado"]).default("pendente").notNull(),
   posicaoFinal: int("posicaoFinal"), // posição final no campeonato
   pontos: int("pontos").default(0).notNull(), // pontos obtidos no campeonato
   dataInscricao: timestamp("dataInscricao").defaultNow().notNull(),
@@ -535,7 +536,7 @@ export const planilhasTreinoRelations = relations(planilhasTreino, ({ one }) => 
 export const notificacoes = mysqlTable("notificacoes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida"]).notNull(),
+  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida"]).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   mensagem: text("mensagem").notNull(),
   lida: boolean("lida").default(false).notNull(),

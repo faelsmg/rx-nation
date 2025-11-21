@@ -674,6 +674,123 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getInscricoesByCampeonato(input.campeonatoId);
       }),
+
+    // Aprovar inscrição (Admin/Box Master)
+    aprovar: protectedProcedure
+      .input(z.object({ inscricaoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem aprovar inscrições',
+          });
+        }
+
+        const inscricao = await db.getInscricaoById(input.inscricaoId);
+        if (!inscricao) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Inscrição não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(inscricao.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode aprovar inscrições de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.aprovarInscricao(input.inscricaoId);
+      }),
+
+    // Rejeitar inscrição (Admin/Box Master)
+    rejeitar: protectedProcedure
+      .input(z.object({ inscricaoId: z.number(), motivo: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem rejeitar inscrições',
+          });
+        }
+
+        const inscricao = await db.getInscricaoById(input.inscricaoId);
+        if (!inscricao) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Inscrição não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(inscricao.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode rejeitar inscrições de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.rejeitarInscricao(input.inscricaoId);
+      }),
+
+    // Confirmar pagamento (Admin/Box Master)
+    confirmarPagamento: protectedProcedure
+      .input(z.object({ inscricaoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem confirmar pagamentos',
+          });
+        }
+
+        const inscricao = await db.getInscricaoById(input.inscricaoId);
+        if (!inscricao) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Inscrição não encontrada' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master') {
+          const campeonato = await db.getCampeonatoById(inscricao.campeonatoId);
+          if (!campeonato || campeonato.boxId !== ctx.user.boxId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Você só pode confirmar pagamentos de campeonatos do seu box',
+            });
+          }
+        }
+
+        return db.confirmarPagamentoInscricao(input.inscricaoId);
+      }),
+
+    // Gerar relatório de inscrições (Admin/Box Master)
+    gerarRelatorio: protectedProcedure
+      .input(z.object({ campeonatoId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        if (!['admin_liga', 'box_master'].includes(ctx.user.role)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Apenas administradores e donos de box podem gerar relatórios',
+          });
+        }
+
+        const campeonato = await db.getCampeonatoById(input.campeonatoId);
+        if (!campeonato) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Campeonato não encontrado' });
+        }
+
+        // Se for box_master, verifica se o campeonato é do seu box
+        if (ctx.user.role === 'box_master' && campeonato.boxId !== ctx.user.boxId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Você só pode gerar relatórios de campeonatos do seu box',
+          });
+        }
+
+        return db.gerarRelatorioInscricoes(input.campeonatoId);
+      }),
   }),
 
   // ===== BATERIAS (HEATS) =====
@@ -822,7 +939,19 @@ export const appRouter = router({
           }
         }
 
-        return db.adicionarAtletaNaBateria(input);
+        const result = await db.adicionarAtletaNaBateria(input);
+
+        // Notificar atleta sobre alocação na bateria
+        const campeonato = await db.getCampeonatoById(bateria.campeonatoId);
+        await db.createNotification({
+          userId: input.userId,
+          tipo: "campeonato",
+          titulo: "Você foi alocado em uma bateria!",
+          mensagem: `Você foi alocado na bateria ${bateria.nome || bateria.numero} do campeonato ${campeonato?.nome}. Horário: ${new Date(bateria.horario).toLocaleString('pt-BR')}`,
+          link: `/campeonatos/${bateria.campeonatoId}`,
+        });
+
+        return result;
       }),
 
     // Remover atleta da bateria
@@ -3610,6 +3739,15 @@ export const appRouter = router({
         const pontosAtuais = inscricao.pontos || 0;
         await db.atualizarPontosInscricao(input.inscricaoId, pontosAtuais + pontos);
 
+        // Notificar atleta sobre resultado registrado
+        await db.createNotification({
+          userId: inscricao.userId,
+          tipo: "campeonato",
+          titulo: "Resultado Registrado",
+          mensagem: `Seu resultado foi registrado: ${input.posicao}º lugar com ${pontos} pontos!`,
+          link: `/campeonatos/${inscricao.campeonatoId}`,
+        });
+
         return resultado;
       }),
 
@@ -3678,6 +3816,24 @@ export const appRouter = router({
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Apenas admins da liga podem configurar pontuação",
+          });
+        }
+
+        // Validar pontos decrescentes
+        for (let i = 0; i < input.configuracoes.length - 1; i++) {
+          if (input.configuracoes[i].pontos <= input.configuracoes[i + 1].pontos) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Os pontos devem ser decrescentes. ${input.configuracoes[i].posicao}º lugar deve ter mais pontos que ${input.configuracoes[i + 1].posicao}º lugar.`,
+            });
+          }
+        }
+
+        // Validar pontos não negativos
+        if (input.configuracoes.some((c) => c.pontos < 0)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Pontos não podem ser negativos",
           });
         }
 

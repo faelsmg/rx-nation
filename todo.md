@@ -1713,3 +1713,71 @@
 - [x] Testar fluxo completo (registrar resultado, calcular pontos, atualizar leaderboard)
 - [x] Verificar atualização automática do leaderboard
 - [x] Salvar checkpoint
+
+
+## Configuração de Pontuação Customizada - Sprint 5
+### Interface Admin
+- [ ] Criar componente ConfiguracaoPontuacao.tsx
+- [ ] Formulário para definir pontos por posição (1º, 2º, 3º...)
+- [ ] Validação: pontos decrescentes (1º > 2º > 3º...)
+- [ ] Preview da configuração antes de salvar
+- [ ] Integrar na página de detalhes do campeonato (aba Config)
+- [ ] Botão "Usar Padrão" (1º=100, 2º=95, 3º=90...)
+
+### Backend
+- [ ] Procedure já existe (pontuacao.configurar)
+- [ ] Adicionar validação de pontos decrescentes
+- [ ] Atualizar cálculo para usar config customizada
+- [ ] Escrever testes (5+ testes)
+
+### Testes
+- [ ] Testar configuração customizada
+- [ ] Testar fallback para padrão
+- [ ] Testar validações
+
+## Sistema de Notificações em Tempo Real - Sprint 6
+### Backend - Notificações
+- [ ] Criar tabela `notificacoes` (userId, tipo, titulo, mensagem, lida, data)
+- [ ] Procedure: notificacoes.enviar
+- [ ] Procedure: notificacoes.marcarComoLida
+- [ ] Procedure: notificacoes.listarPorUsuario
+- [ ] Trigger: notificar quando resultado é registrado
+- [ ] Trigger: notificar quando posição no leaderboard muda
+- [ ] Trigger: notificar quando atleta é alocado em bateria
+- [ ] Escrever testes (8+ testes)
+
+### Interface
+- [ ] Criar componente NotificacoesDropdown.tsx
+- [ ] Badge com contador de não lidas
+- [ ] Lista de notificações com scroll
+- [ ] Marcar como lida ao clicar
+- [ ] Integrar no header da plataforma
+
+### Testes
+- [ ] Testar envio de notificações
+- [ ] Testar marcação como lida
+- [ ] Testar triggers automáticos
+
+## Gestão de Inscrições e Pagamentos - Sprint 7
+### Backend - Gestão de Inscrições
+- [ ] Adicionar campo `status` em inscricoes_campeonatos (pendente, aprovada, rejeitada)
+- [ ] Adicionar campo `statusPagamento` (pendente, pago, reembolsado)
+- [ ] Procedure: inscricoes.aprovar
+- [ ] Procedure: inscricoes.rejeitar
+- [ ] Procedure: inscricoes.confirmarPagamento
+- [ ] Procedure: inscricoes.gerarRelatorio
+- [ ] Escrever testes (8+ testes)
+
+### Interface Admin
+- [ ] Criar página GestaoInscricoes.tsx
+- [ ] Tabela com todas as inscrições (filtros: status, categoria)
+- [ ] Ações: Aprovar, Rejeitar, Confirmar Pagamento
+- [ ] Botão "Exportar Lista" (CSV/PDF)
+- [ ] Relatório por categoria/faixa etária
+- [ ] Integração Stripe (já configurado)
+
+### Testes
+- [ ] Testar aprovação/rejeição
+- [ ] Testar confirmação de pagamento
+- [ ] Testar geração de relatórios
+- [ ] Testar exportação de listas

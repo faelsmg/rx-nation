@@ -14,6 +14,7 @@ import Badges from "./pages/Badges";
 import Campeonatos from "./pages/Campeonatos";
 import CampeonatoDetalhes from "./pages/CampeonatoDetalhes";
 import CampeonatosAdmin from "./pages/CampeonatosAdmin";
+import GestaoInscricoes from "./pages/GestaoInscricoes";
 import Perfil from "./pages/Perfil";
 import GestaoBox from "./pages/GestaoBox";
 import AdminLiga from "./pages/AdminLiga";
@@ -73,6 +74,7 @@ function Router() {
       <Route path={"/badges"} component={Badges} />
       <Route path={"/campeonatos"} component={Campeonatos} />
       <Route path={"/campeonatos/:id"} component={CampeonatoDetalhes} />
+      <Route path={"/campeonatos/:id/inscricoes"} component={GestaoInscricoes} />
       <Route path={"/admin/campeonatos"} component={CampeonatosAdmin} />
       <Route path={"/perfil"} component={Perfil} />
       <Route path={"/gestao-box"} component={GestaoBox} />
