@@ -1482,3 +1482,18 @@
 - [x] Atualizar cards FIFA com novo branding
 - [x] Atualizar meta tags e SEO
 - [x] Testar identidade visual completa
+
+
+## Ícones PWA e Variações do Logo RX Nation
+- [x] Gerar icon-192.png (PWA)
+- [x] Gerar icon-512.png (PWA)
+- [x] Gerar favicon-16.png
+- [x] Gerar favicon-32.png
+- [x] Gerar favicon-48.png
+- [x] Converter favicons para .ico multi-resolução
+- [x] Gerar logo horizontal (para emails/docs)
+- [x] Gerar logo vertical (para banners)
+- [x] Gerar logo monocromático (para impressão)
+- [x] Atualizar referências no manifest.json
+- [x] Atualizar referência do favicon no index.html
+- [x] Testar ícones em diferentes dispositivos
