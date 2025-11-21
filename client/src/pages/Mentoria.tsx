@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { Calendar, CheckCircle2, Clock, MessageSquare, Star, UserPlus, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import ChatMentoria from "@/components/ChatMentoria";
 
 export default function Mentoria() {
   const { user } = useAuth();
@@ -317,10 +318,20 @@ export default function Mentoria() {
                         Concluir
                       </Button>
 
-                      <Button size="sm" variant="ghost">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Chat
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="ghost">
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Chat
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Chat com {mentoria.outroUsuarioNome}</DialogTitle>
+                          </DialogHeader>
+                          <ChatMentoria mentoriaId={mentoria.id} userId={user!.id} />
+                        </DialogContent>
+                      </Dialog>
                     </>
                   )}
 

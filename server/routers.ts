@@ -4248,6 +4248,110 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getAgendamentosByMentoria(input.mentoriaId);
       }),
+
+    // Chat: Enviar mensagem
+    enviarMensagem: protectedProcedure
+      .input(z.object({
+        mentoriaId: z.number(),
+        mensagem: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.enviarMensagemChat({
+          mentoriaId: input.mentoriaId,
+          remetenteId: ctx.user.id,
+          mensagem: input.mensagem,
+        });
+      }),
+
+    // Chat: Listar mensagens
+    listarMensagens: protectedProcedure
+      .input(z.object({ mentoriaId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getMensagensChat(input.mentoriaId, ctx.user.id);
+      }),
+
+    // Chat: Marcar como lidas
+    marcarComoLidas: protectedProcedure
+      .input(z.object({ mentoriaId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.marcarMensagensMentoriaComoLidas(input.mentoriaId, ctx.user.id);
+      }),
+
+    // Chat: Contar não lidas
+    contarNaoLidas: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.contarMensagensNaoLidas(ctx.user.id);
+      }),
+  }),
+
+  marketplace: router({
+    // Listar produtos
+    listarProdutos: publicProcedure
+      .input(z.object({
+        categoria: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getProdutosMarketplace(input?.categoria);
+      }),
+
+    // Criar pedido
+    criarPedido: protectedProcedure
+      .input(z.object({
+        produtoId: z.number(),
+        quantidade: z.number().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.criarPedidoMarketplace({
+          userId: ctx.user.id,
+          produtoId: input.produtoId,
+          quantidade: input.quantidade,
+          enderecoEntrega: "Retirar no box",
+        });
+      }),
+
+    // Listar meus pedidos
+    meusPedidos: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPedidosByUser(ctx.user.id);
+      }),
+
+    // Admin: Criar produto
+    criarProduto: protectedProcedure
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string(),
+        categoria: z.string(),
+        custoEmPontos: z.number(),
+        estoque: z.number(),
+        imagemUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem criar produtos' });
+        }
+        // TODO: Implementar criarProdutoMarketplace no db.ts
+        throw new TRPCError({ code: 'NOT_IMPLEMENTED', message: 'Função em desenvolvimento' });
+      }),
+  }),
+
+  ia: router({
+    // Gerar insights personalizados
+    gerarInsights: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.gerarInsightsPersonalizados(ctx.user.id);
+      }),
+
+    // Sugerir treinos
+    sugerirTreinos: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.sugerirTreinosComplementares(ctx.user.id);
+      }),
+
+    // Prever risco de lesões
+    preverRisco: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.preverRiscoLesoes(ctx.user.id);
+      }),
   }),
 
 });

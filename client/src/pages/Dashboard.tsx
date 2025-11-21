@@ -11,6 +11,7 @@ import { StreakIndicator } from "@/components/StreakIndicator";
 import BadgesSection from "@/components/BadgesSection";
 import NivelAtleta from "@/components/NivelAtleta";
 import { DesafiosSemana } from "@/components/DesafiosSemana";
+import InsightsIA from "@/components/InsightsIA";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -51,6 +52,11 @@ export default function Dashboard() {
             <NivelAtleta pontosTotais={pontuacaoTotal || 0} />
             <DesafiosSemana />
           </div>
+        )}
+
+        {/* Insights com IA */}
+        {user?.role === "atleta" && (
+          <InsightsIA />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-onboarding="dashboard-stats">

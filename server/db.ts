@@ -62,6 +62,8 @@ import {
   pedidosMarketplace,
   InsertProdutoMarketplace,
   InsertPedidoMarketplace,
+  mensagensChat,
+  InsertMensagemChat,
   InsertFeedAtividade,
   desafiosSemanais,
   InsertDesafioSemanal,
@@ -10765,4 +10767,135 @@ PRs nos últimos 7 dias: ${countPrsRecentes}
     },
     geradoEm: new Date(),
   };
+}
+
+
+// ==================== CHAT DE MENTORIA ====================
+
+/**
+ * Enviar mensagem no chat
+ */
+export async function enviarMensagemChat(data: {
+  mentoriaId: number;
+  remetenteId: number;
+  mensagem: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Verificar se mentoria existe e usuário faz parte
+  const mentoria = await db
+    .select()
+    .from(mentorias)
+    .where(eq(mentorias.id, data.mentoriaId))
+    .limit(1);
+
+  if (mentoria.length === 0) {
+    throw new Error("Mentoria não encontrada");
+  }
+
+  const m = mentoria[0];
+  if (m.mentorId !== data.remetenteId && m.mentoradoId !== data.remetenteId) {
+    throw new Error("Usuário não faz parte desta mentoria");
+  }
+
+  // Criar mensagem
+  const [mensagem] = await db.insert(mensagensChat).values(data).$returningId();
+
+  // Notificar destinatário
+  const destinatarioId = m.mentorId === data.remetenteId ? m.mentoradoId : m.mentorId;
+
+  await createNotification({
+    userId: destinatarioId,
+    tipo: "mentoria" as any,
+    titulo: "Nova Mensagem 💬",
+    mensagem: "Você recebeu uma nova mensagem na mentoria",
+    link: `/mentoria`,
+  });
+
+  return mensagem;
+}
+
+/**
+ * Listar mensagens do chat
+ */
+export async function getMensagensChat(mentoriaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Verificar se usuário faz parte da mentoria
+  const mentoria = await db
+    .select()
+    .from(mentorias)
+    .where(eq(mentorias.id, mentoriaId))
+    .limit(1);
+
+  if (mentoria.length === 0 || 
+      (mentoria[0].mentorId !== userId && mentoria[0].mentoradoId !== userId)) {
+    throw new Error("Acesso negado");
+  }
+
+  return db
+    .select({
+      id: mensagensChat.id,
+      mensagem: mensagensChat.mensagem,
+      remetenteId: mensagensChat.remetenteId,
+      remetenteNome: users.name,
+      lida: mensagensChat.lida,
+      createdAt: mensagensChat.createdAt,
+    })
+    .from(mensagensChat)
+    .leftJoin(users, eq(mensagensChat.remetenteId, users.id))
+    .where(eq(mensagensChat.mentoriaId, mentoriaId))
+    .orderBy(mensagensChat.createdAt);
+}
+
+/**
+ * Marcar mensagens de mentoria como lidas
+ */
+export async function marcarMensagensMentoriaComoLidas(mentoriaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .update(mensagensChat)
+    .set({ lida: true })
+    .where(and(
+      eq(mensagensChat.mentoriaId, mentoriaId),
+      sql`${mensagensChat.remetenteId} != ${userId}`
+    ));
+
+  return { success: true };
+}
+
+/**
+ * Contar mensagens não lidas
+ */
+export async function contarMensagensNaoLidas(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Buscar mentorias do usuário
+  const mentoriasUsuario = await db
+    .select({ id: mentorias.id })
+    .from(mentorias)
+    .where(or(
+      eq(mentorias.mentorId, userId),
+      eq(mentorias.mentoradoId, userId)
+    ));
+
+  if (mentoriasUsuario.length === 0) return 0;
+
+  const mentoriaIds = mentoriasUsuario.map(m => m.id);
+
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(mensagensChat)
+    .where(and(
+      sql`${mensagensChat.mentoriaId} IN (${sql.join(mentoriaIds.map(id => sql`${id}`), sql`, `)})`,
+      sql`${mensagensChat.remetenteId} != ${userId}`,
+      eq(mensagensChat.lida, false)
+    ));
+
+  return result[0]?.count || 0;
 }

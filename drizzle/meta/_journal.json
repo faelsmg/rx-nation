@@ -225,6 +225,13 @@
       "when": 1763758003358,
       "tag": "0031_living_outlaw_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1763759733073,
+      "tag": "0032_sticky_lilandra",
+      "breakpoints": true
     }
   ]
 }

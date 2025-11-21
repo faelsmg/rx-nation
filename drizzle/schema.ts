@@ -1014,3 +1014,30 @@ export const pedidosMarketplaceRelations = relations(pedidosMarketplace, ({ one 
     references: [produtosMarketplace.id],
   }),
 }));
+
+
+/**
+ * Mensagens de Chat (Mentoria)
+ */
+export const mensagensChat = mysqlTable("mensagens_chat", {
+  id: int("id").autoincrement().primaryKey(),
+  mentoriaId: int("mentoriaId").notNull(),
+  remetenteId: int("remetenteId").notNull(),
+  mensagem: text("mensagem").notNull(),
+  lida: boolean("lida").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MensagemChat = typeof mensagensChat.$inferSelect;
+export type InsertMensagemChat = typeof mensagensChat.$inferInsert;
+
+export const mensagensChatRelations = relations(mensagensChat, ({ one }) => ({
+  mentoria: one(mentorias, {
+    fields: [mensagensChat.mentoriaId],
+    references: [mentorias.id],
+  }),
+  remetente: one(users, {
+    fields: [mensagensChat.remetenteId],
+    references: [users.id],
+  }),
+}));
