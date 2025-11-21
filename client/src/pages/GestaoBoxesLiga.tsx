@@ -12,7 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Building2, Plus, Edit, Trash2, Users, TrendingUp, Trophy, Activity } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Users, TrendingUp, Trophy, Activity, FileDown, FileSpreadsheet } from "lucide-react";
+import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,61 @@ export default function GestaoBoxesLiga() {
 
   const { data: boxes, isLoading } = trpc.boxes.getAll.useQuery();
   const { data: metrics } = trpc.boxes.getMetrics.useQuery();
+
+  const handleExportPDF = () => {
+    if (!boxes || boxes.length === 0) {
+      toast.error("Nenhum box para exportar");
+      return;
+    }
+
+    exportToPDF(
+      "Relatório de Boxes",
+      "Impacto Pro League - Gestão de Boxes",
+      boxes.map((box: any) => ({
+        id: box.id,
+        nome: box.nome,
+        endereco: box.endereco || "-",
+        status: box.ativo ? "Ativo" : "Inativo",
+      })),
+      [
+        { header: "ID", dataKey: "id" },
+        { header: "Box", dataKey: "nome" },
+        { header: "Endereço", dataKey: "endereco" },
+        { header: "Status", dataKey: "status" },
+      ],
+      `relatorio-boxes-${new Date().getTime()}`
+    );
+    toast.success("✅ Relatório PDF exportado!");
+  };
+
+  const handleExportExcel = () => {
+    if (!boxes || boxes.length === 0) {
+      toast.error("Nenhum box para exportar");
+      return;
+    }
+
+    exportToExcel(
+      boxes.map((box: any) => ({
+        id: box.id,
+        nome: box.nome,
+        endereco: box.endereco || "-",
+        telefone: box.telefone || "-",
+        email: box.email || "-",
+        status: box.ativo ? "Ativo" : "Inativo",
+      })),
+      [
+        { header: "ID", dataKey: "id" },
+        { header: "Box", dataKey: "nome" },
+        { header: "Endereço", dataKey: "endereco" },
+        { header: "Telefone", dataKey: "telefone" },
+        { header: "Email", dataKey: "email" },
+        { header: "Status", dataKey: "status" },
+      ],
+      "Boxes",
+      `boxes-${new Date().getTime()}`
+    );
+    toast.success("✅ Planilha Excel exportada!");
+  };
   
   const createMutation = trpc.boxes.create.useMutation();
   const updateMutation = trpc.boxes.update.useMutation();
@@ -146,10 +202,20 @@ export default function GestaoBoxesLiga() {
               Gerencie todos os boxes da Impacto Pro League
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Box
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportPDF}>
+              <FileDown className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
+            <Button variant="outline" onClick={handleExportExcel}>
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Box
+            </Button>
+          </div>
         </div>
 
         {/* Métricas Consolidadas */}

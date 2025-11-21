@@ -10,7 +10,13 @@ import {
   Target,
   Activity,
   Clock,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportMetricasToPDF, exportToExcel } from "@/lib/exportUtils";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -22,6 +28,7 @@ import { useState } from "react";
 
 export default function DashboardCoach() {
   const [periodo, setPeriodo] = useState<'semana' | 'mes' | 'trimestre'>('mes');
+  const { user } = useAuth();
 
   const { data: metricas, isLoading } = trpc.coach.getMetricas.useQuery({ periodo });
   const { data: atletasEmRisco } = trpc.coach.getAtletasEmRisco.useQuery({ diasSemCheckin: 7 });
@@ -48,6 +55,61 @@ export default function DashboardCoach() {
             <p className="text-muted-foreground">
               Visão geral do engajamento e performance do box
             </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!metricas || !topAtletas) {
+                  toast.error("Aguarde o carregamento dos dados");
+                  return;
+                }
+                exportMetricasToPDF(
+                  user?.boxId ? `Box #${user.boxId}` : "Meu Box",
+                  {
+                    totalAtletas: metricas.total_atletas || 0,
+                    taxaEngajamento: metricas.taxa_engajamento || 0,
+                    wodsPublicados: metricas.wods_publicados || 0,
+                    checkinsUltimos30Dias: metricas.checkins_ultimos_30_dias || 0,
+                  },
+                  topAtletas,
+                  `relatorio-coach-${new Date().getTime()}`
+                );
+                toast.success("✅ Relatório PDF exportado!");
+              }}
+            >
+              <FileDown className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!topAtletas) {
+                  toast.error("Aguarde o carregamento dos dados");
+                  return;
+                }
+                exportToExcel(
+                  topAtletas.map((a: any) => ({
+                    nome: a.nome || "Sem nome",
+                    pontos: a.pontos || 0,
+                    badges: a.total_badges || 0,
+                    categoria: a.categoria || "-",
+                  })),
+                  [
+                    { header: "Nome", dataKey: "nome" },
+                    { header: "Pontos", dataKey: "pontos" },
+                    { header: "Badges", dataKey: "badges" },
+                    { header: "Categoria", dataKey: "categoria" },
+                  ],
+                  "Top Atletas",
+                  `top-atletas-${new Date().getTime()}`
+                );
+                toast.success("✅ Planilha Excel exportada!");
+              }}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Exportar Excel
+            </Button>
           </div>
 
           <Select value={periodo} onValueChange={(v: any) => setPeriodo(v)}>

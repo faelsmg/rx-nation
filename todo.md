@@ -1310,3 +1310,31 @@
 - [x] Rankings cross-box (atletas, WODs, engajamento)
 - [x] Filtros e busca de boxes
 - [x] Adicionar rota e link no menu para admin_liga
+
+
+## Sistema de Mensagens Diretas 1-on-1
+- [x] Adicionar tipo "direto" nas conversas existentes
+- [x] Criar procedure para iniciar conversa direta com atleta/coach
+- [x] Adicionar lista de contatos/usuários para iniciar chat
+- [x] Implementar indicadores de mensagem lida (read receipts)
+- [x] Adicionar busca de conversas e mensagens
+- [x] Interface de mensagens diretas integrada ao chat atual
+
+## Exportação de Relatórios (PDF/Excel)
+- [x] Instalar bibliotecas jspdf e xlsx
+- [x] Adicionar botão de exportar PDF no DashboardCoach
+- [x] Adicionar botão de exportar Excel no DashboardCoach
+- [x] Exportar métricas de engajamento em PDF
+- [x] Exportar lista de atletas em Excel
+- [x] Adicionar exportação no painel Admin da Liga
+- [x] Formatação profissional dos relatórios
+
+## Notificações Push Web
+- [ ] Criar service worker (sw.js)
+- [ ] Implementar registro de push subscription
+- [ ] Criar API endpoint para enviar push notifications
+- [ ] Solicitar permissão de notificações ao usuário
+- [ ] Enviar push quando novo WOD é publicado
+- [ ] Enviar push quando atleta recebe badge
+- [ ] Enviar push para novas mensagens no chat
+- [ ] Testar notificações em diferentes navegadores
