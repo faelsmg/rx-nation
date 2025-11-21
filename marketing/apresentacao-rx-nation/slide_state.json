@@ -1,0 +1,124 @@
+{
+  "project_info": {
+    "title": "RX NATION",
+    "created": 1763735842.1262436,
+    "last_updated": 1763736392.5340745,
+    "total_slides": 14
+  },
+  "slides": {
+    "capa": "edited",
+    "desafio": "edited",
+    "solucao": "edited",
+    "funcionalidades": "edited",
+    "gamificacao": "edited",
+    "cards": "edited",
+    "painel": "edited",
+    "casos": "edited",
+    "planos": "edited",
+    "roadmap": "edited",
+    "diferenciais": "edited",
+    "depoimentos": "edited",
+    "cta": "edited",
+    "obrigado": "edited"
+  },
+  "outline": [
+    {
+      "id": "capa",
+      "title": "RX NATION",
+      "summary": "Slide de abertura apresentando a RX Nation como plataforma completa de gestão e gamificação para boxes de CrossFit, com logo em destaque e gradiente azul vibrante",
+      "image_plan": "/home/ubuntu/impacto-pro-league/client/public/logo-rx-nation-final.png - The cover slide requires a strong, clean logo. Image 5 is a bold, blue logo on a solid blue background, matching the brand identity and providing a strong visual start.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "desafio",
+      "title": "O Desafio dos Boxes Modernos",
+      "summary": "Apresenta os 3 desafios críticos que boxes de CrossFit enfrentam: engajamento (60% desistem em 3 meses), operacional (15h/semana em tarefas manuais) e retenção (40% de churn evitável)",
+      "image_plan": "/home/ubuntu/upload/search_images/btH8JOWggsKS.jpg - This slide discusses the challenges faced by modern CrossFit boxes (engagement, operations, retention). Image 19 shows a well-equipped but slightly empty-looking box, visually representing the environment where these challenges occur.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "solucao",
+      "title": "RX Nation Resolve Esses Problemas",
+      "summary": "Plataforma all-in-one que combina sistema de pontos/badges, automação completa e analytics em tempo real - primeira brasileira com gamificação nativa",
+      "image_plan": "/home/ubuntu/impacto-pro-league/client/public/logo-horizontal.png - This slide introduces the platform as an all-in-one solution. Image 11 is a clean, modern logo on a white background, suitable for a professional introduction of the solution.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "funcionalidades",
+      "title": "6 Módulos Integrados",
+      "summary": "Detalha as 6 funcionalidades principais: WOD do Dia, Sistema de Pontos, Badges, Agendamento Inteligente, Análise de Performance e Rankings Dinâmicos",
+      "image_plan": "/home/ubuntu/upload/search_images/UHEijjgVSlas.jpg - This slide lists the main functionalities, which are related to WODs, equipment, and tracking. Image 18 shows high-quality CrossFit equipment (rack, weights), visually supporting the context of the functionalities.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "gamificacao",
+      "title": "Gamificação Baseada em Ciência",
+      "summary": "Explica as mecânicas de engajamento validadas por psicologia comportamental: progresso visível, competição saudável, reconhecimento social e metas alcançáveis",
+      "image_plan": "/home/ubuntu/impacto-pro-league/client/public/favicon-48.png - This slide focuses on gamification and behavioral science. Image 10 is a simple, modern logo icon, which can be used as a clean visual element for a text-heavy, conceptual slide.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "cards",
+      "title": "Cards Compartilháveis",
+      "summary": "Apresenta o sistema de cards estilo FIFA para marketing viral: design profissional, compartilhamento 1-click e impacto mensurável (30% aumento em leads)",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "painel",
+      "title": "Painel do Gestor",
+      "summary": "Dashboard completo com métricas de retenção, performance do box, gestão de aulas e financeiro - reduz tempo de gestão em 70%",
+      "image_plan": "/home/ubuntu/upload/search_images/hncrv19QXGSX.jpg - This slide is about the Manager Dashboard and strategic data. Image 22 is a clean, professional mobile analytics dashboard concept, perfectly illustrating the data-driven management tool.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "casos",
+      "title": "Casos de Sucesso",
+      "summary": "Resultados reais de 2 boxes: CrossFit ABC (+50% receita, 72% frequência) e Box XYZ (95% engajamento, 40 novos leads)",
+      "image_plan": "/home/ubuntu/impacto-pro-league/marketing/mockups/squeeze.png - This slide discusses success cases and results. Image 16, a black water bottle with the RX Nation logo, can serve as a simple, professional branding element for a testimonial slide.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "planos",
+      "title": "Planos e Investimento",
+      "summary": "Apresenta 3 planos flexíveis: Starter (R$297), Pro (R$597) e Enterprise (sob consulta), com 30 dias de teste grátis",
+      "image_plan": "/home/ubuntu/upload/search_images/NB1gAGMDoHzM.jpg - This slide is about plans and investment, emphasizing growth. Image 24, a business growth graph with an upward arrow, visually represents scaling and growth, which is the core theme of the pricing structure.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "roadmap",
+      "title": "Roadmap de Implementação",
+      "summary": "Processo de onboarding em 4 semanas: Setup, Treinamento, Lançamento e Otimização, com suporte contínuo",
+      "image_plan": "/home/ubuntu/upload/search_images/UJ1IU1iVaf5j.jpg - This slide outlines the implementation roadmap. Image 25, a staircase graph with an upward trend, visually represents the step-by-step process and progression of the 4-week roadmap.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "diferenciais",
+      "title": "Por Que Escolher a RX Nation?",
+      "summary": "5 diferenciais competitivos: 100% focado em CrossFit, gamificação nativa, ROI comprovado, suporte em português e atualizações constantes",
+      "image_plan": "/home/ubuntu/impacto-pro-league/marketing/mockups/adesivos.png - This slide lists competitive differentiators. Image 17, showing various branded stickers/badges, visually relates to the gamification and branding aspects mentioned as key differentiators.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "depoimentos",
+      "title": "Depoimentos",
+      "summary": "Testemunhos de gestores de boxes sobre transformação na gestão, engajamento triplicado e marketing orgânico via cards compartilháveis",
+      "image_plan": "/home/ubuntu/impacto-pro-league/marketing/mockups/camiseta-frente.png - This slide features testimonials. Image 14, a black t-shirt with the RX Nation logo on a mannequin, provides a professional, branded visual for a slide focused on community and user feedback.",
+      "slide_template_key": ""
+    },
+    {
+      "id": "cta",
+      "title": "Comece Sua Transformação",
+      "summary": "Chamada para ação com teste grátis por 30 dias, informações de contato (email, WhatsApp, site) e bônus de 2 meses grátis",
+      "image_plan": "",
+      "slide_template_key": ""
+    },
+    {
+      "id": "obrigado",
+      "title": "Obrigado!",
+      "summary": "Slide de encerramento agradecendo e reforçando a proposta de valor: transformar boxes em comunidades engajadas",
+      "image_plan": "/home/ubuntu/impacto-pro-league/client/public/logo-rx-nation-1.png - The final \"Thank You\" slide requires a clean, prominent logo. Image 1 is a strong, simple logo on a light background, suitable for the closing slide.",
+      "slide_template_key": ""
+    }
+  ]
+}

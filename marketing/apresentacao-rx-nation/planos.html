@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planos e Investimento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            padding-top: 45px;
+            padding-left: 50px;
+            padding-right: 50px;
+        }
+        .growth-image {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 180px;
+            height: auto;
+            opacity: 0.15;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 40px;
+            line-height: 1.3;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 25px; }
+        .plan-card {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            padding-top: 25px;
+            padding-left: 20px;
+            padding-right: 20px;
+            min-height: 420px;
+            display: flex;
+            flex-direction: column;
+        }
+        .plan-card.featured {
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 2px solid rgba(255, 0, 110, 0.3);
+        }
+        .plan-name {
+            font-family: 'Oswald', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .plan-target {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #8B5CF6;
+            margin-bottom: 20px;
+        }
+        .plan-price {
+            font-family: 'Oswald', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            color: #00F5FF;
+            margin-bottom: 5px;
+        }
+        .plan-period {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #FFFFFF;
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+        .plan-features {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .feature-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .feature-icon {
+            color: #00F5FF;
+            font-size: 14px;
+            min-width: 16px;
+            padding-top: 3px;
+        }
+        .feature-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #FFFFFF;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+        .guarantee-box {
+            background: linear-gradient(90deg, rgba(255, 0, 110, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+            padding-top: 18px;
+            padding-left: 30px;
+            padding-right: 30px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .guarantee-text {
+            font-family: 'Oswald', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #FF006E;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <img src="/home/ubuntu/upload/search_images/NB1gAGMDoHzM.jpg" alt="Growth" class="growth-image">
+        
+        <h1 class="slide-title">
+            Planos flexíveis que escalam com<br>
+            o crescimento do seu box
+        </h1>
+        
+        <div class="plans-grid">
+            <!-- Plano Starter -->
+            <div class="plan-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-target">até 50 atletas</div>
+                <div class="plan-price">R$ 297</div>
+                <div class="plan-period">/mês</div>
+                <div class="plan-features">
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Todos os módulos inclusos</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">WOD do Dia + Registro</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Sistema de Pontos e Badges</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Agendamento Inteligente</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Cards Compartilháveis</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Suporte por email</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Plano Pro (Featured) -->
+            <div class="plan-card featured">
+                <div class="plan-name">Pro</div>
+                <div class="plan-target">até 150 atletas</div>
+                <div class="plan-price">R$ 597</div>
+                <div class="plan-period">/mês</div>
+                <div class="plan-features">
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Todos os módulos inclusos</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Analytics avançado</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Dashboard completo</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Métricas de retenção</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Suporte prioritário</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Onboarding personalizado</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Plano Enterprise -->
+            <div class="plan-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-target">150+ atletas</div>
+                <div class="plan-price">Consulta</div>
+                <div class="plan-period">customizado</div>
+                <div class="plan-features">
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Todos os recursos Pro</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">White-label completo</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">API customizada</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Múltiplas unidades</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">Account manager dedicado</div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check feature-icon"></i>
+                        <div class="feature-text">SLA garantido</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="guarantee-box">
+            <div class="guarantee-text">
+                30 DIAS DE TESTE GRÁTIS • SEM CARTÃO • SEM COMPROMISSO
+            </div>
+        </div>
+    </div>
+</body>
+</html>

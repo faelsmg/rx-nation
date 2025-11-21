@@ -1497,3 +1497,14 @@
 - [x] Atualizar referências no manifest.json
 - [x] Atualizar referência do favicon no index.html
 - [x] Testar ícones em diferentes dispositivos
+
+
+## Materiais de Marketing RX Nation
+- [x] Template de email: Newsletter
+- [x] Template de email: Promoções
+- [x] Template de email: Boas-vindas
+- [x] Template de email: Lembrete de check-in
+- [x] Mockup: Camiseta (frente e costas)
+- [x] Mockup: Squeeze/Garrafa
+- [x] Mockup: Adesivos
+- [x] Apresentação institucional: Estrutura e conteúdo- [x] Apresentação institucional: Design de slides- [ ] Documentação de uso dos materiais

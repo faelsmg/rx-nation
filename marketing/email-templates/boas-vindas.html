@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo à RX Nation!</title>
+    <style>
+        /* Reset CSS para emails */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        body { margin: 0; padding: 0; width: 100% !important; }
+        
+        /* Estilos gerais */
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0066CC 0%, #1E90FF 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            max-width: 200px;
+            height: auto;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .hero-title {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #0066CC;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #666666;
+            margin: 0 0 30px 0;
+            text-align: center;
+        }
+        
+        .feature-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066CC;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-title {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #0066CC;
+            margin: 0 0 10px 0;
+        }
+        
+        .feature-text {
+            font-size: 14px;
+            color: #666666;
+            margin: 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066CC 0%, #1E90FF 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .cta-container {
+            text-align: center;
+        }
+        
+        .footer {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .footer a {
+            color: #1E90FF;
+            text-decoration: none;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #ffffff;
+            text-decoration: none;
+        }
+        
+        /* Responsivo */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px !important;
+            }
+            .hero-title {
+                font-size: 24px !important;
+            }
+            .subtitle {
+                font-size: 16px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table class="email-container" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="header">
+                            <img src="https://seu-dominio.com/logo-horizontal.png" alt="RX Nation" class="logo" />
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="content">
+                            <h1 class="hero-title">BEM-VINDO À RX NATION! 💪</h1>
+                            <p class="subtitle">Sua jornada de transformação começa agora</p>
+                            
+                            <p style="font-size: 16px; line-height: 1.8; color: #333333;">
+                                Olá, <strong>{{NOME_ATLETA}}</strong>!
+                            </p>
+                            
+                            <p style="font-size: 16px; line-height: 1.8; color: #333333;">
+                                É com grande satisfação que damos as boas-vindas à <strong>RX Nation</strong>, 
+                                a plataforma mais completa de gestão e gamificação para atletas de CrossFit!
+                            </p>
+                            
+                            <div class="feature-box">
+                                <h3 class="feature-title">🏋️ WOD do Dia</h3>
+                                <p class="feature-text">
+                                    Acesse o treino diário do seu box, registre seus resultados e acompanhe 
+                                    sua evolução em tempo real.
+                                </p>
+                            </div>
+                            
+                            <div class="feature-box">
+                                <h3 class="feature-title">🏆 Sistema de Pontos e Badges</h3>
+                                <p class="feature-text">
+                                    Ganhe pontos a cada WOD completado, check-in realizado e PR conquistado. 
+                                    Desbloqueie badges exclusivos e suba no ranking!
+                                </p>
+                            </div>
+                            
+                            <div class="feature-box">
+                                <h3 class="feature-title">📊 Análise de Performance</h3>
+                                <p class="feature-text">
+                                    Acompanhe seus PRs, gráficos de evolução e estatísticas detalhadas 
+                                    para maximizar seus resultados.
+                                </p>
+                            </div>
+                            
+                            <div class="feature-box">
+                                <h3 class="feature-title">📅 Agendamento de Aulas</h3>
+                                <p class="feature-text">
+                                    Reserve sua vaga nas aulas do box de forma rápida e prática, 
+                                    direto pelo app.
+                                </p>
+                            </div>
+                            
+                            <div class="cta-container">
+                                <a href="{{LINK_PLATAFORMA}}" class="cta-button">
+                                    COMEÇAR AGORA 🚀
+                                </a>
+                            </div>
+                            
+                            <p style="font-size: 14px; line-height: 1.8; color: #666666; margin-top: 30px;">
+                                <strong>Dica:</strong> Complete o tour de boas-vindas na plataforma para 
+                                conhecer todas as funcionalidades e ganhar seus primeiros pontos!
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer">
+                            <p style="margin: 0 0 10px 0; font-weight: 600;">
+                                RX NATION
+                            </p>
+                            <p style="margin: 0 0 20px 0;">
+                                Plataforma completa de gestão e gamificação para boxes de CrossFit
+                            </p>
+                            
+                            <div class="social-links">
+                                <a href="{{LINK_INSTAGRAM}}">Instagram</a> | 
+                                <a href="{{LINK_FACEBOOK}}">Facebook</a> | 
+                                <a href="{{LINK_SITE}}">Site</a>
+                            </div>
+                            
+                            <p style="margin: 20px 0 0 0; color: #999999;">
+                                {{NOME_BOX}} - {{ENDERECO_BOX}}<br>
+                                Você está recebendo este email porque se cadastrou na RX Nation.<br>
+                                <a href="{{LINK_DESCADASTRAR}}" style="color: #999999;">Descadastrar</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promoção Especial - RX Nation</title>
+    <style>
+        /* Reset CSS para emails */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        body { margin: 0; padding: 0; width: 100% !important; }
+        
+        /* Estilos gerais */
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0066CC 0%, #1E90FF 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            max-width: 150px;
+            height: auto;
+        }
+        
+        .promo-banner {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .promo-title {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+        
+        .promo-subtitle {
+            font-size: 20px;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .discount-box {
+            background: linear-gradient(135deg, #0066CC 0%, #1E90FF 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .discount-percentage {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 72px;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1;
+        }
+        
+        .discount-text {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 10px 0 0 0;
+        }
+        
+        .countdown-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .countdown-text {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: #856404;
+            margin: 0;
+        }
+        
+        .countdown-timer {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #856404;
+            margin: 10px 0 0 0;
+        }
+        
+        .benefits-list {
+            margin: 30px 0;
+        }
+        
+        .benefit-item {
+            display: table;
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        .benefit-icon {
+            display: table-cell;
+            width: 40px;
+            vertical-align: top;
+            font-size: 24px;
+        }
+        
+        .benefit-text {
+            display: table-cell;
+            vertical-align: top;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333333;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 8px;
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 20px 0;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        
+        .cta-container {
+            text-align: center;
+        }
+        
+        .terms {
+            font-size: 12px;
+            color: #999999;
+            margin: 30px 0 0 0;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .footer a {
+            color: #1E90FF;
+            text-decoration: none;
+        }
+        
+        /* Responsivo */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px !important;
+            }
+            .promo-title {
+                font-size: 28px !important;
+            }
+            .discount-percentage {
+                font-size: 56px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table class="email-container" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="header">
+                            <img src="https://seu-dominio.com/logo-horizontal.png" alt="RX Nation" class="logo" />
+                        </td>
+                    </tr>
+                    
+                    <!-- Promo Banner -->
+                    <tr>
+                        <td class="promo-banner">
+                            <h1 class="promo-title">{{TITULO_PROMOCAO}}</h1>
+                            <p class="promo-subtitle">{{SUBTITULO_PROMOCAO}}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="content">
+                            
+                            <p style="font-size: 18px; line-height: 1.8; color: #333333; text-align: center;">
+                                Olá, <strong>{{NOME_ATLETA}}</strong>!
+                            </p>
+                            
+                            <!-- Discount Box -->
+                            <div class="discount-box">
+                                <p class="discount-percentage">{{PERCENTUAL_DESCONTO}}%</p>
+                                <p class="discount-text">DE DESCONTO</p>
+                            </div>
+                            
+                            <!-- Countdown -->
+                            <div class="countdown-box">
+                                <p class="countdown-text">⏰ OFERTA POR TEMPO LIMITADO</p>
+                                <p class="countdown-timer">{{TEMPO_RESTANTE}}</p>
+                            </div>
+                            
+                            <p style="font-size: 16px; line-height: 1.8; color: #333333;">
+                                {{DESCRICAO_PROMOCAO}}
+                            </p>
+                            
+                            <!-- Benefits -->
+                            <div class="benefits-list">
+                                <div class="benefit-item">
+                                    <div class="benefit-icon">✅</div>
+                                    <div class="benefit-text">
+                                        <strong>{{BENEFICIO_1_TITULO}}</strong><br>
+                                        {{BENEFICIO_1_DESCRICAO}}
+                                    </div>
+                                </div>
+                                
+                                <div class="benefit-item">
+                                    <div class="benefit-icon">✅</div>
+                                    <div class="benefit-text">
+                                        <strong>{{BENEFICIO_2_TITULO}}</strong><br>
+                                        {{BENEFICIO_2_DESCRICAO}}
+                                    </div>
+                                </div>
+                                
+                                <div class="benefit-item">
+                                    <div class="benefit-icon">✅</div>
+                                    <div class="benefit-text">
+                                        <strong>{{BENEFICIO_3_TITULO}}</strong><br>
+                                        {{BENEFICIO_3_DESCRICAO}}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- CTA -->
+                            <div class="cta-container">
+                                <a href="{{LINK_PROMOCAO}}" class="cta-button">
+                                    APROVEITAR AGORA 🔥
+                                </a>
+                            </div>
+                            
+                            <p style="font-size: 14px; line-height: 1.8; color: #666666; text-align: center; margin-top: 30px;">
+                                Use o cupom: <strong style="font-size: 18px; color: #0066CC;">{{CODIGO_CUPOM}}</strong>
+                            </p>
+                            
+                            <!-- Terms -->
+                            <p class="terms">
+                                {{TERMOS_E_CONDICOES}}
+                            </p>
+                            
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer">
+                            <p style="margin: 0 0 10px 0; font-weight: 600;">
+                                RX NATION
+                            </p>
+                            <p style="margin: 0 0 20px 0;">
+                                Plataforma completa de gestão e gamificação para boxes de CrossFit
+                            </p>
+                            
+                            <p style="margin: 20px 0 0 0; color: #999999;">
+                                {{NOME_BOX}} - {{ENDERECO_BOX}}<br>
+                                <a href="{{LINK_DESCADASTRAR}}" style="color: #999999;">Descadastrar</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

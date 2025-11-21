@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cards Compartilháveis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            padding-top: 55px;
+            padding-left: 70px;
+            padding-right: 70px;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 40px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 50px;
+            line-height: 1.3;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 35px; margin-bottom: 45px; }
+        .benefit-card {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+            padding-top: 30px;
+            padding-left: 25px;
+            padding-right: 25px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .benefit-icon { font-size: 56px; margin-bottom: 22px; }
+        .benefit-icon.icon-1 { color: #FF006E; }
+        .benefit-icon.icon-2 { color: #00F5FF; }
+        .benefit-icon.icon-3 { color: #8B5CF6; }
+        .benefit-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        .benefit-description { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 400; color: #FFFFFF; line-height: 1.5; opacity: 0.9; }
+        .benefit-highlight { color: #00F5FF; font-weight: 700; font-size: 18px; }
+        .example-box {
+            background: linear-gradient(90deg, rgba(255, 0, 110, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+            padding-top: 25px;
+            padding-left: 40px;
+            padding-right: 40px;
+            min-height: 120px;
+        }
+        .example-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FF006E;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .example-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #FFFFFF;
+            opacity: 0.95;
+        }
+        .flow-arrow {
+            font-size: 20px;
+            color: #8B5CF6;
+        }
+        .flow-result {
+            color: #00F5FF;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <h1 class="slide-title">
+            Transforme cada PR em conteúdo<br>
+            de marketing orgânico
+        </h1>
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon icon-1">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div class="benefit-title">Design Profissional</div>
+                <div class="benefit-description">
+                    Cards estilo FIFA Ultimate Team com foto do atleta, estatísticas e branding do box
+                </div>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon icon-2">
+                    <i class="fas fa-share-nodes"></i>
+                </div>
+                <div class="benefit-title">Compartilhamento 1-Click</div>
+                <div class="benefit-description">
+                    Integração nativa com Instagram, Facebook e WhatsApp
+                </div>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon icon-3">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="benefit-title">Impacto Mensurável</div>
+                <div class="benefit-description">
+                    Boxes parceiros reportam <span class="benefit-highlight">30%</span> de aumento em leads qualificados via stories de atletas
+                </div>
+            </div>
+        </div>
+        <div class="example-box">
+            <div class="example-title">Exemplo de Fluxo Viral</div>
+            <div class="example-flow">
+                <span class="flow-step">Atleta quebra PR de Clean & Jerk</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Gera card automático</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">Compartilha no Instagram</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step flow-result">200+ visualizações</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step flow-result">5 novos leads para o box</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

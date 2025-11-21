@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Por Que Escolher a RX Nation?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            font-family: 'Inter', sans-serif;
+        }
+        .image-column {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 60px;
+            padding-left: 60px;
+        }
+        .badges-image {
+            max-width: 100%;
+            max-height: 600px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: brightness(1.1) saturate(1.2);
+        }
+        .content-column {
+            padding-top: 55px;
+            padding-left: 50px;
+            padding-right: 60px;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            margin-bottom: 45px;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .differentials-list {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+        .differential-item {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .differential-number {
+            min-width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #00F5FF 0%, #8B5CF6 100%);
+            color: #0A0E27;
+            font-family: 'Oswald', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .differential-number.alt {
+            background: linear-gradient(135deg, #FF006E 0%, #8B5CF6 100%);
+        }
+        .differential-content {
+            flex: 1;
+            padding-top: 2px;
+        }
+        .differential-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .differential-description {
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            color: #FFFFFF;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        .differential-icon {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+        .icon-1 { color: #00F5FF; }
+        .icon-2 { color: #FF006E; }
+        .icon-3 { color: #8B5CF6; }
+        .icon-4 { color: #00F5FF; }
+        .icon-5 { color: #FF006E; }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="image-column">
+            <img src="/home/ubuntu/impacto-pro-league/marketing/mockups/adesivos.png" alt="RX Nation Badges" class="badges-image">
+        </div>
+        
+        <div class="content-column">
+            <h1 class="slide-title">
+                5 diferenciais competitivos<br>
+                que nos tornam a escolha #1
+            </h1>
+            
+            <div class="differentials-list">
+                <div class="differential-item">
+                    <div class="differential-number">1</div>
+                    <div class="differential-content">
+                        <div class="differential-title">
+                            <i class="fas fa-dumbbell differential-icon icon-1"></i>
+                            100% Focado em CrossFit
+                        </div>
+                        <div class="differential-description">
+                            Desenvolvido por atletas e gestores de boxes, não é um CRM genérico adaptado
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="differential-item">
+                    <div class="differential-number alt">2</div>
+                    <div class="differential-content">
+                        <div class="differential-title">
+                            <i class="fas fa-gamepad differential-icon icon-2"></i>
+                            Gamificação Nativa
+                        </div>
+                        <div class="differential-description">
+                            Única plataforma brasileira com sistema de pontos, badges e rankings integrados desde o início
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="differential-item">
+                    <div class="differential-number">3</div>
+                    <div class="differential-content">
+                        <div class="differential-title">
+                            <i class="fas fa-chart-line differential-icon icon-3"></i>
+                            ROI Comprovado
+                        </div>
+                        <div class="differential-description">
+                            Clientes aumentam receita em média 25-40% no primeiro ano
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="differential-item">
+                    <div class="differential-number alt">4</div>
+                    <div class="differential-content">
+                        <div class="differential-title">
+                            <i class="fas fa-headset differential-icon icon-4"></i>
+                            Suporte em Português
+                        </div>
+                        <div class="differential-description">
+                            Time brasileiro, suporte rápido, entendimento das necessidades locais
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="differential-item">
+                    <div class="differential-number">5</div>
+                    <div class="differential-content">
+                        <div class="differential-title">
+                            <i class="fas fa-rocket differential-icon icon-5"></i>
+                            Atualizações Constantes
+                        </div>
+                        <div class="differential-description">
+                            Roadmap público, novos recursos mensais, comunidade ativa de feedback
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

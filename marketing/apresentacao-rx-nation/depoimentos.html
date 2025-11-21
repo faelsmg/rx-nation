@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depoimentos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            font-family: 'Inter', sans-serif;
+        }
+        .image-column {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 60px;
+            padding-left: 40px;
+        }
+        .tshirt-image {
+            max-width: 100%;
+            max-height: 600px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 40px rgba(0, 245, 255, 0.15));
+        }
+        .content-column {
+            padding-top: 55px;
+            padding-left: 50px;
+            padding-right: 60px;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            margin-bottom: 45px;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .testimonials-container {
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+        }
+        .testimonial-card {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            padding-top: 25px;
+            padding-left: 30px;
+            padding-right: 30px;
+            min-height: 200px;
+            position: relative;
+        }
+        .quote-icon {
+            font-size: 40px;
+            color: #8B5CF6;
+            opacity: 0.3;
+            position: absolute;
+            top: 20px;
+            left: 30px;
+        }
+        .testimonial-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            color: #FFFFFF;
+            line-height: 1.7;
+            font-style: italic;
+            opacity: 0.95;
+            margin-bottom: 20px;
+            padding-left: 50px;
+        }
+        .testimonial-author {
+            font-family: 'Oswald', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FF006E;
+            text-align: right;
+            padding-right: 10px;
+        }
+        .author-role {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #00F5FF;
+            text-align: right;
+            padding-right: 10px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="image-column">
+            <img src="/home/ubuntu/impacto-pro-league/marketing/mockups/camiseta-frente.png" alt="RX Nation Merchandise" class="tshirt-image">
+        </div>
+        
+        <div class="content-column">
+            <h1 class="slide-title">
+                O que gestores de boxes<br>
+                estão dizendo sobre a RX Nation
+            </h1>
+            
+            <div class="testimonials-container">
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left quote-icon"></i>
+                    <p class="testimonial-text">
+                        "A RX Nation transformou completamente a gestão do nosso box. Antes gastávamos horas em planilhas, agora tudo é automático. Os atletas adoram o sistema de pontos e o engajamento triplicou!"
+                    </p>
+                    <div class="testimonial-author">— João Silva</div>
+                    <div class="author-role">Owner CrossFit ABC</div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <i class="fas fa-quote-left quote-icon"></i>
+                    <p class="testimonial-text">
+                        "Os cards compartilháveis são geniais. Nossos atletas postam seus PRs no Instagram e isso virou a melhor campanha de marketing que já tivemos. Conseguimos 20 novos alunos só no último mês!"
+                    </p>
+                    <div class="testimonial-author">— Maria Santos</div>
+                    <div class="author-role">Gestora Box XYZ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

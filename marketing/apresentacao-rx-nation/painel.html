@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Gestor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 480px;
+            font-family: 'Inter', sans-serif;
+        }
+        .content-column {
+            padding-top: 60px;
+            padding-left: 60px;
+            padding-right: 40px;
+            position: relative;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 38px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            margin-bottom: 45px;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+        .metric-item {
+            display: flex;
+            gap: 18px;
+            align-items: flex-start;
+        }
+        .metric-icon {
+            font-size: 26px;
+            min-width: 35px;
+            padding-top: 2px;
+        }
+        .metric-icon.icon-1 { color: #00F5FF; }
+        .metric-icon.icon-2 { color: #FF006E; }
+        .metric-icon.icon-3 { color: #8B5CF6; }
+        .metric-icon.icon-4 { color: #00F5FF; }
+        .metric-content { flex: 1; }
+        .metric-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 6px;
+        }
+        .metric-description {
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            color: #FFFFFF;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        .benefit-box {
+            margin-top: 40px;
+            background: linear-gradient(90deg, rgba(255, 0, 110, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+            padding-top: 20px;
+            padding-left: 25px;
+            padding-right: 25px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+        }
+        .benefit-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: #FF006E;
+            line-height: 1.4;
+        }
+        .benefit-highlight {
+            color: #00F5FF;
+            font-size: 19px;
+        }
+        .image-column {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 60px;
+            padding-right: 60px;
+        }
+        .dashboard-image {
+            max-width: 100%;
+            max-height: 600px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 40px rgba(0, 245, 255, 0.2));
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="content-column">
+            <h1 class="slide-title">
+                Dashboard completo para<br>
+                decisões estratégicas<br>
+                baseadas em dados
+            </h1>
+            <div class="metrics-list">
+                <div class="metric-item">
+                    <div class="metric-icon icon-1">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-title">Métricas de Retenção</div>
+                        <div class="metric-description">
+                            Taxa de churn, frequência média, atletas em risco de desistência
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-icon icon-2">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-title">Performance do Box</div>
+                        <div class="metric-description">
+                            Total de WODs completados, PRs conquistados, engajamento por horário
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-icon icon-3">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-title">Gestão de Aulas</div>
+                        <div class="metric-description">
+                            Ocupação em tempo real, horários de pico, taxa de no-show
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-icon icon-4">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-title">Financeiro</div>
+                        <div class="metric-description">
+                            Receita recorrente, lifetime value por atleta, ROI de campanhas
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="benefit-box">
+                <div class="benefit-text">
+                    Reduz tempo de gestão em <span class="benefit-highlight">70%</span> e aumenta receita em <span class="benefit-highlight">25%</span> no primeiro ano
+                </div>
+            </div>
+        </div>
+        <div class="image-column">
+            <img src="/home/ubuntu/upload/search_images/hncrv19QXGSX.jpg" alt="Dashboard Analytics" class="dashboard-image">
+        </div>
+    </div>
+</body>
+</html>

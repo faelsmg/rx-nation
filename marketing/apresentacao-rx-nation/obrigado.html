@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obrigado!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* top align to preserve consistent header spacing */
+            padding-top: 60px;
+            padding-left: 80px;
+            padding-right: 80px;
+        }
+        .logo-container { margin-bottom: 60px; }
+        .logo {
+            max-width: 400px;
+            height: auto;
+            filter: drop-shadow(0 10px 40px rgba(0, 245, 255, 0.3));
+        }
+        .thank-you-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 90px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00F5FF 0%, #8B5CF6 50%, #FF006E 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            margin-bottom: 20px; /* reduced from 40px */
+            letter-spacing: 4px;
+            text-align: center;
+            line-height: 1; /* tighten single-line height from ~135px to 90px */
+        }
+        .value-proposition {
+            font-family: 'Inter', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: #FFFFFF;
+            text-align: center;
+            line-height: 1.2; /* two lines ~58px total */
+            max-width: 900px;
+            margin-bottom: 8px; /* reduced from 50px */
+            opacity: 0.95;
+        }
+        .value-highlight { color: #00F5FF; font-weight: 700; }
+        .tagline {
+            font-family: 'Oswald', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #FF006E;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 2px;
+            line-height: 1; /* single line ~22px */
+        }
+        .tagline-accent { color: #00F5FF; }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="logo-container">
+            <img src="/home/ubuntu/impacto-pro-league/client/public/logo-rx-nation-1.png" alt="RX Nation" class="logo">
+        </div>
+        
+        <h1 class="thank-you-title">OBRIGADO!</h1>
+        
+        <p class="value-proposition">
+            Transformando boxes em <span class="value-highlight">comunidades engajadas</span><br>
+            através de gamificação e dados
+        </p>
+        
+        <div class="tagline">
+            RX Nation <span class="tagline-accent">—</span> A plataforma <span class="tagline-accent">#1</span> para boxes de CrossFit no Brasil
+        </div>
+    </div>
+</body>
+</html>

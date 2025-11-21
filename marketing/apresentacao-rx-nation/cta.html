@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comece Sua Transformação</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            padding-top: 60px;
+            padding-left: 80px;
+            padding-right: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 35px; /* reduzido de 50px para 35px */
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .cta-box {
+            background: linear-gradient(135deg, #FF006E 0%, #8B5CF6 100%);
+            padding-top: 40px;
+            padding-left: 60px;
+            padding-right: 60px;
+            text-align: center;
+            margin-bottom: 30px; /* reduzido de 50px para 30px */
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 900px;
+        }
+        .cta-main {
+            font-family: 'Oswald', sans-serif;
+            font-size: 52px;
+            font-weight: 700;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        .cta-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #FFFFFF;
+            opacity: 0.95;
+        }
+        .contact-section {
+            margin-bottom: 45px;
+        }
+        .contact-label {
+            font-family: 'Oswald', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #8B5CF6;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            max-width: 1000px;
+        }
+        .contact-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .contact-icon {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+        .contact-icon.icon-1 { color: #00F5FF; }
+        .contact-icon.icon-2 { color: #FF006E; }
+        .contact-icon.icon-3 { color: #8B5CF6; }
+        .contact-type {
+            font-family: 'Oswald', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFFFFF;
+            text-transform: uppercase;
+        }
+        .contact-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: #FFFFFF;
+            opacity: 0.9;
+        }
+        .bonus-box {
+            background: linear-gradient(90deg, rgba(0, 245, 255, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+            border-top: 3px solid #00F5FF;
+            padding-top: 25px;
+            padding-left: 50px;
+            padding-right: 50px;
+            text-align: center;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+        .bonus-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #00F5FF;
+            line-height: 1.5;
+        }
+        .bonus-highlight {
+            color: #FF006E;
+            font-size: 22px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <h1 class="slide-title">
+            Comece sua transformação<br>
+            digital hoje
+        </h1>
+        
+        <div class="cta-box">
+            <div class="cta-main">TESTE GRÁTIS POR 30 DIAS</div>
+            <div class="cta-subtitle">Sem cartão de crédito, sem compromisso</div>
+        </div>
+        
+        <div class="contact-section">
+            <div class="contact-label">Contato</div>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <div class="contact-icon icon-1">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="contact-type">Email</div>
+                    <div class="contact-value">contato@rxnation.com.br</div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon icon-2">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="contact-type">WhatsApp</div>
+                    <div class="contact-value">(11) 99999-9999</div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon icon-3">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="contact-type">Site</div>
+                    <div class="contact-value">www.rxnation.com.br</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bonus-box">
+            <div class="bonus-text">
+                <span class="bonus-highlight">BÔNUS:</span> Agende uma demo personalizada e ganhe <span class="bonus-highlight">2 meses grátis</span> na contratação anual
+            </div>
+        </div>
+    </div>
+</body>
+</html>

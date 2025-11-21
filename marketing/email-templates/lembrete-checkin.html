@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembrete de Check-in - RX Nation</title>
+    <style>
+        /* Reset CSS para emails */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        body { margin: 0; padding: 0; width: 100% !important; }
+        
+        /* Estilos gerais */
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0066CC 0%, #1E90FF 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            max-width: 180px;
+            height: auto;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .hero-icon {
+            text-align: center;
+            font-size: 80px;
+            margin: 0 0 20px 0;
+        }
+        
+        .hero-title {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #0066CC;
+            margin: 0 0 15px 0;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #666666;
+            margin: 0 0 30px 0;
+            text-align: center;
+        }
+        
+        .class-info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066CC;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .info-row {
+            display: table;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .info-label {
+            display: table-cell;
+            width: 30%;
+            font-weight: 600;
+            color: #666666;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            display: table-cell;
+            font-size: 16px;
+            color: #333333;
+            font-weight: 600;
+        }
+        
+        .reminder-box {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .reminder-text {
+            font-size: 16px;
+            color: #856404;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066CC 0%, #1E90FF 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 8px;
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .cta-container {
+            text-align: center;
+        }
+        
+        .secondary-button {
+            display: inline-block;
+            background-color: transparent;
+            color: #0066CC !important;
+            text-decoration: none;
+            padding: 12px 30px;
+            border: 2px solid #0066CC;
+            border-radius: 8px;
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        
+        .footer {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .footer a {
+            color: #1E90FF;
+            text-decoration: none;
+        }
+        
+        /* Responsivo */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px !important;
+            }
+            .hero-title {
+                font-size: 24px !important;
+            }
+            .info-row {
+                display: block !important;
+            }
+            .info-label, .info-value {
+                display: block !important;
+                width: 100% !important;
+            }
+            .info-label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table class="email-container" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="header">
+                            <img src="https://seu-dominio.com/logo-horizontal.png" alt="RX Nation" class="logo" />
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="content">
+                            
+                            <div class="hero-icon">📅</div>
+                            <h1 class="hero-title">Sua aula está chegando!</h1>
+                            <p class="subtitle">Não esqueça de fazer o check-in</p>
+                            
+                            <p style="font-size: 16px; line-height: 1.8; color: #333333;">
+                                Olá, <strong>{{NOME_ATLETA}}</strong>!
+                            </p>
+                            
+                            <p style="font-size: 16px; line-height: 1.8; color: #333333;">
+                                Este é um lembrete amigável sobre sua aula agendada no <strong>{{NOME_BOX}}</strong>.
+                            </p>
+                            
+                            <!-- Class Info -->
+                            <div class="class-info-box">
+                                <div class="info-row">
+                                    <div class="info-label">📅 Data:</div>
+                                    <div class="info-value">{{DATA_AULA}}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">⏰ Horário:</div>
+                                    <div class="info-value">{{HORARIO_AULA}}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">👨‍🏫 Instrutor:</div>
+                                    <div class="info-value">{{NOME_INSTRUTOR}}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">📍 Local:</div>
+                                    <div class="info-value">{{LOCAL_AULA}}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Reminder -->
+                            <div class="reminder-box">
+                                <p class="reminder-text">
+                                    ⏰ Chegue com 10-15 minutos de antecedência para o aquecimento!
+                                </p>
+                            </div>
+                            
+                            <!-- CTA -->
+                            <div class="cta-container">
+                                <a href="{{LINK_CHECKIN}}" class="cta-button">
+                                    FAZER CHECK-IN AGORA ✓
+                                </a>
+                            </div>
+                            
+                            <div class="cta-container" style="margin-top: 10px;">
+                                <a href="{{LINK_CANCELAR}}" class="secondary-button">
+                                    Cancelar Reserva
+                                </a>
+                                <a href="{{LINK_REAGENDAR}}" class="secondary-button">
+                                    Reagendar
+                                </a>
+                            </div>
+                            
+                            <p style="font-size: 14px; line-height: 1.8; color: #666666; margin-top: 30px; text-align: center;">
+                                <strong>Dica:</strong> Faça o check-in e ganhe <strong style="color: #0066CC;">+10 pontos</strong> 
+                                no seu perfil RX Nation! 🏆
+                            </p>
+                            
+                            <p style="font-size: 14px; line-height: 1.8; color: #999999; margin-top: 20px; text-align: center;">
+                                Em caso de imprevistos, por favor cancele sua reserva com antecedência 
+                                para liberar a vaga para outros atletas.
+                            </p>
+                            
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer">
+                            <p style="margin: 0 0 10px 0; font-weight: 600;">
+                                RX NATION
+                            </p>
+                            <p style="margin: 0 0 20px 0;">
+                                Plataforma completa de gestão e gamificação para boxes de CrossFit
+                            </p>
+                            
+                            <p style="margin: 20px 0 0 0; color: #999999;">
+                                {{NOME_BOX}} - {{ENDERECO_BOX}}<br>
+                                Telefone: {{TELEFONE_BOX}}<br>
+                                <a href="{{LINK_DESCADASTRAR}}" style="color: #999999;">Gerenciar preferências de email</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

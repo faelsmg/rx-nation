@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6 Módulos Integrados</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            font-family: 'Inter', sans-serif;
+        }
+        .image-column {
+            position: relative;
+            overflow: hidden;
+        }
+        .equipment-image {
+            width: 100%;
+            height: 720px;
+            object-fit: cover;
+            object-position: center;
+            filter: brightness(0.5) saturate(1.1);
+        }
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(10, 14, 39, 0.3) 0%, rgba(10, 14, 39, 0.9) 100%);
+        }
+        .content-column {
+            padding-top: 50px;
+            padding-left: 50px;
+            padding-right: 60px;
+        }
+        .slide-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #00F5FF;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 245, 255, 0.3);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+        .feature-item {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        .feature-number {
+            min-width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #00F5FF 0%, #8B5CF6 100%);
+            color: #0A0E27;
+            font-family: 'Oswald', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .feature-content {
+            flex: 1;
+            padding-top: 2px;
+        }
+        .feature-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .feature-description {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: #FFFFFF;
+            line-height: 1.4;
+            opacity: 0.85;
+        }
+        .feature-highlight {
+            color: #FF006E;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="image-column">
+            <img src="/home/ubuntu/upload/search_images/UHEijjgVSlas.jpg" alt="CrossFit Equipment" class="equipment-image">
+            <div class="image-overlay"></div>
+        </div>
+        
+        <div class="content-column">
+            <h1 class="slide-title">
+                6 módulos integrados que<br>
+                transformam a experiência
+            </h1>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-number">1</div>
+                    <div class="feature-content">
+                        <div class="feature-title">WOD do Dia</div>
+                        <div class="feature-description">
+                            Publicação automática, registro de resultados e comparação com histórico pessoal
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-number">2</div>
+                    <div class="feature-content">
+                        <div class="feature-title">Sistema de Pontos</div>
+                        <div class="feature-description">
+                            Algoritmo proprietário que recompensa consistência, PRs e check-ins <span class="feature-highlight">(+10 pts por presença, +50 pts por PR)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-number">3</div>
+                    <div class="feature-content">
+                        <div class="feature-title">Badges e Conquistas</div>
+                        <div class="feature-description">
+                            30+ badges desbloqueáveis que reconhecem marcos (Streak de 7 dias, 100 WODs, 1ª posição no ranking)
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-number">4</div>
+                    <div class="feature-content">
+                        <div class="feature-title">Agendamento Inteligente</div>
+                        <div class="feature-description">
+                            Gestão de vagas, lista de espera automática e lembretes por email/push
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-number">5</div>
+                    <div class="feature-content">
+                        <div class="feature-title">Análise de Performance</div>
+                        <div class="feature-description">
+                            Gráficos de evolução, PRs históricos e comparação com médias do box
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-number">6</div>
+                    <div class="feature-content">
+                        <div class="feature-title">Rankings Dinâmicos</div>
+                        <div class="feature-description">
+                            Leaderboards semanais, mensais e anuais com categorias (RX, Scaled, Masters)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
