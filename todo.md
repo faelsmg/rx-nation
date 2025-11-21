@@ -1968,3 +1968,33 @@ NOTA: Backend completo (procedure compararAtletas). Falta apenas UI.
 - [ ] Adicionar ícones/badges de nível - NÃO IMPLEMENTADO
 
 NOTA: Sistema de gamificação pode ser implementado em fase futura. Recomenda-se usar pontos acumulados do ranking global como base para XP.
+
+
+## Novas Funcionalidades (Sprint 7 - Final)
+
+### 1. Página de Comparação de Atletas
+- [x] Criar procedure para listar todos os atletas (autocomplete)
+- [ ] Criar página ComparacaoAtletas.tsx - PARCIAL (página existe mas precisa adaptação)
+- [ ] Implementar seletor de 2 atletas com autocomplete - PARCIAL
+- [ ] Criar gráficos Chart.js lado a lado (evolução pontos, posições) - PARCIAL
+- [ ] Adicionar tabela comparativa de estatísticas - PARCIAL
+- [x] Adicionar rota no App.tsx
+
+NOTA: Backend 100% completo (listarAtletas + compararAtletas). Página existe mas usa procedures antigas. Requer adaptação para usar novo backend.
+
+### 2. Sistema de Níveis e XP
+- [ ] Definir 4 níveis: Bronze (0-500), Prata (500-1500), Ouro (1500-3000), Platina (3000+) - NÃO IMPLEMENTADO
+- [ ] Criar função para calcular nível baseado em pontos acumulados - NÃO IMPLEMENTADO
+- [ ] Adicionar componente de nível no Dashboard (ícone + barra de progresso) - NÃO IMPLEMENTADO
+- [ ] Definir benefícios por tier (desconto inscrições, prioridade em baterias, etc) - NÃO IMPLEMENTADO
+- [ ] Exibir benefícios desbloqueados no perfil - NÃO IMPLEMENTADO
+
+### 3. Notificações Push Web
+- [ ] Configurar Service Worker para Web Push API - NÃO IMPLEMENTADO
+- [ ] Criar procedure para solicitar permissão de notificações - NÃO IMPLEMENTADO
+- [ ] Implementar envio de push ao registrar resultado - NÃO IMPLEMENTADO
+- [ ] Implementar envio de push ao desbloquear badge - NÃO IMPLEMENTADO
+- [ ] Implementar envio de push ao ganhar prêmio - NÃO IMPLEMENTADO
+- [ ] Adicionar toggle para ativar/desativar notificações - NÃO IMPLEMENTADO
+
+NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do navegador e servidor de push. Implementação complexa recomendada para fase futura.

@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, desc, asc, count, sum } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, asc, count, sum, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -7598,6 +7598,42 @@ export async function resgatarPremio(userId: number, premioUsuarioId: number) {
     success: true,
     codigoResgate: premioUsuario.codigoResgate,
   };
+}
+
+// ========== LISTAR ATLETAS ==========
+
+export async function listarAtletas(busca?: string, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Construir condição de busca
+  let condicao = eq(users.role, "atleta");
+
+  if (busca && busca.trim().length > 0) {
+    condicao = and(
+      eq(users.role, "atleta"),
+      or(
+        sql`${users.name} LIKE ${`%${busca}%`}`,
+        sql`${users.email} LIKE ${`%${busca}%`}`
+      )
+    ) as any;
+  }
+
+  const atletas = await db
+    .select({
+      id: users.id,
+      nome: users.name,
+      email: users.email,
+    })
+    .from(users)
+    .where(condicao)
+    .limit(limit);
+
+  return atletas.map((a) => ({
+    id: a.id,
+    nome: a.nome || "Atleta sem nome",
+    email: a.email || "",
+  }));
 }
 
 // ========== BADGES DO USUÁRIO ==========

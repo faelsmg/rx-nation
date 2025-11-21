@@ -976,6 +976,17 @@ export const appRouter = router({
     return db.getBadgesUsuario(ctx.user.id);
   }),
 
+  listarAtletas: protectedProcedure
+    .input(
+      z.object({
+        busca: z.string().optional(),
+        limit: z.number().default(20),
+      })
+    )
+    .query(async ({ input }) => {
+      return db.listarAtletas(input.busca, input.limit);
+    }),
+
   compararAtletas: protectedProcedure
     .input(
       z.object({
