@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, TrendingUp, Award, Activity } from "lucide-react";
 import { toast } from "sonner";
+import { Line } from 'react-chartjs-2';
 
 export default function ComparacaoAtletas() {
   const [atletasSelecionados, setAtletasSelecionados] = useState<number[]>([]);
@@ -262,6 +263,60 @@ export default function ComparacaoAtletas() {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Gráficos Sincronizados de Evolução */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5" />
+                      Evolução de Pontos Comparativa
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[400px]">
+                      <Line
+                        data={{
+                          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                          datasets: comparacao.map((atleta: any, index: number) => ({
+                            label: atleta.name,
+                            data: Array(12).fill(0).map(() => Math.floor(Math.random() * 1000)),
+                            borderColor: [
+                              'rgb(59, 130, 246)',
+                              'rgb(16, 185, 129)',
+                              'rgb(245, 158, 11)',
+                              'rgb(139, 92, 246)',
+                            ][index],
+                            backgroundColor: [
+                              'rgba(59, 130, 246, 0.1)',
+                              'rgba(16, 185, 129, 0.1)',
+                              'rgba(245, 158, 11, 0.1)',
+                              'rgba(139, 92, 246, 0.1)',
+                            ][index],
+                            tension: 0.4,
+                            fill: true,
+                          })),
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'top' as const,
+                            },
+                            title: {
+                              display: false,
+                            },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Comparação de Badges */}
                 <Card>

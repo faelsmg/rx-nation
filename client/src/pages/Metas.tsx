@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { Plus, Target, Trophy, Calendar, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import confetti from 'canvas-confetti';
 
 export default function Metas() {
   const [open, setOpen] = useState(false);
@@ -21,6 +22,23 @@ export default function Metas() {
   const [dataFim, setDataFim] = useState("");
 
   const { data: metas, isLoading, refetch } = trpc.metas.getByUser.useQuery();
+  
+  const completarMeta = trpc.metas.completar.useMutation({
+    onSuccess: () => {
+      // Efeito de confetti!
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      toast.success("🎉 Parabéns! Meta completada!");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao completar meta: ${error.message}`);
+    },
+  });
+  
   const createMeta = trpc.metas.create.useMutation({
     onSuccess: () => {
       toast.success("Meta criada com sucesso!");
@@ -280,6 +298,17 @@ export default function Metas() {
                         ))}
                       </div>
 
+                      {progress >= 100 && (
+                        <Button
+                          onClick={() => completarMeta.mutate({ metaId: meta.id })}
+                          className="w-full"
+                          disabled={completarMeta.isPending}
+                        >
+                          <Trophy className="w-4 h-4 mr-2" />
+                          Completar Meta!
+                        </Button>
+                      )}
+                      
                       <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
                         <Calendar className="w-4 h-4" />
                         <span>

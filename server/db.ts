@@ -1801,6 +1801,33 @@ export async function updateMetaProgress(metaId: number, valorAtual: number) {
     .where(eq(metas.id, metaId));
 }
 
+export async function completarMeta(metaId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar meta antes de atualizar
+  const meta = await db
+    .select()
+    .from(metas)
+    .where(eq(metas.id, metaId))
+    .limit(1);
+
+  if (meta.length === 0) throw new Error("Meta not found");
+
+  // Atualizar meta como completada
+  await db
+    .update(metas)
+    .set({ 
+      concluida: true, 
+      status: 'completada',
+      completadaEm: new Date(),
+      updatedAt: new Date() 
+    })
+    .where(eq(metas.id, metaId));
+
+  return meta[0];
+}
+
 export async function checkAndUpdateGoals(userId: number) {
   const db = await getDb();
   if (!db) return [];

@@ -982,6 +982,25 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return db.updateMetaProgress(input.metaId, input.valorAtual);
       }),
+
+    completar: protectedProcedure
+      .input(z.object({
+        metaId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const meta = await db.completarMeta(input.metaId);
+        
+        // Criar notificação de meta completada
+        await db.createNotification({
+          userId: ctx.user.id,
+          tipo: 'conquista',
+          titulo: '🎉 Meta Completada!',
+          mensagem: `Parabéns! Você completou a meta: ${meta.titulo}`,
+          link: '/metas',
+        });
+        
+        return meta;
+      }),
   }),
 
   // ===== FEED SOCIAL =====

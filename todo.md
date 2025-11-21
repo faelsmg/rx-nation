@@ -1369,3 +1369,37 @@
 - [ ] Trigger push ao publicar novo WOD
 - [ ] Trigger push ao atleta receber badge
 - [ ] Testar em diferentes navegadores
+
+
+## Comparativo de Atletas
+- [x] Criar página de comparação de atletas
+- [x] Seletor de 2+ atletas para comparar
+- [x] Gráficos sincronizados de evolução de PRs
+- [x] Gráficos sincronizados de pontos ao longo do tempo
+- [x] Tabela comparativa de estatísticas (PRs, badges, frequência)
+- [x] Filtros de período para comparação
+- [x] Exportar comparativo como PDF
+
+## Sistema de Metas SMART
+- [x] Criar schema de metas no banco (título, descrição, tipo, valor_alvo, prazo, status)
+- [x] Implementar framework SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
+- [x] Criar procedures para CRUD de metas
+- [x] Implementar tracking automático de progresso
+- [x] Criar página de gerenciamento de metas
+- [x] Adicionar visualização de progresso com barra percentual
+- [x] Implementar celebrações ao atingir metas (confetti, badge especial)
+- [x] Notificações ao completar meta
+- [ ] Sugestões inteligentes de metas baseadas em histórico
+
+## Notificações Push Web com Service Worker
+- [ ] Criar service worker (sw.js) no public
+- [ ] Registrar service worker no main.tsx
+- [ ] Solicitar permissão de notificações ao usuário
+- [ ] Criar tabela push_subscriptions no schema
+- [ ] Implementar endpoint para salvar subscription
+- [ ] Gerar VAPID keys para autenticação
+- [ ] Criar função para enviar push notification
+- [ ] Trigger push ao publicar novo WOD
+- [ ] Trigger push ao atleta receber badge
+- [ ] Trigger push ao completar meta
+- [ ] Testar em diferentes navegadores
