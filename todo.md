@@ -1508,3 +1508,15 @@
 - [x] Mockup: Squeeze/Garrafa
 - [x] Mockup: Adesivos
 - [x] Apresentação institucional: Estrutura e conteúdo- [x] Apresentação institucional: Design de slides- [ ] Documentação de uso dos materiais
+
+
+## Variações do Logo RX Nation
+- [x] Gerar logo sem fundo (PNG transparente)
+- [x] Gerar logo em fundo branco
+- [x] Gerar logo em fundo preto
+- [x] Gerar logo em fundo azul (#00F5FF)
+- [x] Criar versão reduzida/ícone (quadrado, para app icons)
+- [x] Criar versão monocromática branca
+- [x] Criar versão monocromática preta
+- [x] Organizar todos os arquivos em pasta dedicada
+- [x] Atualizar documentação de identidade visual
