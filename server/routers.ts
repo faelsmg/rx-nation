@@ -1325,6 +1325,15 @@ export const appRouter = router({
         };
       }),
 
+    verificarConquistas: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const conquistasDesbloqueadas = await db.verificarConquistasAutomaticas(ctx.user.id);
+        return {
+          success: true,
+          conquistasDesbloqueadas,
+        };
+      }),
+
     getUserStats: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
@@ -1342,6 +1351,17 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         return db.getRankingsByTipoAndPeriodo(input.tipo, input.periodo, input.boxId);
+      }),
+
+    getSemanal: publicProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        categoria: z.string().optional(),
+        faixaEtaria: z.string().optional(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getRankingSemanalCompleto(input);
       }),
   }),
 

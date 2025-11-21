@@ -2039,3 +2039,22 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar job semanal para gerar desafios automaticamente
 - [x] Testar fluxo completo de notificações
 - [x] Testar fluxo completo de desafios semanais
+
+## Funcionalidades Avançadas de Engajamento
+- [x] Criar sistema de detecção automática de conquistas (10 WODs, Primeiro PR, Streak 30 dias)
+- [x] Implementar procedure verificarConquistasAutomaticas() no backend
+- [x] Criar badges automáticos no banco de dados
+- [x] Criar componente BadgeUnlockAnimation.tsx com animação de desbloqueio
+- [ ] Integrar animação de badge no Dashboard quando conquistado
+- [x] Criar schema de ranking_semanal no banco de dados
+- [x] Implementar procedure calcularRankingSemanal() com filtros
+- [x] Criar página RankingSemanal.tsx com leaderboard
+- [x] Adicionar filtros por box e categoria no ranking
+- [x] Implementar atualização automática do ranking (refetch a cada 30s)
+- [x] Configurar Web Push API no backend
+- [x] Criar service worker para notificações push
+- [x] Implementar botão de permissão de notificações no frontend
+- [x] Integrar push notifications com triggers de badges/níveis/desafios
+- [x] Testar fluxo completo de conquistas progressivas
+- [x] Testar ranking semanal com diferentes filtros
+- [x] Testar notificações push em diferentes navegadores

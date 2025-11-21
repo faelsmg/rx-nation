@@ -29,6 +29,7 @@ import {
   InsertPontuacao,
   badges,
   InsertBadge,
+  Badge,
   userBadges,
   InsertUserBadge,
   rankings,
@@ -9223,4 +9224,354 @@ function getInicioSemana(data: Date): Date {
 function getFimSemana(data: Date): Date {
   const inicio = getInicioSemana(data);
   return new Date(inicio.getTime() + 6 * 24 * 60 * 60 * 1000);
+}
+
+
+// ==================== CONQUISTAS PROGRESSIVAS ====================
+
+/**
+ * Verificar e conceder badges automáticos baseados em conquistas
+ */
+export async function verificarConquistasAutomaticas(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conquistasDesbloqueadas: any[] = [];
+
+  // Buscar badges já conquistados pelo usuário
+  const badgesUsuario = await getUserBadges(userId);
+  const badgesIds = badgesUsuario.map((ub: any) => ub.badge?.id).filter(Boolean);
+
+  // Buscar todos os badges automáticos disponíveis
+  const badgesAutomaticos = await db
+    .select()
+    .from(badges)
+    .where(sql`${badges.categoria} IN ('wods', 'prs', 'frequencia')`);
+
+  for (const badge of badgesAutomaticos) {
+    // Pular se já conquistado
+    if (badgesIds.includes(badge.id)) continue;
+
+    let conquistou = false;
+
+    // Verificar critério baseado na categoria
+    switch (badge.categoria) {
+      case "wods": {
+        // Contar WODs completados
+        const wodsCompletos = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(resultadosTreinos)
+          .where(eq(resultadosTreinos.userId, userId));
+        
+        const totalWods = wodsCompletos[0]?.count || 0;
+        conquistou = totalWods >= (badge.valorObjetivo || 0);
+        break;
+      }
+
+      case "prs": {
+        // Contar PRs registrados
+        const prsRegistrados = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(prs)
+          .where(eq(prs.userId, userId));
+        
+        const totalPRs = prsRegistrados[0]?.count || 0;
+        conquistou = totalPRs >= (badge.valorObjetivo || 0);
+        break;
+      }
+
+      case "frequencia": {
+        // Verificar streak atual
+        const streakData = await calcularStreak(userId);
+        conquistou = streakData.streakAtual >= (badge.valorObjetivo || 0);
+        break;
+      }
+    }
+
+    // Se conquistou, atribuir badge
+    if (conquistou) {
+      await assignBadgeToUser({
+        userId,
+        badgeId: badge.id,
+        dataConquista: new Date(),
+      });
+      conquistasDesbloqueadas.push(badge);
+    }
+  }
+
+  return conquistasDesbloqueadas;
+}
+
+/**
+ * Criar badges automáticos padrão no sistema
+ */
+export async function criarBadgesAutomaticos() {
+  const db = await getDb();
+  if (!db) return;
+
+  const badgesPadrao: InsertBadge[] = [
+    // WODs
+    {
+      nome: "Primeiro WOD",
+      descricao: "Complete seu primeiro WOD",
+      icone: "🎯",
+      criterio: "Completar 1 WOD",
+      nivel: "bronze",
+      categoria: "wods",
+      valorObjetivo: 1,
+    },
+    {
+      nome: "Guerreiro Iniciante",
+      descricao: "Complete 10 WODs",
+      icone: "⚔️",
+      criterio: "Completar 10 WODs",
+      nivel: "bronze",
+      categoria: "wods",
+      valorObjetivo: 10,
+    },
+    {
+      nome: "Atleta Dedicado",
+      descricao: "Complete 50 WODs",
+      icone: "💪",
+      criterio: "Completar 50 WODs",
+      nivel: "prata",
+      categoria: "wods",
+      valorObjetivo: 50,
+    },
+    {
+      nome: "Máquina de Treino",
+      descricao: "Complete 100 WODs",
+      icone: "🔥",
+      criterio: "Completar 100 WODs",
+      nivel: "ouro",
+      categoria: "wods",
+      valorObjetivo: 100,
+    },
+    {
+      nome: "Lenda do WOD",
+      descricao: "Complete 250 WODs",
+      icone: "👑",
+      criterio: "Completar 250 WODs",
+      nivel: "platina",
+      categoria: "wods",
+      valorObjetivo: 250,
+    },
+
+    // PRs
+    {
+      nome: "Primeiro PR",
+      descricao: "Registre seu primeiro Personal Record",
+      icone: "🎖️",
+      criterio: "Registrar 1 PR",
+      nivel: "bronze",
+      categoria: "prs",
+      valorObjetivo: 1,
+    },
+    {
+      nome: "Quebrando Limites",
+      descricao: "Registre 5 PRs",
+      icone: "💥",
+      criterio: "Registrar 5 PRs",
+      nivel: "prata",
+      categoria: "prs",
+      valorObjetivo: 5,
+    },
+    {
+      nome: "Recordista",
+      descricao: "Registre 15 PRs",
+      icone: "🏆",
+      criterio: "Registrar 15 PRs",
+      nivel: "ouro",
+      categoria: "prs",
+      valorObjetivo: 15,
+    },
+    {
+      nome: "Mestre dos PRs",
+      descricao: "Registre 30 PRs",
+      icone: "⭐",
+      criterio: "Registrar 30 PRs",
+      nivel: "platina",
+      categoria: "prs",
+      valorObjetivo: 30,
+    },
+
+    // Frequência (Streak)
+    {
+      nome: "Semana Completa",
+      descricao: "Mantenha um streak de 7 dias",
+      icone: "📅",
+      criterio: "Streak de 7 dias consecutivos",
+      nivel: "bronze",
+      categoria: "frequencia",
+      valorObjetivo: 7,
+    },
+    {
+      nome: "Mês Consistente",
+      descricao: "Mantenha um streak de 30 dias",
+      icone: "🔥",
+      criterio: "Streak de 30 dias consecutivos",
+      nivel: "prata",
+      categoria: "frequencia",
+      valorObjetivo: 30,
+    },
+    {
+      nome: "Imparável",
+      descricao: "Mantenha um streak de 60 dias",
+      icone: "⚡",
+      criterio: "Streak de 60 dias consecutivos",
+      nivel: "ouro",
+      categoria: "frequencia",
+      valorObjetivo: 60,
+    },
+    {
+      nome: "Lenda Viva",
+      descricao: "Mantenha um streak de 100 dias",
+      icone: "🌟",
+      criterio: "Streak de 100 dias consecutivos",
+      nivel: "platina",
+      categoria: "frequencia",
+      valorObjetivo: 100,
+    },
+  ];
+
+  // Inserir badges (ignorar duplicatas)
+  for (const badge of badgesPadrao) {
+    try {
+      await db.insert(badges).values(badge);
+    } catch (error) {
+      // Ignorar erros de duplicata
+      console.log(`Badge "${badge.nome}" já existe`);
+    }
+  }
+
+  console.log("[Badges] Badges automáticos criados/verificados");
+}
+
+
+// ==================== RANKING SEMANAL DINÂMICO ====================
+
+/**
+ * Calcular ranking semanal com filtros
+ */
+export async function calcularRankingSemanal(filtros?: {
+  boxId?: number;
+  categoria?: string;
+  faixaEtaria?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const semana = getNumeroSemana(hoje);
+  const periodo = `${ano}-W${semana.toString().padStart(2, '0')}`;
+
+  // Buscar pontuações da semana
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - hoje.getDay()); // Domingo
+  inicioSemana.setHours(0, 0, 0, 0);
+
+  let query = db
+    .select({
+      userId: pontuacoes.userId,
+      totalPontos: sql<number>`SUM(${pontuacoes.pontos})`,
+      userName: users.name,
+      userEmail: users.email,
+      userBoxId: users.boxId,
+      userCategoria: users.categoria,
+      userFaixaEtaria: users.faixaEtaria,
+    })
+    .from(pontuacoes)
+    .leftJoin(users, eq(pontuacoes.userId, users.id))
+    .where(sql`${pontuacoes.data} >= ${inicioSemana}`)
+    .groupBy(pontuacoes.userId, users.name, users.email, users.boxId, users.categoria, users.faixaEtaria);
+
+  // Aplicar filtros
+  const conditions = [sql`${pontuacoes.data} >= ${inicioSemana}`];
+  
+  if (filtros?.boxId) {
+    conditions.push(eq(users.boxId, filtros.boxId));
+  }
+  
+  if (filtros?.categoria) {
+    conditions.push(eq(users.categoria, filtros.categoria as any));
+  }
+  
+  if (filtros?.faixaEtaria) {
+    conditions.push(eq(users.faixaEtaria, filtros.faixaEtaria));
+  }
+
+  const resultados = await db
+    .select({
+      userId: pontuacoes.userId,
+      totalPontos: sql<number>`SUM(${pontuacoes.pontos})`,
+      userName: users.name,
+      userEmail: users.email,
+      userBoxId: users.boxId,
+      userCategoria: users.categoria,
+      userFaixaEtaria: users.faixaEtaria,
+    })
+    .from(pontuacoes)
+    .leftJoin(users, eq(pontuacoes.userId, users.id))
+    .where(and(...conditions))
+    .groupBy(pontuacoes.userId, users.name, users.email, users.boxId, users.categoria, users.faixaEtaria)
+    .orderBy(desc(sql`SUM(${pontuacoes.pontos})`))
+    .limit(100);
+
+  // Adicionar posição
+  const rankingComPosicao = resultados.map((r, index) => ({
+    posicao: index + 1,
+    userId: r.userId,
+    nome: r.userName || "Atleta",
+    email: r.userEmail,
+    pontos: r.totalPontos || 0,
+    boxId: r.userBoxId,
+    categoria: r.userCategoria,
+    faixaEtaria: r.userFaixaEtaria,
+  }));
+
+  return rankingComPosicao;
+}
+
+/**
+ * Obter ranking semanal com badges e conquistas
+ */
+export async function getRankingSemanalCompleto(filtros?: {
+  boxId?: number;
+  categoria?: string;
+  faixaEtaria?: string;
+  limit?: number;
+}) {
+  const ranking = await calcularRankingSemanal(filtros);
+  const limit = filtros?.limit || 10;
+  const top = ranking.slice(0, limit);
+
+  // Enriquecer com badges conquistados na semana
+  const rankingEnriquecido = await Promise.all(
+    top.map(async (atleta) => {
+      const badges = await getUserBadges(atleta.userId);
+      
+      // Filtrar badges conquistados esta semana
+      const hoje = new Date();
+      const inicioSemana = new Date(hoje);
+      inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+      inicioSemana.setHours(0, 0, 0, 0);
+
+      const badgesDaSemana = badges.filter((ub: any) => {
+        const dataConquista = new Date(ub.dataConquista);
+        return dataConquista >= inicioSemana;
+      });
+
+      return {
+        ...atleta,
+        badgesDaSemana: badgesDaSemana.length,
+        badges: badgesDaSemana.map((ub: any) => ({
+          nome: ub.badge?.nome,
+          icone: ub.badge?.icone,
+        })),
+      };
+    })
+  );
+
+  return rankingEnriquecido;
 }

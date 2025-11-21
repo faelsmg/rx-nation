@@ -66,6 +66,7 @@ import ArvoreConquistas from "./pages/ArvoreConquistas";
 import GestaoPremios from "./pages/GestaoPremios";
 import MeusPremios from "./pages/MeusPremios";
 import HistoricoPerformance from "./pages/HistoricoPerformance";
+import RankingSemanal from "./pages/RankingSemanal";
 
 function Router() {
   return (
@@ -76,6 +77,7 @@ function Router() {
       <Route path={"/historico"} component={Historico} />
       <Route path={"/prs"} component={PRs} />
       <Route path={"/rankings"} component={Rankings} />
+      <Route path={"/ranking-semanal"} component={RankingSemanal} />
       <Route path={"/badges"} component={Badges} />
       <Route path={"/campeonatos"} component={Campeonatos} />
       <Route path={"/campeonatos/:id"} component={CampeonatoDetalhes} />
