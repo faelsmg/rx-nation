@@ -77,9 +77,9 @@ export default function InsightsIA() {
           {mostrarInsights && insights && (
             <div className="p-4 bg-muted rounded-lg space-y-2">
               <Streamdown>{insights.insights}</Streamdown>
-              {insights.metricas && (
+              {insights.dadosAnalisados && (
                 <div className="text-xs text-muted-foreground mt-3 pt-3 border-t">
-                  <p>Baseado em: {insights.metricas.totalTreinos} treinos, {insights.metricas.diasComTreino} dias ativos</p>
+                  <p>Baseado em: {insights.dadosAnalisados.frequencia} treinos, {insights.dadosAnalisados.totalPRs} PRs, {insights.dadosAnalisados.totalBadges} badges</p>
                 </div>
               )}
             </div>

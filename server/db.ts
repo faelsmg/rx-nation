@@ -10587,7 +10587,8 @@ ${badgesUsuario.map(b => `- ${b.nome}: ${b.descricao}`).join('\n')}
     ]
   });
 
-  const insights = response.choices[0].message.content;
+  const content = response.choices[0].message.content;
+  const insights = typeof content === 'string' ? content : JSON.stringify(content);
 
   return {
     insights,
@@ -10652,7 +10653,8 @@ ${movimentosFaltando.join(', ')}
     ]
   });
 
-  const sugestoes = response.choices[0].message.content;
+  const content = response.choices[0].message.content;
+  const sugestoes = typeof content === 'string' ? content : JSON.stringify(content);
 
   return {
     sugestoes,
@@ -10746,7 +10748,8 @@ PRs nos últimos 7 dias: ${countPrsRecentes}
     ]
   });
 
-  const analise = response.choices[0].message.content;
+  const content = response.choices[0].message.content;
+  const analise = typeof content === 'string' ? content : JSON.stringify(content);
 
   // Determinar nível de risco baseado em heurísticas
   let nivelRisco = "Baixo";
@@ -10898,4 +10901,20 @@ export async function contarMensagensNaoLidas(userId: number) {
     ));
 
   return result[0]?.count || 0;
+}
+
+
+/**
+ * Calcular pontos totais do usuário
+ */
+export async function getPontosTotaisUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const pontosResult = await db
+    .select({ total: sql<number>`SUM(${pontuacoes.pontos})` })
+    .from(pontuacoes)
+    .where(eq(pontuacoes.userId, userId));
+
+  return pontosResult[0]?.total || 0;
 }

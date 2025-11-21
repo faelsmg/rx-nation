@@ -4285,6 +4285,12 @@ export const appRouter = router({
   }),
 
   marketplace: router({
+    // Calcular pontos totais do usuário
+    getPontosTotais: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPontosTotaisUsuario(ctx.user.id);
+      }),
+
     // Listar produtos
     listarProdutos: publicProcedure
       .input(z.object({
@@ -4315,6 +4321,63 @@ export const appRouter = router({
         return db.getPedidosByUser(ctx.user.id);
       }),
 
+    // Criar checkout Stripe (quando pontos insuficientes)
+    criarCheckoutStripe: protectedProcedure
+      .input(z.object({
+        produtoId: z.number(),
+        quantidade: z.number().min(1),
+        pontosDisponiveis: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const produto = await db.getProdutoMarketplaceById(input.produtoId);
+        if (!produto) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Produto não encontrado' });
+        }
+
+        const totalPontos = produto.pontosNecessarios * input.quantidade;
+        const diferenca = totalPontos - input.pontosDisponiveis;
+
+        if (diferenca <= 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você já tem pontos suficientes' });
+        }
+
+        // Converter pontos em centavos (1 ponto = R$0,10)
+        const valorEmCentavos = Math.ceil(diferenca * 10);
+
+        const stripe = (await import('stripe')).default;
+        const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: '2025-11-17.clover',
+        });
+
+        const session = await stripeClient.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: 'brl',
+                product_data: {
+                  name: `${produto.nome} (x${input.quantidade})`,
+                  description: `Diferença de ${diferenca} pontos`,
+                },
+                unit_amount: valorEmCentavos,
+              },
+              quantity: 1,
+            },
+          ],
+          mode: 'payment',
+          success_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/marketplace?success=true`,
+          cancel_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/marketplace?canceled=true`,
+          metadata: {
+            userId: ctx.user.id.toString(),
+            produtoId: input.produtoId.toString(),
+            quantidade: input.quantidade.toString(),
+            pontosUsados: input.pontosDisponiveis.toString(),
+          },
+        });
+
+        return { sessionId: session.id, url: session.url };
+      }),
+
     // Admin: Criar produto
     criarProduto: protectedProcedure
       .input(z.object({
@@ -4338,7 +4401,7 @@ export const appRouter = router({
     // Gerar insights personalizados
     gerarInsights: protectedProcedure
       .query(async ({ ctx }) => {
-        return db.gerarInsightsPersonalizados(ctx.user.id);
+        return db.gerarInsightsPerformance(ctx.user.id);
       }),
 
     // Sugerir treinos

@@ -18,9 +18,7 @@ export default function Marketplace() {
 
   const { data: produtos, isLoading } = trpc.marketplace.listarProdutos.useQuery({ categoria: categoriaFiltro });
   const { data: meusPedidos } = trpc.marketplace.meusPedidos.useQuery();
-  // Calcular pontos totais do usuário
-  const { data: userData } = trpc.auth.me.useQuery();
-  const pontos = userData?.id ? 0 : 0; // TODO: Implementar cálculo de pontos totais
+  const { data: pontos = 0 } = trpc.marketplace.getPontosTotais.useQuery();
 
   const criarPedidoMutation = trpc.marketplace.criarPedido.useMutation({
     onSuccess: () => {
@@ -62,17 +60,44 @@ export default function Marketplace() {
     return total;
   };
 
+  const checkoutStripeMutation = trpc.marketplace.criarCheckoutStripe.useMutation({
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const finalizarCompra = () => {
     const total = calcularTotalCarrinho();
-    if (total > pontos) {
-      toast.error("Pontos insuficientes para finalizar a compra");
-      return;
+    
+    if (total <= pontos) {
+      // Tem pontos suficientes - criar pedidos normalmente
+      carrinho.forEach((quantidade, produtoId) => {
+        criarPedidoMutation.mutate({ produtoId, quantidade });
+      });
+    } else {
+      // Pontos insuficientes - mostrar opção de pagar diferença
+      const diferenca = total - pontos;
+      const confirmar = window.confirm(
+        `Você tem ${pontos} pontos, mas precisa de ${total}.\n` +
+        `Faltam ${diferenca} pontos (R$ ${(diferenca * 0.10).toFixed(2)}).\n\n` +
+        `Deseja pagar a diferença com cartão?`
+      );
+      
+      if (confirmar) {
+        // Criar checkout Stripe apenas para o primeiro item do carrinho
+        const [produtoId, quantidade] = Array.from(carrinho.entries())[0];
+        checkoutStripeMutation.mutate({
+          produtoId,
+          quantidade,
+          pontosDisponiveis: pontos,
+        });
+      }
     }
-
-    // Criar pedidos individuais
-    carrinho.forEach((quantidade, produtoId) => {
-      criarPedidoMutation.mutate({ produtoId, quantidade });
-    });
   };
 
   const categorias = produtos

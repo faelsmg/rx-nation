@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { playlistPurchases, playlists } from "../drizzle/schema";
+import { playlistPurchases, playlists, pedidosMarketplace } from "../drizzle/schema";
 
 const stripe = new Stripe(ENV.stripeSecretKey, {
   apiVersion: "2025-11-17.clover",
@@ -48,7 +48,48 @@ router.post(
     console.log(`[Stripe Webhook] Event received: ${event.type} (${event.id})`);
 
     try {
-      // Processar evento de pagamento bem-sucedido
+      // Processar evento de checkout completado (marketplace)
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        // Verificar se é do marketplace (tem metadata.produtoId)
+        if (session.metadata?.produtoId) {
+          const userId = parseInt(session.metadata.userId);
+          const produtoId = parseInt(session.metadata.produtoId);
+          const quantidade = parseInt(session.metadata.quantidade);
+          const pontosUsados = parseInt(session.metadata.pontosUsados || '0');
+
+          if (!isNaN(userId) && !isNaN(produtoId) && !isNaN(quantidade)) {
+            const db = await getDb();
+            if (!db) {
+              console.error("[Stripe Webhook] Database not available");
+              return res.status(500).send("Database error");
+            }
+
+            const valorPago = session.amount_total || 0;
+
+            await db.insert(pedidosMarketplace).values({
+              userId,
+              produtoId,
+              quantidade,
+              pontosUsados,
+              valorPago,
+              status: 'processando',
+              enderecoEntrega: 'Retirar no box',
+              stripePaymentIntentId: session.payment_intent as string,
+            });
+
+            console.log('[Stripe Webhook] Pedido marketplace criado:', {
+              userId,
+              produtoId,
+              quantidade,
+              valorPago,
+            });
+          }
+        }
+      }
+      
+      // Processar evento de pagamento bem-sucedido (playlists)
       if (event.type === "payment_intent.succeeded") {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         

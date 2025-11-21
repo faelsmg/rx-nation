@@ -2233,3 +2233,12 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - **Componentes**: 50+
 - **Procedures tRPC**: 200+
 - **Tabelas no Banco**: 40+
+
+
+## TAREFAS ATUAIS (Sprint Atual)
+
+- [x] Corrigir erro TypeScript em InsightsIA.tsx (tipo de content no LLM)
+- [x] Adicionar export de gerarInsightsPersonalizados em db.ts
+- [x] Implementar checkout Stripe no marketplace
+- [x] Criar webhook Stripe para atualizar status de pedidos
+- [x] Gerar relatório detalhado de funcionalidades faltantes
