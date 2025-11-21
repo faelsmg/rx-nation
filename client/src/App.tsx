@@ -50,6 +50,8 @@ import GestaoEstoque from "./pages/GestaoEstoque";
 import DashboardFinanceiroGeral from "./pages/DashboardFinanceiroGeral";
 import PDV from "./pages/PDV";
 import Chat from "./pages/Chat";
+import BibliotecaVideos from "./pages/BibliotecaVideos";
+import WODsFamosos from "./pages/WODsFamosos";
 
 function Router() {
   return (
@@ -84,6 +86,8 @@ function Router() {
       <Route path={"/comparacao"} component={ComparacaoAtletas} />
       <Route path={"/mensagens"} component={Mensagens} />
       <Route path={"/chat"} component={Chat} />
+      <Route path={"/biblioteca-videos"} component={BibliotecaVideos} />
+      <Route path={"/wods-famosos"} component={WODsFamosos} />
       <Route path={"/calendario-eventos"} component={CalendarioEventos} />
       <Route path={"/meu-qrcode"} component={MeuQRCode} />
       <Route path={"/scanner-qrcode"} component={ScannerQRCode} />

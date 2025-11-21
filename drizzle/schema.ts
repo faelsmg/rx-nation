@@ -109,6 +109,7 @@ export const prs = mysqlTable("prs", {
   carga: int("carga").notNull(), // em kg
   data: timestamp("data").notNull(),
   observacoes: text("observacoes"),
+  videoUrl: text("videoUrl"), // URL do vídeo do recorde (YouTube ou outro)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

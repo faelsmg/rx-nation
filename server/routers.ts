@@ -308,6 +308,7 @@ export const appRouter = router({
         carga: z.number(),
         data: z.date(),
         observacoes: z.string().optional(),
+        videoUrl: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Verificar se é realmente um novo PR

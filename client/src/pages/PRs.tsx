@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Trophy, Plus, TrendingUp } from "lucide-react";
+import { Trophy, Plus, TrendingUp, Video } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MOVIMENTOS_PR } from "@/const";
@@ -27,6 +27,7 @@ export default function PRs() {
   const [movimento, setMovimento] = useState("");
   const [carga, setCarga] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +42,7 @@ export default function PRs() {
         carga: parseFloat(carga),
         data: new Date(),
         observacoes: observacoes || undefined,
+        videoUrl: videoUrl || undefined,
       });
       
       toast.success("PR registrado com sucesso! +30 pontos");
@@ -48,6 +50,7 @@ export default function PRs() {
       setMovimento("");
       setCarga("");
       setObservacoes("");
+      setVideoUrl("");
       utils.prs.getByUser.invalidate();
     } catch (error: any) {
       toast.error(error.message || "Erro ao registrar PR");
@@ -141,6 +144,20 @@ export default function PRs() {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="videoUrl">Vídeo do Recorde (opcional)</Label>
+                  <Input
+                    id="videoUrl"
+                    type="url"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=... ou outro link"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Cole o link do vídeo do seu recorde (YouTube, Instagram, etc.)
+                  </p>
+                </div>
+
                 <Button
                   type="submit"
                   size="lg"
@@ -187,6 +204,25 @@ export default function PRs() {
                       <p className="text-sm text-muted-foreground italic">
                         "{melhorPr.observacoes}"
                       </p>
+                    )}
+                    
+                    {melhorPr.videoUrl && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold flex items-center gap-2">
+                          <Video className="w-4 h-4 text-primary" />
+                          Vídeo do Recorde
+                        </p>
+                        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                          <iframe
+                            className="absolute top-0 left-0 w-full h-full rounded-lg"
+                            src={melhorPr.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                            title="Vídeo do PR"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
                     )}
                     
                     {historico.length > 0 && (

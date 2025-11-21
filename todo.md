@@ -1253,3 +1253,18 @@
 - [x] Atualizar formulário de criação de WOD
 - [x] Adicionar player do YouTube na visualização
 - [x] Testar funcionalidade
+
+## Vídeos em PRs
+- [x] Adicionar campo video_url na tabela prs
+- [x] Atualizar formulário de registro de PR
+- [x] Exibir vídeo na visualização de PRs
+
+## Biblioteca de Vídeos Educacionais
+- [x] Criar página de biblioteca de vídeos
+- [x] Organizar por categorias (Olímpicos, Ginástica, Cardio, etc.)
+- [x] Interface de busca e filtros
+
+## Galeria de WODs Famosos
+- [x] Criar página de WODs famosos
+- [x] Adicionar WODs clássicos (Fran, Murph, Helen, etc.)
+- [x] Vídeos demonstrativos e recordes mundiais
