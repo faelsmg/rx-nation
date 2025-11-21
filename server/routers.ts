@@ -972,6 +972,10 @@ export const appRouter = router({
   }),
 
   // Histórico de Performance Individual (Atleta)
+  meusBadges: protectedProcedure.query(async ({ ctx }) => {
+    return db.getBadgesUsuario(ctx.user.id);
+  }),
+
   compararAtletas: protectedProcedure
     .input(
       z.object({

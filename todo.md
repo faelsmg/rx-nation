@@ -1940,3 +1940,31 @@ NOTA: Backend completo (procedure compararAtletas com cálculo de diferenças). 
 - [ ] Implementar geração de Excel (xlsx library) - NÃO IMPLEMENTADO
 
 NOTA: Exportação de relatórios requer bibliotecas adicionais e processamento complexo de gráficos. Recomenda-se implementar em fase futura.
+
+
+## Novas Funcionalidades (Sprint 6)
+
+### 1. UI de Conquistas no Perfil
+- [x] Criar procedure para listar badges do atleta
+- [x] Criar componente BadgesSection.tsx
+- [x] Exibir badges desbloqueados com ícones e datas
+- [x] Mostrar progresso para próximas conquistas
+- [x] Integrar no perfil do atleta ou dashboard
+
+### 2. UI de Comparação de Atletas
+- [ ] Criar página ComparacaoAtletas.tsx - PENDENTE
+- [ ] Implementar seletor de atletas com autocomplete - PENDENTE
+- [ ] Criar gráficos lado a lado (evolução pontos, posições) - PENDENTE
+- [ ] Adicionar tabela comparativa de estatísticas - PENDENTE
+- [ ] Adicionar rota no App.tsx - PENDENTE
+
+NOTA: Backend completo (procedure compararAtletas). Falta apenas UI.
+
+### 3. Sistema de Gamificação com Níveis
+- [ ] Definir níveis e faixas de XP (Bronze, Prata, Ouro, etc) - NÃO IMPLEMENTADO
+- [ ] Criar função para calcular nível baseado em pontos - NÃO IMPLEMENTADO
+- [ ] Adicionar barra de progresso de XP no dashboard - NÃO IMPLEMENTADO
+- [ ] Exibir nível atual e próximo nível - NÃO IMPLEMENTADO
+- [ ] Adicionar ícones/badges de nível - NÃO IMPLEMENTADO
+
+NOTA: Sistema de gamificação pode ser implementado em fase futura. Recomenda-se usar pontos acumulados do ranking global como base para XP.

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { ProgressoSemanal } from "@/components/ProgressoSemanal";
 import { StreakIndicator } from "@/components/StreakIndicator";
+import BadgesSection from "@/components/BadgesSection";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -117,6 +118,11 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold mb-4">Seu Progresso Semanal</h2>
             <ProgressoSemanal />
           </div>
+        )}
+
+        {/* Seção de Conquistas */}
+        {user?.role === "atleta" && (
+          <BadgesSection />
         )}
 
         {/* Comunicados */}

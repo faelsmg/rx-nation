@@ -7600,6 +7600,96 @@ export async function resgatarPremio(userId: number, premioUsuarioId: number) {
   };
 }
 
+// ========== BADGES DO USUÁRIO ==========
+
+export async function getBadgesUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Buscar badges conquistados
+  const badgesConquistados = await db
+    .select({
+      badgeId: userBadges.badgeId,
+      dataConquista: userBadges.dataConquista,
+      nome: badges.nome,
+      descricao: badges.descricao,
+      icone: badges.icone,
+    })
+    .from(userBadges)
+    .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+    .where(eq(userBadges.userId, userId));
+
+  // Buscar estatísticas do atleta para calcular progresso
+  const rankingCompleto = await getRankingGlobal(
+    new Date().getFullYear(),
+    undefined,
+    999
+  );
+
+  const atletaRanking = rankingCompleto?.find((r) => r.userId === userId);
+
+  // Definir todas as conquistas possíveis com progresso
+  const todasConquistas = [
+    {
+      badgeId: 1,
+      nome: "Primeiro Lugar",
+      descricao: "Conquistou o 1º lugar em um campeonato",
+      icone: "🥇",
+      progresso: atletaRanking?.melhorPosicao === 1 ? 100 : 0,
+      meta: "1º lugar",
+    },
+    {
+      badgeId: 2,
+      nome: "Veterano",
+      descricao: "Participou de 10 campeonatos",
+      icone: "🏆",
+      progresso: atletaRanking
+        ? Math.min((atletaRanking.totalCampeonatos / 10) * 100, 100)
+        : 0,
+      meta: "10 campeonatos",
+    },
+    {
+      badgeId: 3,
+      nome: "Mil Pontos",
+      descricao: "Acumulou 1000 pontos no ranking",
+      icone: "💯",
+      progresso: atletaRanking
+        ? Math.min((atletaRanking.totalPontos / 1000) * 100, 100)
+        : 0,
+      meta: "1000 pontos",
+    },
+    {
+      badgeId: 4,
+      nome: "Elite",
+      descricao: "Ficou entre os Top 3 do ranking global",
+      icone: "⭐",
+      progresso: atletaRanking && atletaRanking.posicao <= 3 ? 100 : 0,
+      meta: "Top 3",
+    },
+    {
+      badgeId: 5,
+      nome: "Consistente",
+      descricao: "Mantém média acima de 80 pontos por campeonato",
+      icone: "📊",
+      progresso: atletaRanking
+        ? Math.min((atletaRanking.mediaPontos / 80) * 100, 100)
+        : 0,
+      meta: "80 pontos de média",
+    },
+  ];
+
+  // Marcar quais já foram conquistados
+  const badgesIds = badgesConquistados.map((b) => b.badgeId);
+  const conquistasComStatus = todasConquistas.map((conquista) => ({
+    ...conquista,
+    conquistado: badgesIds.includes(conquista.badgeId),
+    dataConquista: badgesConquistados.find((b) => b.badgeId === conquista.badgeId)
+      ?.dataConquista,
+  }));
+
+  return conquistasComStatus;
+}
+
 // ========== CONQUISTAS AUTOMÁTICAS ==========
 
 export async function verificarConquistas(userId: number) {
