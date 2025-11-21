@@ -2026,3 +2026,16 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Criar componente DesafiosSemana.tsx no Dashboard
 - [x] Adicionar recompensas automáticas ao completar desafios
 - [ ] Criar testes para notificações, feed e desafios
+
+## Finalização Sistema de Engajamento Social
+- [x] Criar componente NotificationCenter.tsx com sino e badge de contagem
+- [x] Integrar NotificationCenter no DashboardLayout
+- [x] Criar componente DesafiosSemana.tsx com cards de progresso
+- [x] Integrar DesafiosSemana no Dashboard do atleta
+- [x] Melhorar página Feed.tsx com tabs de filtro por tipo
+- [x] Adicionar trigger de notificação ao registrar resultado de treino
+- [x] Adicionar trigger de notificação ao conquistar badge
+- [x] Adicionar trigger de notificação ao subir de nível
+- [x] Criar job semanal para gerar desafios automaticamente
+- [x] Testar fluxo completo de notificações
+- [x] Testar fluxo completo de desafios semanais

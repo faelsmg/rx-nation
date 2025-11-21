@@ -13,18 +13,24 @@ const TIPO_ICONS = {
   wod_completo: Dumbbell,
   pr_quebrado: Trophy,
   badge_desbloqueado: Award,
+  nivel_subiu: Trophy,
+  desafio_completo: Trophy,
 };
 
 const TIPO_COLORS = {
   wod_completo: "text-blue-500",
   pr_quebrado: "text-orange-500",
   badge_desbloqueado: "text-purple-500",
+  nivel_subiu: "text-yellow-500",
+  desafio_completo: "text-green-500",
 };
 
 const TIPO_BG = {
   wod_completo: "bg-blue-500/10",
   pr_quebrado: "bg-orange-500/10",
   badge_desbloqueado: "bg-purple-500/10",
+  nivel_subiu: "bg-yellow-500/10",
+  desafio_completo: "bg-green-500/10",
 };
 
 export default function Feed() {

@@ -10,6 +10,7 @@ import { ProgressoSemanal } from "@/components/ProgressoSemanal";
 import { StreakIndicator } from "@/components/StreakIndicator";
 import BadgesSection from "@/components/BadgesSection";
 import NivelAtleta from "@/components/NivelAtleta";
+import { DesafiosSemana } from "@/components/DesafiosSemana";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -43,11 +44,12 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Streak Indicator e Nível */}
+        {/* Streak Indicator, Nível e Desafios */}
         {user?.role === "atleta" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <StreakIndicator />
             <NivelAtleta pontosTotais={pontuacaoTotal || 0} />
+            <DesafiosSemana />
           </div>
         )}
 

@@ -54,6 +54,36 @@ export function agendarRelatorioSemanal() {
 }
 
 /**
+ * Job: Geração automática de desafios semanais
+ * Executa toda segunda-feira às 00:00
+ */
+export function agendarDesafiosSemanais() {
+  // Cron: "0 0 * * 1" = Segunda-feira às 00:00
+  const schedule = process.env.DESAFIOS_CRON || '0 0 * * 1';
+  
+  const task = cron.schedule(schedule, async () => {
+    console.log('[Job] Iniciando geração de desafios semanais...');
+    
+    try {
+      // Gerar desafios para todos os boxes
+      const resultado = await db.gerarDesafiosSemanaisAutomaticos();
+      
+      if (resultado) {
+        console.log('[Job] ✓ Desafios semanais gerados com sucesso');
+      } else {
+        console.error('[Job] ✗ Erro ao gerar desafios semanais');
+      }
+    } catch (error) {
+      console.error('[Job] Erro ao processar desafios semanais:', error);
+    }
+  }, {
+    timezone: 'America/Sao_Paulo',
+  });
+
+  return task;
+}
+
+/**
  * Inicializa todos os jobs agendados
  */
 export function inicializarJobs() {
@@ -72,8 +102,14 @@ export function inicializarJobs() {
     console.log('[Jobs] Configure a variável RELATORIO_EMAILS para ativar');
   }
   
+  // Desafios semanais (sempre ativo)
+  const desafiosJob = agendarDesafiosSemanais();
+  desafiosJob.start();
+  console.log('[Jobs] ✓ Desafios semanais agendados:', process.env.DESAFIOS_CRON || '0 0 * * 1');
+  
   return {
     relatorioSemanal: relatorioJob,
+    desafiosSemanais: desafiosJob,
   };
 }
 
@@ -83,4 +119,5 @@ export function inicializarJobs() {
 export function pararJobs(jobs: ReturnType<typeof inicializarJobs>) {
   console.log('[Jobs] Parando jobs agendados...');
   jobs.relatorioSemanal.stop();
+  jobs.desafiosSemanais.stop();
 }

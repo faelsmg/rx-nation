@@ -586,7 +586,30 @@ export async function createPontuacao(data: InsertPontuacao) {
   const db = await getDb();
   if (!db) return undefined;
 
+  // Verificar pontos antes
+  const pontosAntes = await getTotalPontosByUser(data.userId);
+  
   const result = await db.insert(pontuacoes).values(data);
+  
+  // Verificar pontos depois e checar se subiu de nível
+  const pontosDepois = await getTotalPontosByUser(data.userId);
+  
+  // Calcular nível antes e depois
+  const calcularNivel = (pontos: number) => {
+    if (pontos >= 2000) return { nivel: "Platina", icone: "💎" };
+    if (pontos >= 1000) return { nivel: "Ouro", icone: "🥇" };
+    if (pontos >= 500) return { nivel: "Prata", icone: "🥈" };
+    return { nivel: "Bronze", icone: "🥉" };
+  };
+  
+  const nivelAntes = calcularNivel(pontosAntes);
+  const nivelDepois = calcularNivel(pontosDepois);
+  
+  // Se subiu de nível, notificar
+  if (nivelAntes.nivel !== nivelDepois.nivel) {
+    await notificarSubidaNivel(data.userId, nivelDepois.nivel, pontosDepois);
+  }
+  
   return result;
 }
 
@@ -638,6 +661,13 @@ export async function assignBadgeToUser(data: InsertUserBadge) {
   if (!db) return undefined;
 
   const result = await db.insert(userBadges).values(data);
+  
+  // Buscar informações do badge para notificar
+  const badge = await getBadgeById(data.badgeId);
+  if (badge && badge.nome && badge.icone) {
+    await notificarNovoBadge(data.userId, badge.nome, badge.icone);
+  }
+  
   return result;
 }
 
