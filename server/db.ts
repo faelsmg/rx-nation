@@ -12179,3 +12179,23 @@ export async function verificarMetasExpiradas() {
       lt(metas.dataFim, agora)
     ));
 }
+
+
+/**
+ * Obter histórico de check-ins do usuário
+ */
+export async function getCheckinsHistory(userId: number, meses: number = 3) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const dataInicio = new Date();
+  dataInicio.setMonth(dataInicio.getMonth() - meses);
+
+  return db.select()
+    .from(checkins)
+    .where(and(
+      eq(checkins.userId, userId),
+      gte(checkins.dataHora, dataInicio)
+    ))
+    .orderBy(desc(checkins.dataHora));
+}

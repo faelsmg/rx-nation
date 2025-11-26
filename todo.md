@@ -2529,10 +2529,10 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Atualizar componente StreakIndicator com contador visual
 
 ## Compartilhamento Social de Resultados
-- [ ] Criar endpoint para gerar card visual de resultados
+- [x] Criar endpoint para gerar card visual de resultados
 - [ ] Implementar canvas HTML5 com logo do box e resultado
 - [ ] Adicionar comparação vs média do box no card
-- [ ] Criar botão de download/compartilhamento no WOD do Dia
+- [x] Criar botão de download/compartilhamento no WOD do Dia
 - [ ] Otimizar imagem para Instagram Stories e WhatsApp Status
 
 ## Desafios Semanais com IA
@@ -2554,11 +2554,11 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar badges especiais por metas conquistadas
 
 ## Compartilhamento Social de Resultados
-- [ ] Criar endpoint para gerar card visual de resultados
-- [ ] Implementar Canvas API para gerar imagem 1080x1920
-- [ ] Adicionar logo do box, resultado e comparação vs média
-- [ ] Criar botão de download/compartilhamento no WOD do Dia
-- [ ] Otimizar para Instagram Stories e WhatsApp Status
+- [x] Criar endpoint para gerar card visual de resultados
+- [x] Implementar Canvas API para gerar imagem 1080x1920
+- [x] Adicionar logo do box, resultado e comparação vs média
+- [x] Criar botão de download/compartilhamento no WOD do Dia
+- [x] Otimizar para Instagram Stories e WhatsApp Status
 
 ## Desafios Semanais com IA
 - [ ] Verificar schema de desafios semanais (já existe)
@@ -2568,8 +2568,8 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Criar componente de visualização de desafios ativos no Dashboard
 
 ## Histórico Visual de Streaks
-- [ ] Criar componente de heatmap estilo GitHub
-- [ ] Buscar dados de check-ins dos últimos 3 meses
-- [ ] Implementar cores graduadas por intensidade
-- [ ] Adicionar tooltip com detalhes ao passar mouse
-- [ ] Integrar no Dashboard ou página de Streaks
+- [x] Criar componente de heatmap estilo GitHub
+- [x] Buscar dados de check-ins dos últimos 3 meses
+- [x] Implementar cores graduadas por intensidade
+- [x] Adicionar tooltip com detalhes ao passar mouse
+- [x] Integrar no Dashboard ou página de Streaks
