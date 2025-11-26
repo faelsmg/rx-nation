@@ -2266,3 +2266,19 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Corrigir erro de hooks do React no AppLayout (useLocation fora do contexto Router)
 
 - [x] Corrigir erro de query undefined em wods.getToday quando não há WOD cadastrado
+
+- [ ] Criar 4 usuários de demonstração com dev-login (Admin, Box Master, Franqueado, Atleta)
+- [ ] Criar guia sequencial de testes com URLs de acesso rápido
+- [ ] Validar fluxo completo: Admin cria box → Box Master cria WOD → Atleta registra resultado
+
+- [x] Criar 4 usuários de demonstração com dev-login (Admin, Box Master, Franqueado, Atleta)
+- [x] Criar guia sequencial de testes com URLs de acesso rápido
+- [ ] Validar fluxo completo: Admin cria box → Box Master cria WOD → Atleta registra resultado
+
+- [ ] Permitir cadastro de WODs com datas futuras (semana inteira de uma vez)
+- [ ] Garantir que "WOD do Dia" mostra apenas WOD com data = hoje
+- [ ] Melhorar interface de cadastro para facilitar cadastro em lote da semana
+
+- [x] Permitir cadastro de WODs com datas futuras (semana inteira de uma vez)
+- [x] Garantir que "WOD do Dia" mostra apenas WOD com data = hoje
+- [x] Melhorar interface de cadastro para facilitar cadastro em lote da semana

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Users, Dumbbell, Plus, Edit, Trash2, Calendar, Award } from "lucide-react";
+import { Users, Dumbbell, Plus, Edit, Trash2, Calendar, Award, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -238,6 +238,9 @@ export default function GestaoBox() {
                               onChange={(e) => setData(e.target.value)}
                               required
                             />
+                            <p className="text-xs text-muted-foreground">
+                              💡 Você pode cadastrar WODs para datas futuras (semana inteira de uma vez)
+                            </p>
                           </div>
                         </div>
 
@@ -341,7 +344,28 @@ export default function GestaoBox() {
                               <Button
                                 variant="outline"
                                 size="icon"
+                                onClick={() => {
+                                  setTitulo(wod.titulo);
+                                  setTipo(wod.tipo);
+                                  setDescricao(wod.descricao);
+                                  setTimeCap(wod.timeCap ?? undefined);
+                                  setDuracao(wod.duracao ?? undefined);
+                                  setVideoYoutubeUrl(wod.videoYoutubeUrl || "");
+                                  // Não copia a data - deixa para o usuário escolher
+                                  setData(new Date().toISOString().split("T")[0]);
+                                  setEditingWod(null); // Não está editando, está duplicando
+                                  setWodDialogOpen(true);
+                                  toast.info("WOD duplicado! Escolha a nova data.");
+                                }}
+                                title="Duplicar WOD"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
                                 onClick={() => handleOpenDialog(wod)}
+                                title="Editar WOD"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -350,6 +374,7 @@ export default function GestaoBox() {
                                 size="icon"
                                 onClick={() => handleDelete(wod.id)}
                                 disabled={deleteWodMutation.isPending}
+                                title="Excluir WOD"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
