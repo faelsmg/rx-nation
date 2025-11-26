@@ -212,6 +212,47 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getWodsByDateRange(input.boxId, input.startDate, input.endDate);
       }),
+
+    copyWeek: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number(),
+        startDate: z.date(), // Data inicial da semana a copiar
+        daysOffset: z.number().default(7), // Quantos dias adicionar (padrão: +7 dias)
+      }))
+      .mutation(async ({ input }) => {
+        // Buscar WODs da semana
+        const endDate = new Date(input.startDate);
+        endDate.setDate(endDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+
+        const wods = await db.getWodsByDateRange(input.boxId, input.startDate, endDate);
+
+        if (wods.length === 0) {
+          throw new Error("Nenhum WOD encontrado nesta semana");
+        }
+
+        // Criar cópias com datas ajustadas
+        const copiedWods = [];
+        for (const wod of wods) {
+          const newDate = new Date(wod.data);
+          newDate.setDate(newDate.getDate() + input.daysOffset);
+
+          const newWod = await db.createWod({
+            boxId: input.boxId,
+            titulo: wod.titulo,
+            descricao: wod.descricao,
+            tipo: wod.tipo,
+            duracao: wod.duracao,
+            timeCap: wod.timeCap,
+            data: newDate,
+            oficial: wod.oficial,
+            videoYoutubeUrl: wod.videoYoutubeUrl,
+          });
+          copiedWods.push(newWod);
+        }
+
+        return { count: copiedWods.length, wods: copiedWods };
+      }),
   }),
 
   // ===== TEMPLATES DE WOD =====

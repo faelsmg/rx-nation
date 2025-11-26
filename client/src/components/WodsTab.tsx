@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Dumbbell, Plus, Edit, Trash2, Calendar as CalendarIcon, Copy, Save } from "lucide-react";
+import { Dumbbell, Plus, Edit, Trash2, Calendar as CalendarIcon, Copy, Save, Search, CalendarDays } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { WodCalendarView } from "./WodCalendarView";
 import { WodTemplateLibrary } from "./WodTemplateLibrary";
 import { WodFilters, DateFilter } from "./WodFilters";
+import { WodStatsDashboard } from "./WodStatsDashboard";
 
 interface WodsTabProps {
   boxId: number;
@@ -21,9 +22,12 @@ interface WodsTabProps {
 export function WodsTab({ boxId }: WodsTabProps) {
   const [wodDialogOpen, setWodDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [copyWeekDialogOpen, setCopyWeekDialogOpen] = useState(false);
   const [editingWod, setEditingWod] = useState<any>(null);
+  const [weekStartDate, setWeekStartDate] = useState("");
   const [currentFilter, setCurrentFilter] = useState<DateFilter>("all");
   const [filterDates, setFilterDates] = useState<{ start?: Date; end?: Date }>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Form state
   const [titulo, setTitulo] = useState("");
@@ -90,6 +94,19 @@ export function WodsTab({ boxId }: WodsTabProps) {
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao salvar template");
+    },
+  });
+
+  const copyWeekMutation = trpc.wods.copyWeek.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.count} WODs copiados com sucesso!`);
+      utils.wods.getByBox.invalidate();
+      utils.wods.getByDateRange.invalidate();
+      setCopyWeekDialogOpen(false);
+      setWeekStartDate("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao copiar semana");
     },
   });
 
@@ -182,12 +199,40 @@ export function WodsTab({ boxId }: WodsTabProps) {
     }
   };
 
+  const handleCopyWeek = () => {
+    if (!weekStartDate) {
+      toast.error("Selecione a data de início da semana");
+      return;
+    }
+
+    const startDate = new Date(weekStartDate);
+    startDate.setHours(0, 0, 0, 0);
+
+    copyWeekMutation.mutate({
+      boxId,
+      startDate,
+      daysOffset: 7,
+    });
+  };
+
+  // Filtrar WODs por busca
+  const filteredWods = wods?.filter((wod) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      wod.titulo.toLowerCase().includes(query) ||
+      wod.tipo.toLowerCase().includes(query) ||
+      wod.descricao.toLowerCase().includes(query)
+    );
+  }) || [];
+
   return (
     <Tabs defaultValue="lista" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="lista">Lista</TabsTrigger>
         <TabsTrigger value="calendario">Calendário</TabsTrigger>
         <TabsTrigger value="templates">Templates</TabsTrigger>
+        <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
       </TabsList>
 
       {/* Aba Lista */}
@@ -202,16 +247,65 @@ export function WodsTab({ boxId }: WodsTabProps) {
                 </CardTitle>
                 <CardDescription>Crie e gerencie os treinos diários</CardDescription>
               </div>
-              <Dialog open={wodDialogOpen} onOpenChange={setWodDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => handleOpenDialog()}
-                  >
-                    <Plus className="mr-2 h-5 w-5" />
-                    Novo WOD
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                <Dialog open={copyWeekDialogOpen} onOpenChange={setCopyWeekDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      Copiar Semana
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Copiar Semana de WODs</DialogTitle>
+                      <DialogDescription>
+                        Selecione a data de início da semana que deseja copiar. Todos os WODs dessa semana serão duplicados para a próxima semana (+7 dias).
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="weekStart">Data de Início da Semana *</Label>
+                        <Input
+                          id="weekStart"
+                          type="date"
+                          value={weekStartDate}
+                          onChange={(e) => setWeekStartDate(e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          💡 Escolha qualquer dia da semana que deseja copiar (ex: segunda-feira)
+                        </p>
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setCopyWeekDialogOpen(false)}
+                          className="flex-1"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          onClick={handleCopyWeek}
+                          disabled={copyWeekMutation.isPending}
+                          className="flex-1"
+                        >
+                          Copiar Semana
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={wodDialogOpen} onOpenChange={setWodDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={() => handleOpenDialog()}
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      Novo WOD
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingWod ? "Editar WOD" : "Criar Novo WOD"}</DialogTitle>
@@ -335,18 +429,31 @@ export function WodsTab({ boxId }: WodsTabProps) {
                   </form>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Busca */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar WODs por título, tipo ou descrição..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
             {/* Filtros */}
             <WodFilters currentFilter={currentFilter} onFilterChange={handleFilterChange} />
 
             {/* Lista de WODs */}
             {isLoading ? (
               <p className="text-muted-foreground">Carregando...</p>
-            ) : wods && wods.length > 0 ? (
+            ) : filteredWods.length > 0 ? (
               <div className="space-y-4">
-                {wods.map((wod) => (
+                {filteredWods.map((wod) => (
                   <Card key={wod.id} className="border-2 border-border hover:border-primary/40 transition-colors">
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between">
@@ -416,9 +523,11 @@ export function WodsTab({ boxId }: WodsTabProps) {
                   </Card>
                 ))}
               </div>
-            ) : (
-              <p className="text-muted-foreground">Nenhum WOD criado ainda.</p>
-            )}
+                ) : wods && wods.length > 0 ? (
+                  <p className="text-muted-foreground">Nenhum WOD encontrado com "{searchQuery}".</p>
+                ) : (
+                  <p className="text-muted-foreground">Nenhum WOD criado ainda.</p>
+                )}
           </CardContent>
         </Card>
       </TabsContent>
@@ -438,6 +547,11 @@ export function WodsTab({ boxId }: WodsTabProps) {
       {/* Aba Templates */}
       <TabsContent value="templates">
         <WodTemplateLibrary boxId={boxId} onSelectTemplate={handleSelectTemplate} />
+      </TabsContent>
+
+      {/* Aba Estatísticas */}
+      <TabsContent value="estatisticas">
+        <WodStatsDashboard boxId={boxId} />
       </TabsContent>
     </Tabs>
   );

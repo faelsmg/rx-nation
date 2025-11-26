@@ -2298,3 +2298,11 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar opção "Salvar como Template" em WODs existentes
 - [x] Implementar filtros de data (Esta semana, Próxima semana, Este mês)
 - [x] Integrar calendário, templates e filtros na aba WODs
+
+- [ ] Adicionar campo de busca na aba Lista de WODs (buscar por título, tipo, descrição)
+- [ ] Implementar botão "Copiar Semana" para duplicar WODs de uma semana (+7 dias)
+- [ ] Criar dashboard de estatísticas (templates mais usados, WODs por mês, tipos)
+
+- [x] Adicionar campo de busca na aba Lista de WODs (buscar por título, tipo, descrição)
+- [x] Implementar botão "Copiar Semana" para duplicar WODs de uma semana (+7 dias)
+- [x] Criar dashboard de estatísticas (templates mais usados, WODs por mês, tipos)
