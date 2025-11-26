@@ -2264,3 +2264,5 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Corrigir erro SQL na página de campeonatos (tabela resultados_treinos não existe)
 
 - [x] Corrigir erro de hooks do React no AppLayout (useLocation fora do contexto Router)
+
+- [x] Corrigir erro de query undefined em wods.getToday quando não há WOD cadastrado

@@ -262,7 +262,7 @@ export async function getWodsByBox(boxId: number, limit = 10) {
 
 export async function getWodByBoxAndDate(boxId: number, date: Date) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
 
   // Normalize date to start of day
   const startOfDay = new Date(date);
@@ -280,7 +280,7 @@ export async function getWodByBoxAndDate(boxId: number, date: Date) {
     )
     .limit(1);
 
-  return result.length > 0 ? result[0] : undefined;
+  return result.length > 0 ? result[0] : null;
 }
 
 export async function updateWod(id: number, data: Partial<InsertWod>) {
