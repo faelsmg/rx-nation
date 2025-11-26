@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { trpc } from "@/lib/trpc";
 import { Dumbbell, CheckCircle, Trophy, Medal, Clock, Zap } from "lucide-react";
 import { WodComments } from "@/components/WodComments";
+import { ComparacaoResultado } from "@/components/ComparacaoResultado";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -280,6 +281,11 @@ export default function WodDoDia() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Card de Comparação */}
+            {comparacao && comparacao.resultado && (
+              <ComparacaoResultado comparacao={comparacao} />
             )}
 
             {showResultForm && (

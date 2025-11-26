@@ -11849,3 +11849,121 @@ export async function getComparacaoResultado(wodId: number, userId: number) {
     },
   };
 }
+
+
+// ===== LEADERBOARD DE ENGAJAMENTO =====
+
+export async function getLeaderboardEngajamento(boxId: number, mes?: number, ano?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Se não especificar mês/ano, usar mês atual
+  const now = new Date();
+  const targetMes = mes || now.getMonth() + 1;
+  const targetAno = ano || now.getFullYear();
+
+  // Calcular data inicial e final do mês
+  const dataInicio = new Date(targetAno, targetMes - 1, 1);
+  const dataFim = new Date(targetAno, targetMes, 0, 23, 59, 59);
+
+  // Query complexa para calcular score de engajamento
+  const query = sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      
+      -- Comentários feitos
+      COUNT(DISTINCT c.id) as totalComentarios,
+      
+      -- Reações dadas
+      COUNT(DISTINCT r.id) as totalReacoesDadas,
+      
+      -- Reações recebidas nos comentários
+      (SELECT COUNT(*) 
+       FROM reacoes_comentarios rc2
+       INNER JOIN comentarios_wod cw2 ON rc2.comentarioId = cw2.id
+       WHERE cw2.userId = u.id 
+       AND rc2.createdAt BETWEEN ${dataInicio} AND ${dataFim}
+      ) as totalReacoesRecebidas,
+      
+      -- Menções recebidas
+      (SELECT COUNT(*) 
+       FROM mencoes_comentarios mc2
+       WHERE mc2.mencionadoId = u.id 
+       AND mc2.createdAt BETWEEN ${dataInicio} AND ${dataFim}
+      ) as totalMencoesRecebidas,
+      
+      -- Score total (ponderado)
+      (
+        COUNT(DISTINCT c.id) * 10 +  -- 10 pontos por comentário
+        COUNT(DISTINCT r.id) * 2 +   -- 2 pontos por reação dada
+        (SELECT COUNT(*) 
+         FROM reacoes_comentarios rc2
+         INNER JOIN comentarios_wod cw2 ON rc2.comentarioId = cw2.id
+         WHERE cw2.userId = u.id 
+         AND rc2.createdAt BETWEEN ${dataInicio} AND ${dataFim}
+        ) * 5 +  -- 5 pontos por reação recebida
+        (SELECT COUNT(*) 
+         FROM mencoes_comentarios mc2
+         WHERE mc2.mencionadoId = u.id 
+         AND mc2.createdAt BETWEEN ${dataInicio} AND ${dataFim}
+        ) * 8  -- 8 pontos por menção recebida
+      ) as scoreEngajamento
+      
+    FROM users u
+    LEFT JOIN comentarios_wod c ON c.userId = u.id 
+      AND c.createdAt BETWEEN ${dataInicio} AND ${dataFim}
+    LEFT JOIN reacoes_comentarios r ON r.userId = u.id 
+      AND r.createdAt BETWEEN ${dataInicio} AND ${dataFim}
+    WHERE u.boxId = ${boxId}
+    GROUP BY u.id, u.name, u.email
+    HAVING scoreEngajamento > 0
+    ORDER BY scoreEngajamento DESC, u.name ASC
+    LIMIT 50
+  `;
+
+  const results = await db.execute(query);
+  return results.rows;
+}
+
+export async function getMeuRankingEngajamento(userId: number, mes?: number, ano?: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar usuário
+  const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (userResult.length === 0 || !userResult[0].boxId) return null;
+
+  const boxId = userResult[0].boxId;
+
+  // Buscar leaderboard completo
+  const leaderboard = await getLeaderboardEngajamento(boxId, mes, ano);
+
+  // Encontrar posição do usuário
+  const posicao = leaderboard.findIndex((entry: any) => entry.id === userId) + 1;
+
+  if (posicao === 0) {
+    return {
+      posicao: null,
+      totalAtletas: leaderboard.length,
+      scoreEngajamento: 0,
+      totalComentarios: 0,
+      totalReacoesDadas: 0,
+      totalReacoesRecebidas: 0,
+      totalMencoesRecebidas: 0,
+    };
+  }
+
+  const meusDados = leaderboard[posicao - 1];
+
+  return {
+    posicao,
+    totalAtletas: leaderboard.length,
+    scoreEngajamento: meusDados.scoreEngajamento,
+    totalComentarios: meusDados.totalComentarios,
+    totalReacoesDadas: meusDados.totalReacoesDadas,
+    totalReacoesRecebidas: meusDados.totalReacoesRecebidas,
+    totalMencoesRecebidas: meusDados.totalMencoesRecebidas,
+  };
+}

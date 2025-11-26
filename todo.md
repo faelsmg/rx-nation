@@ -2435,3 +2435,56 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar query de comparação no WodDoDia
 - [x] Criar função de cálculo de percentil
 - [x] Implementar comparação completa de resultados
+
+
+## Visualização de Comparação no WOD
+- [ ] Criar card "Você vs Média do Box" no leaderboard
+- [ ] Adicionar gráfico de barras comparativo
+- [ ] Mostrar indicador de percentil (Top X%)
+- [ ] Exibir diferença em porcentagem
+- [ ] Adicionar comparação por categoria/faixa etária
+
+## Notificações Push de Conquistas
+- [ ] Criar componente de toast animado para badges
+- [ ] Adicionar efeito de confete com canvas-confetti
+- [ ] Implementar som de celebração
+- [ ] Integrar verificação automática após ações
+- [ ] Adicionar animação de entrada do badge
+
+## Leaderboard de Engajamento
+- [ ] Criar query de ranking mensal de engajamento
+- [ ] Calcular score combinado (comentários + reações + menções)
+- [ ] Criar página de leaderboard de engajamento
+- [ ] Adicionar destaque visual para Top 3
+- [ ] Implementar filtro por mês
+- [ ] Adicionar badges de premiação simbólica
+
+## ✅ UX Avançada de Gamificação Implementada
+
+### Visualização de Comparação no WOD
+- [x] Criar componente ComparacaoResultado
+- [x] Adicionar card "Você vs Média do Box" no leaderboard
+- [x] Adicionar gráfico de barras comparativo
+- [x] Mostrar indicador de percentil (Top X%)
+- [x] Exibir diferença em porcentagem
+- [x] Adicionar comparação por categoria/faixa etária
+
+### Notificações Push de Conquistas
+- [x] Instalar canvas-confetti
+- [x] Criar componente BadgeNotification com confete
+- [x] Adicionar efeito de confete animado
+- [x] Implementar som de celebração com Web Audio API
+- [x] Criar hook useBadgeChecker
+- [x] Integrar verificação automática no WodComments
+- [x] Adicionar toast animado com badge
+
+### Leaderboard de Engajamento
+- [x] Criar função getLeaderboardEngajamento no db.ts
+- [x] Calcular score combinado ponderado
+- [x] Criar função getMeuRankingEngajamento
+- [x] Criar router leaderboardEngajamento
+- [x] Criar página LeaderboardEngajamento
+- [x] Adicionar destaque visual para Top 3
+- [x] Implementar filtro por mês/ano
+- [x] Adicionar badges de premiação simbólica
+- [x] Adicionar rota /leaderboard-engajamento

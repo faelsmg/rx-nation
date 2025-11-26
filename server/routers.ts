@@ -2121,6 +2121,30 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== LEADERBOARD DE ENGAJAMENTO =====
+  leaderboardEngajamento: router({
+    getRanking: protectedProcedure
+      .input(z.object({
+        mes: z.number().optional(),
+        ano: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não vinculado a um box' });
+        }
+        return db.getLeaderboardEngajamento(ctx.user.boxId, input.mes, input.ano);
+      }),
+
+    getMeuRanking: protectedProcedure
+      .input(z.object({
+        mes: z.number().optional(),
+        ano: z.number().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getMeuRankingEngajamento(ctx.user.id, input.mes, input.ano);
+      }),
+  }),
+
   // ===== FEED SOCIAL DE ATIVIDADES =====
   feedSocial: router({
     getMinhaTimeline: protectedProcedure

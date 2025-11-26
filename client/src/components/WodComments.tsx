@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { useBadgeChecker } from "@/hooks/useBadgeChecker";
 import { MessageSquare, Trash2, Send, ThumbsUp, Flame, Heart } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ const REACTION_EMOJIS = {
 
 export function WodComments({ wodId, boxId }: WodCommentsProps) {
   const { user } = useAuth();
+  const { checkBadges } = useBadgeChecker();
   const [comentario, setComentario] = useState("");
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState("");
@@ -42,6 +44,8 @@ export function WodComments({ wodId, boxId }: WodCommentsProps) {
       toast.success("Comentário adicionado!");
       setComentario("");
       utils.comentariosWod.getByWod.invalidate({ wodId });
+      // Verificar se desbloqueou badge
+      setTimeout(() => checkBadges(), 1000);
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao adicionar comentário");
@@ -61,6 +65,8 @@ export function WodComments({ wodId, boxId }: WodCommentsProps) {
   const toggleReactionMutation = trpc.reacoesComentarios.toggle.useMutation({
     onSuccess: () => {
       utils.comentariosWod.getByWod.invalidate({ wodId });
+      // Verificar se desbloqueou badge
+      setTimeout(() => checkBadges(), 1000);
     },
   });
 
