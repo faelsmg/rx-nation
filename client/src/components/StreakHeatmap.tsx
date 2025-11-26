@@ -4,7 +4,7 @@ import { Flame } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function StreakHeatmap() {
-  const { data: checkins } = trpc.checkin.getHistory.useQuery({
+  const { data: checkins } = trpc.streaks.getHistory.useQuery({
     meses: 3,
   });
 

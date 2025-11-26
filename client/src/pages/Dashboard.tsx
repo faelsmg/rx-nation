@@ -13,6 +13,8 @@ import NivelAtleta from "@/components/NivelAtleta";
 import { DesafiosSemana } from "@/components/DesafiosSemana";
 import InsightsIA from "@/components/InsightsIA";
 import { WidgetProximoBadge } from "@/components/WidgetProximoBadge";
+import { StreakHeatmap } from "@/components/StreakHeatmap";
+import { DesafiosPersonalizadosIA } from "@/components/DesafiosPersonalizadosIA";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -57,6 +59,12 @@ export default function Dashboard() {
             
             {/* Widget de Próximo Badge */}
             <WidgetProximoBadge />
+            
+            {/* Heatmap de Streaks */}
+            <StreakHeatmap />
+            
+            {/* Desafios Personalizados com IA */}
+            <DesafiosPersonalizadosIA />
           </>
         )}
 

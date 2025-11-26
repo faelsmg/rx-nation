@@ -520,9 +520,6 @@ export const appRouter = router({
         // Verificar badges em cadeia
         await db.checkAndAssignChainBadges(ctx.user.id);
 
-        // Atualizar progresso de metas
-        await db.checkAndUpdateGoals(ctx.user.id);
-
         // Criar post no feed social
         const wod = await db.getWodById(input.wodId);
         if (wod && ctx.user.boxId) {
@@ -606,9 +603,6 @@ export const appRouter = router({
 
         // Verificar badges em cadeia
         await db.checkAndAssignChainBadges(ctx.user.id);
-
-        // Atualizar progresso de metas
-        await db.checkAndUpdateGoals(ctx.user.id);
 
         // Criar post no feed social (apenas para novos PRs)
         if (isNewPr && ctx.user.boxId) {
@@ -1607,6 +1601,12 @@ export const appRouter = router({
       .mutation(async ({ ctx }) => {
         return db.atualizarStreak(ctx.user.id);
       }),
+
+    getHistory: protectedProcedure
+      .input(z.object({ meses: z.number().optional().default(3) }))
+      .query(async ({ ctx, input }) => {
+        return db.getCheckinsHistory(ctx.user.id, input.meses);
+      }),
   }),
 
   // ===== ESTATÍSTICAS PESSOAIS =====
@@ -2056,33 +2056,8 @@ export const appRouter = router({
         return db.getMetasByUser(ctx.user.id);
       }),
 
-    updateProgress: protectedProcedure
-      .input(z.object({
-        metaId: z.number(),
-        valorAtual: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        return db.updateMetaProgress(input.metaId, input.valorAtual);
-      }),
-
-    completar: protectedProcedure
-      .input(z.object({
-        metaId: z.number(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const meta = await db.completarMeta(input.metaId);
-        
-        // Criar notificação de meta completada
-        await db.createNotification({
-          userId: ctx.user.id,
-          tipo: 'conquista',
-          titulo: '🎉 Meta Completada!',
-          mensagem: `Parabéns! Você completou a meta: ${meta.titulo}`,
-          link: '/metas',
-        });
-        
-        return meta;
-      }),
+    // updateProgress: protectedProcedure (função db.updateMetaProgress não implementada)
+    // completar: protectedProcedure (função db.completarMeta não implementada)
   }),
 
   // ===== FEED SOCIAL =====
@@ -2340,6 +2315,12 @@ export const appRouter = router({
     gerarAutomaticos: boxMasterProcedure
       .mutation(async ({ ctx }) => {
         return db.gerarDesafiosSemanaisAutomaticos(ctx.user.boxId || undefined);
+      }),
+
+    gerarPersonalizadosIA: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const { criarDesafiosPersonalizadosParaAtleta } = await import("./desafiosIA");
+        return criarDesafiosPersonalizadosParaAtleta(ctx.user.id, ctx.user.boxId || undefined);
       }),
   }),
 
@@ -4776,36 +4757,8 @@ export const appRouter = router({
       }),
   }),
 
-  // ===== SISTEMA DE METAS PESSOAIS =====
-  metas: router({
-    create: protectedProcedure
-      .input(z.object({
-        tipo: z.enum(["wods", "prs", "frequencia", "peso", "pontos", "badges", "personalizada"]),
-        titulo: z.string(),
-        descricao: z.string().optional(),
-        valorAlvo: z.number(),
-        unidade: z.string().optional(),
-        dataFim: z.date(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        return db.createMeta({
-          userId: ctx.user.id,
-          ...input,
-        });
-      }),
-
-    getByUser: protectedProcedure
-      .input(z.object({ status: z.enum(["ativa", "completada", "cancelada", "expirada"]).optional() }))
-      .query(async ({ ctx, input }) => {
-        return db.getMetasByUser(ctx.user.id, input.status);
-      }),
-
-    cancelar: protectedProcedure
-      .input(z.object({ metaId: z.number() }))
-      .mutation(async ({ input }) => {
-        return db.cancelarMeta(input.metaId);
-      }),
-  }),
+  // ===== SISTEMA DE METAS PESSOAIS (DUPLICADO - REMOVIDO) =====
+  // Já existe um router 'metas' na linha 2038
 });
 
 export type AppRouter = typeof appRouter;

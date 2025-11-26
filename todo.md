@@ -2573,3 +2573,26 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Implementar cores graduadas por intensidade
 - [x] Adicionar tooltip com detalhes ao passar mouse
 - [x] Integrar no Dashboard ou página de Streaks
+
+## Funcionalidades Finais para Testes Beta
+
+### 1. Integração do Heatmap no Dashboard
+- [x] Adicionar componente StreakHeatmap no Dashboard do atleta
+- [x] Posicionar abaixo do StreakIndicator e NivelAtleta
+- [x] Verificar procedure getHistory já existe no backend
+- [x] Testar visualização dos últimos 90 dias
+
+### 2. Sistema de Desafios Semanais com IA
+- [x] Criar procedure para gerar desafios personalizados com LLM
+- [x] Analisar histórico do atleta (WODs, PRs, frequência)
+- [x] Gerar 3 desafios semanais customizados
+- [x] Implementar tracking automático de progresso
+- [x] Criar notificações de conclusão com recompensas
+- [x] Adicionar componente visual no Dashboard
+
+### 3. Preparação para Testes Beta
+- [x] Criar guia de onboarding para novos usuários
+- [x] Documentar fluxos principais (atleta e box master)
+- [x] Criar checklist de funcionalidades para testar
+- [x] Preparar formulário de feedback
+- [x] Criar FAQ com dúvidas comuns
