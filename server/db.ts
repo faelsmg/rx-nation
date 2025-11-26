@@ -11967,3 +11967,80 @@ export async function getMeuRankingEngajamento(userId: number, mes?: number, ano
     totalMencoesRecebidas: meusDados.totalMencoesRecebidas,
   };
 }
+
+
+// ===== PROGRESSO DE BADGES =====
+
+export async function getProximoBadge(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar estatísticas do usuário
+  const stats = await getOrCreateEstatisticasEngajamento(userId);
+  if (!stats) return null;
+
+  // Buscar todos os badges
+  const allBadges = await db.select().from(badges).where(eq(badges.categoria, 'social'));
+
+  // Buscar badges já conquistados
+  const userBadgesResult = await db
+    .select()
+    .from(userBadges)
+    .where(eq(userBadges.userId, userId));
+
+  const conquistadosIds = new Set(userBadgesResult.map(ub => ub.badgeId));
+
+  // Filtrar badges não conquistados
+  const badgesDisponiveis = allBadges.filter(b => !conquistadosIds.has(b.id) && b.valorObjetivo);
+
+  if (badgesDisponiveis.length === 0) {
+    return {
+      badge: null,
+      progresso: 100,
+      valorAtual: 0,
+      valorObjetivo: 0,
+      percentual: 100,
+    };
+  }
+
+  // Calcular progresso para cada badge disponível
+  const progressos = badgesDisponiveis.map(badge => {
+    let valorAtual = 0;
+
+    // Determinar valor atual baseado no tipo de badge
+    if (badge.nome.includes('comentário') || badge.nome.includes('Voz') || badge.nome.includes('Conversador') || badge.nome.includes('Influenciador') || badge.nome.includes('Líder')) {
+      valorAtual = stats.totalComentarios;
+    } else if (badge.nome.includes('Reação') && !badge.nome.includes('Popular')) {
+      valorAtual = stats.totalReacoesDadas;
+    } else if (badge.nome.includes('Popular') || badge.nome.includes('Celebridade')) {
+      valorAtual = stats.totalReacoesRecebidas;
+    } else if (badge.nome.includes('Viral') || badge.nome.includes('Influência')) {
+      valorAtual = stats.comentariosMaisReagidos;
+    } else if (badge.nome.includes('Mencionado') || badge.nome.includes('Referência') || badge.nome.includes('Mentor')) {
+      valorAtual = stats.totalMencoesRecebidas;
+    }
+
+    const percentual = badge.valorObjetivo ? (valorAtual / badge.valorObjetivo) * 100 : 0;
+
+    return {
+      badge,
+      valorAtual,
+      valorObjetivo: badge.valorObjetivo || 0,
+      percentual: Math.min(percentual, 99.9), // Nunca mostrar 100% para badge não conquistado
+      distancia: (badge.valorObjetivo || 0) - valorAtual,
+    };
+  });
+
+  // Ordenar por maior percentual (mais próximo de conquistar)
+  progressos.sort((a, b) => b.percentual - a.percentual);
+
+  const proximo = progressos[0];
+
+  return {
+    badge: proximo.badge,
+    valorAtual: proximo.valorAtual,
+    valorObjetivo: proximo.valorObjetivo,
+    percentual: Math.round(proximo.percentual),
+    distancia: proximo.distancia,
+  };
+}

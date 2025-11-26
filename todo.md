@@ -2488,3 +2488,34 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Implementar filtro por mês/ano
 - [x] Adicionar badges de premiação simbólica
 - [x] Adicionar rota /leaderboard-engajamento
+
+
+## Widget de Progresso de Badges
+- [ ] Criar função para calcular próximo badge mais próximo
+- [ ] Criar componente BadgeProgressWidget
+- [ ] Adicionar barra de progresso visual
+- [ ] Adicionar CTA para página de Conquistas
+- [ ] Integrar widget no Dashboard
+
+## Sistema de Streaks
+- [ ] Criar tabela de streaks no schema
+- [ ] Criar função para calcular streak atual
+- [ ] Criar badges de streak (7, 30, 100 dias)
+- [ ] Implementar detecção de quebra de streak
+- [ ] Criar notificação de quebra de streak
+- [ ] Adicionar contador visual no Dashboard
+- [ ] Criar procedure de atualização de streak
+
+## Compartilhamento Social
+- [ ] Criar função de geração de card visual
+- [ ] Adicionar botão "Compartilhar" no WOD
+- [ ] Gerar imagem com logo, resultado e comparação
+- [ ] Implementar download da imagem
+- [ ] Adicionar suporte a compartilhamento nativo
+- [ ] Criar preview do card antes de compartilhar
+
+## Funcionalidades de Retenção e Viralização Implementadas
+
+- [x] Widget de Progresso de Badges - Mini-widget no Dashboard mostrando próximo badge com barra de progresso
+- [ ] Sistema de Streaks - Contador de dias consecutivos com badges especiais (7, 30, 100 dias)
+- [ ] Compartilhamento Social - Botão para gerar card visual de resultados para Instagram/WhatsApp

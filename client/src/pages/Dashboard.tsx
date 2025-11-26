@@ -12,6 +12,7 @@ import BadgesSection from "@/components/BadgesSection";
 import NivelAtleta from "@/components/NivelAtleta";
 import { DesafiosSemana } from "@/components/DesafiosSemana";
 import InsightsIA from "@/components/InsightsIA";
+import { WidgetProximoBadge } from "@/components/WidgetProximoBadge";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -47,11 +48,16 @@ export default function Dashboard() {
 
         {/* Streak Indicator, Nível e Desafios */}
         {user?.role === "atleta" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <StreakIndicator />
-            <NivelAtleta pontosTotais={pontuacaoTotal || 0} />
-            <DesafiosSemana />
-          </div>
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <StreakIndicator />
+              <NivelAtleta pontosTotais={pontuacaoTotal || 0} />
+              <DesafiosSemana />
+            </div>
+            
+            {/* Widget de Próximo Badge */}
+            <WidgetProximoBadge />
+          </>
         )}
 
         {/* Insights com IA */}

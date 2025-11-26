@@ -1570,14 +1570,14 @@ export const appRouter = router({
         };
       }),
 
-    verificarConquistasEngajamento: protectedProcedure
-      .mutation(async ({ ctx }) => {
-        const novosBadges = await db.verificarConquistasEngajamento(ctx.user.id);
-        return {
-          success: true,
-          novosBadges,
-        };
-      }),
+    verificarConquistasEngajamento: protectedProcedure.mutation(async ({ ctx }) => {
+      const novos = await db.verificarConquistasEngajamento(ctx.user.id);
+      return { novos };
+    }),
+
+    getProximoBadge: protectedProcedure.query(async ({ ctx }) => {
+      return db.getProximoBadge(ctx.user.id);
+    }),
 
     getEstatisticasEngajamento: protectedProcedure
       .query(async ({ ctx }) => {
