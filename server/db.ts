@@ -79,6 +79,10 @@ import {
   InsertComentarioFeed,
   comentariosWod,
   InsertComentarioWod,
+  reacoesComentarios,
+  InsertReacaoComentario,
+  mencoesComentarios,
+  InsertMencaoComentario,
   playlists,
   InsertPlaylist,
   playlistItems,
@@ -533,11 +537,54 @@ export async function getResultadosByUser(userId: number, limit = 30) {
   return results;
 }
 
-export async function getResultadosByWod(wodId: number) {
+export async function getResultadosByWod(
+  wodId: number, 
+  orderBy?: "tempo" | "reps" | "carga" | "data",
+  orderDir?: "asc" | "desc"
+) {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(resultadosTreinos).where(eq(resultadosTreinos.wodId, wodId));
+  let query = db
+    .select({
+      id: resultadosTreinos.id,
+      userId: resultadosTreinos.userId,
+      wodId: resultadosTreinos.wodId,
+      tempo: resultadosTreinos.tempo,
+      reps: resultadosTreinos.reps,
+      carga: resultadosTreinos.carga,
+      rxOuScale: resultadosTreinos.rxOuScale,
+      observacoes: resultadosTreinos.observacoes,
+      dataRegistro: resultadosTreinos.dataRegistro,
+      createdAt: resultadosTreinos.createdAt,
+      updatedAt: resultadosTreinos.updatedAt,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(resultadosTreinos)
+    .leftJoin(users, eq(resultadosTreinos.userId, users.id))
+    .where(eq(resultadosTreinos.wodId, wodId));
+
+  // Aplicar ordenação
+  if (orderBy && orderDir) {
+    const column = {
+      tempo: resultadosTreinos.tempo,
+      reps: resultadosTreinos.reps,
+      carga: resultadosTreinos.carga,
+      data: resultadosTreinos.dataRegistro,
+    }[orderBy];
+
+    if (orderDir === "asc") {
+      query = query.orderBy(asc(column)) as any;
+    } else {
+      query = query.orderBy(desc(column)) as any;
+    }
+  } else {
+    // Ordenação padrão: mais recentes primeiro
+    query = query.orderBy(desc(resultadosTreinos.dataRegistro)) as any;
+  }
+
+  return query;
 }
 
 // ===== PRs =====
@@ -11186,4 +11233,125 @@ export async function deleteComentarioWod(id: number, userId: number) {
 
   await db.delete(comentariosWod).where(eq(comentariosWod.id, id));
   return true;
+}
+
+
+// ===== REAÇÕES EM COMENTÁRIOS =====
+
+export async function toggleReacaoComentario(data: { comentarioId: number; userId: number; tipo: "like" | "strong" | "fire" | "heart" }) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  // Verificar se já existe reação do usuário neste comentário com este tipo
+  const existing = await db
+    .select()
+    .from(reacoesComentarios)
+    .where(
+      and(
+        eq(reacoesComentarios.comentarioId, data.comentarioId),
+        eq(reacoesComentarios.userId, data.userId),
+        eq(reacoesComentarios.tipo, data.tipo)
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    // Se já existe, remove (toggle off)
+    await db.delete(reacoesComentarios).where(eq(reacoesComentarios.id, existing[0].id));
+    return { action: 'removed' };
+  } else {
+    // Se não existe, adiciona (toggle on)
+    await db.insert(reacoesComentarios).values({
+      comentarioId: data.comentarioId,
+      userId: data.userId,
+      tipo: data.tipo,
+    });
+    return { action: 'added' };
+  }
+}
+
+export async function getReacoesByComentario(comentarioId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      id: reacoesComentarios.id,
+      tipo: reacoesComentarios.tipo,
+      userId: reacoesComentarios.userId,
+      userName: users.name,
+      createdAt: reacoesComentarios.createdAt,
+    })
+    .from(reacoesComentarios)
+    .leftJoin(users, eq(reacoesComentarios.userId, users.id))
+    .where(eq(reacoesComentarios.comentarioId, comentarioId))
+    .orderBy(reacoesComentarios.createdAt);
+
+  // Agrupar por tipo e contar
+  const grouped = results.reduce((acc, r) => {
+    if (!acc[r.tipo]) {
+      acc[r.tipo] = { count: 0, users: [] };
+    }
+    acc[r.tipo].count++;
+    acc[r.tipo].users.push({ id: r.userId, name: r.userName || 'Anônimo' });
+    return acc;
+  }, {} as Record<string, { count: number; users: Array<{ id: number; name: string }> }>);
+
+  return grouped;
+}
+
+
+// ===== MENÇÕES EM COMENTÁRIOS =====
+
+export async function buscarAtletasParaMencao(boxId: number, busca: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    })
+    .from(users)
+    .where(
+      and(
+        eq(users.boxId, boxId),
+        eq(users.role, 'atleta'),
+        or(
+          sql`${users.name} LIKE ${`%${busca}%`}`,
+          sql`${users.email} LIKE ${`%${busca}%`}`
+        )
+      )
+    )
+    .limit(10);
+
+  return results;
+}
+
+export async function createMencaoComentario(data: InsertMencaoComentario) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(mencoesComentarios).values(data);
+  return result;
+}
+
+export async function notificarMencao(comentarioId: number, usuarioMencionadoId: number, autorId: number, wodId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Buscar nome do autor
+  const autor = await db.select({ name: users.name }).from(users).where(eq(users.id, autorId)).limit(1);
+  const autorNome = autor[0]?.name || 'Alguém';
+
+  // Criar notificação
+  await db.insert(notificacoes).values({
+    userId: usuarioMencionadoId,
+    tipo: 'wod',
+    titulo: 'Você foi mencionado',
+    mensagem: `${autorNome} mencionou você em um comentário`,
+    link: `/wod-do-dia`,
+    lida: false,
+  });
 }

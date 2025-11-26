@@ -13,25 +13,27 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export default function WodDoDia() {
-  const { data: wodHoje, isLoading } = trpc.wods.getToday.useQuery();
-  const { data: resultados } = trpc.resultados.getByWod.useQuery(
-    { wodId: wodHoje?.id! },
-    { enabled: !!wodHoje?.id }
-  );
-  const checkinMutation = trpc.checkins.create.useMutation();
-  const resultadoMutation = trpc.resultados.create.useMutation();
-  const utils = trpc.useUtils();
-  
+  // Estados
   const [checkedIn, setCheckedIn] = useState(false);
   const [showResultForm, setShowResultForm] = useState(false);
-  
-  // Form state
   const [tempo, setTempo] = useState("");
   const [reps, setReps] = useState("");
   const [carga, setCarga] = useState("");
   const [rxOuScale, setRxOuScale] = useState<"rx" | "scale">("rx");
   const [observacoes, setObservacoes] = useState("");
   const [modalidadeFilter, setModalidadeFilter] = useState<"all" | "rx" | "scaled" | "masters">("all");
+  const [orderBy, setOrderBy] = useState<"tempo" | "reps" | "carga" | "data">("data");
+  const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
+
+  // Queries
+  const { data: wodHoje, isLoading } = trpc.wods.getToday.useQuery();
+  const { data: resultados } = trpc.resultados.getByWod.useQuery(
+    { wodId: wodHoje?.id!, orderBy, orderDir },
+    { enabled: !!wodHoje?.id }
+  );
+  const checkinMutation = trpc.checkins.create.useMutation();
+  const resultadoMutation = trpc.resultados.create.useMutation();
+  const utils = trpc.useUtils();
 
   const handleCheckin = async () => {
     if (!wodHoje) return;
@@ -161,28 +163,52 @@ export default function WodDoDia() {
                         {resultados.filter((r: any) => modalidadeFilter === "all" || r.rxOuScale === modalidadeFilter).length} atleta{resultados.filter((r: any) => modalidadeFilter === "all" || r.rxOuScale === modalidadeFilter).length > 1 ? 's' : ''}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={modalidadeFilter === "all" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setModalidadeFilter("all")}
-                      >
-                        Todos
-                      </Button>
-                      <Button
-                        variant={modalidadeFilter === "rx" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setModalidadeFilter("rx")}
-                      >
-                        RX
-                      </Button>
-                      <Button
-                        variant={modalidadeFilter === "scaled" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setModalidadeFilter("scaled")}
-                      >
-                        Scaled
-                      </Button>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Filtro de modalidade */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant={modalidadeFilter === "all" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setModalidadeFilter("all")}
+                        >
+                          Todos
+                        </Button>
+                        <Button
+                          variant={modalidadeFilter === "rx" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setModalidadeFilter("rx")}
+                        >
+                          RX
+                        </Button>
+                        <Button
+                          variant={modalidadeFilter === "scaled" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setModalidadeFilter("scaled")}
+                        >
+                          Scaled
+                        </Button>
+                      </div>
+
+                      {/* Ordenação */}
+                      <div className="flex gap-2 items-center">
+                        <select
+                          value={orderBy}
+                          onChange={(e) => setOrderBy(e.target.value as any)}
+                          className="text-sm border rounded-md px-2 py-1 bg-background"
+                        >
+                          <option value="data">Data</option>
+                          <option value="tempo">Tempo</option>
+                          <option value="reps">Reps</option>
+                          <option value="carga">Carga</option>
+                        </select>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setOrderDir(orderDir === "asc" ? "desc" : "asc")}
+                        >
+                          {orderDir === "asc" ? "↑" : "↓"}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -340,7 +366,7 @@ export default function WodDoDia() {
               </Card>
             )}
             {/* Comentários */}
-            <WodComments wodId={wodHoje.id} />
+            <WodComments wodId={wodHoje.id} boxId={wodHoje.boxId} />
           </>
         ) : (
           <Card className="card-impacto">

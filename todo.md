@@ -2343,3 +2343,45 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar procedures para deletar comentário
 - [x] Implementar interface de comentários no WOD do Dia
 - [x] Adicionar filtro por modalidade nos resultados do WOD do Dia
+
+## Sistema de Reações em Comentários
+- [ ] Criar tabela reacoes_comentarios (comentarioId, userId, tipo)
+- [ ] Criar procedures para adicionar/remover reação
+- [ ] Criar procedure para listar reações de um comentário
+- [ ] Adicionar contador de reações na interface
+- [ ] Adicionar botões de emoji (👍 💪 🔥 ❤️)
+
+## Sistema de Menções
+- [ ] Criar tabela mencoes_comentarios (comentarioId, usuarioMencionadoId)
+- [ ] Criar procedure para buscar atletas do box (autocomplete)
+- [ ] Implementar parser de menções (@nome)
+- [ ] Criar notificação automática ao mencionar
+- [ ] Adicionar highlight visual nas menções
+
+## Ordenação no Leaderboard
+- [ ] Adicionar campo de ordenação na query de resultados
+- [ ] Criar dropdown de ordenação (Tempo, Reps, Carga, Data)
+- [ ] Implementar ordenação ASC/DESC dinâmica
+- [ ] Manter filtro de modalidade funcionando junto
+
+## ✅ Funcionalidades Implementadas - Sessão Atual
+
+### Sistema de Reações em Comentários
+- [x] Criar tabela reacoes_comentarios (comentarioId, userId, tipo)
+- [x] Criar procedures para adicionar/remover reação
+- [x] Criar procedure para listar reações de um comentário
+- [x] Adicionar contador de reações na interface
+- [x] Adicionar botões de emoji (👍 💪 🔥 ❤️)
+
+### Sistema de Menções
+- [x] Criar tabela mencoes_comentarios (comentarioId, usuarioMencionadoId)
+- [x] Criar procedure para buscar atletas do box (autocomplete)
+- [x] Implementar parser de menções (@nome)
+- [x] Criar notificação automática ao mencionar
+- [x] Adicionar highlight visual nas menções
+
+### Ordenação no Leaderboard
+- [x] Adicionar campo de ordenação na query de resultados
+- [x] Criar dropdown de ordenação (Tempo, Reps, Carga, Data)
+- [x] Implementar ordenação ASC/DESC dinâmica
+- [x] Manter filtro de modalidade funcionando junto

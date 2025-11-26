@@ -1131,3 +1131,58 @@ export const wodFavoritosRelations = relations(wodFavoritos, ({ one }) => ({
     references: [wods.id],
   }),
 }));
+
+
+// ==================== REAÇÕES EM COMENTÁRIOS ====================
+
+/**
+ * Reações em Comentários de WOD (👍 💪 🔥 ❤️)
+ */
+export const reacoesComentarios = mysqlTable("reacoes_comentarios", {
+  id: int("id").autoincrement().primaryKey(),
+  comentarioId: int("comentario_id").notNull().references(() => comentariosWod.id, { onDelete: "cascade" }),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tipo: mysqlEnum("tipo", ["like", "strong", "fire", "heart"]).notNull(), // 👍 💪 🔥 ❤️
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ReacaoComentario = typeof reacoesComentarios.$inferSelect;
+export type InsertReacaoComentario = typeof reacoesComentarios.$inferInsert;
+
+export const reacoesComentariosRelations = relations(reacoesComentarios, ({ one }) => ({
+  comentario: one(comentariosWod, {
+    fields: [reacoesComentarios.comentarioId],
+    references: [comentariosWod.id],
+  }),
+  user: one(users, {
+    fields: [reacoesComentarios.userId],
+    references: [users.id],
+  }),
+}));
+
+
+// ==================== MENÇÕES EM COMENTÁRIOS ====================
+
+/**
+ * Menções de Atletas em Comentários (@nome)
+ */
+export const mencoesComentarios = mysqlTable("mencoes_comentarios", {
+  id: int("id").autoincrement().primaryKey(),
+  comentarioId: int("comentario_id").notNull().references(() => comentariosWod.id, { onDelete: "cascade" }),
+  usuarioMencionadoId: int("usuario_mencionado_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MencaoComentario = typeof mencoesComentarios.$inferSelect;
+export type InsertMencaoComentario = typeof mencoesComentarios.$inferInsert;
+
+export const mencoesComentariosRelations = relations(mencoesComentarios, ({ one }) => ({
+  comentario: one(comentariosWod, {
+    fields: [mencoesComentarios.comentarioId],
+    references: [comentariosWod.id],
+  }),
+  usuarioMencionado: one(users, {
+    fields: [mencoesComentarios.usuarioMencionadoId],
+    references: [users.id],
+  }),
+}));

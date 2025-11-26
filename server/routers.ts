@@ -270,11 +270,36 @@ export const appRouter = router({
         comentario: z.string().min(1).max(1000),
       }))
       .mutation(async ({ ctx, input }) => {
-        return db.createComentarioWod({
+        // Criar comentário
+        const result = await db.createComentarioWod({
           wodId: input.wodId,
           userId: ctx.user.id,
           comentario: input.comentario,
         });
+
+        // Processar menções (@nome)
+        const comentarioId = result ? Number((result as any).insertId) : null;
+        const mencoes = input.comentario.match(/@\[(\d+)\]/g);
+        
+        if (mencoes && comentarioId) {
+          for (const mencao of mencoes) {
+            const userId = parseInt(mencao.match(/\d+/)?.[0] || '0');
+            if (userId > 0) {
+              await db.createMencaoComentario({
+                comentarioId: Number(comentarioId),
+                usuarioMencionadoId: userId,
+              });
+              await db.notificarMencao(
+                Number(comentarioId),
+                userId,
+                ctx.user.id,
+                input.wodId
+              );
+            }
+          }
+        }
+
+        return result;
       }),
 
     getByWod: publicProcedure
@@ -294,6 +319,40 @@ export const appRouter = router({
           });
         }
         return { success: true };
+      }),
+  }),
+
+  // ===== REAÇÕES EM COMENTÁRIOS =====
+  reacoesComentarios: router({
+    toggle: protectedProcedure
+      .input(z.object({
+        comentarioId: z.number(),
+        tipo: z.enum(["like", "strong", "fire", "heart"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.toggleReacaoComentario({
+          comentarioId: input.comentarioId,
+          userId: ctx.user.id,
+          tipo: input.tipo,
+        });
+      }),
+
+    getByComentario: publicProcedure
+      .input(z.object({ comentarioId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getReacoesByComentario(input.comentarioId);
+      }),
+  }),
+
+  // ===== MENÇÕES EM COMENTÁRIOS =====
+  mencoesComentarios: router({
+    buscarAtletas: protectedProcedure
+      .input(z.object({
+        boxId: z.number(),
+        busca: z.string().min(1),
+      }))
+      .query(async ({ input }) => {
+        return db.buscarAtletasParaMencao(input.boxId, input.busca);
       }),
   }),
 
@@ -486,9 +545,17 @@ export const appRouter = router({
       }),
 
     getByWod: publicProcedure
-      .input(z.object({ wodId: z.number() }))
+      .input(z.object({ 
+        wodId: z.number(),
+        orderBy: z.enum(["tempo", "reps", "carga", "data"]).optional(),
+        orderDir: z.enum(["asc", "desc"]).optional(),
+      }))
       .query(async ({ input }) => {
-        return db.getResultadosByWod(input.wodId);
+        return db.getResultadosByWod(
+          input.wodId, 
+          input.orderBy, 
+          input.orderDir
+        );
       }),
   }),
 
