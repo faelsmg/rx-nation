@@ -9,6 +9,8 @@ import {
   InsertWod,
   wodTemplates,
   InsertWodTemplate,
+  wodFavoritos,
+  InsertWodFavorito,
   checkins,
   InsertCheckin,
   resultadosTreinos,
@@ -10998,4 +11000,80 @@ export async function getWodsByDateRange(boxId: number, startDate: Date, endDate
       )
     )
     .orderBy(wods.data);
+}
+
+// ===== FAVORITOS DE WOD =====
+
+export async function getWodFavoritosByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      id: wodFavoritos.id,
+      wodId: wodFavoritos.wodId,
+      createdAt: wodFavoritos.createdAt,
+      wod: wods,
+    })
+    .from(wodFavoritos)
+    .leftJoin(wods, eq(wodFavoritos.wodId, wods.id))
+    .where(eq(wodFavoritos.userId, userId))
+    .orderBy(desc(wodFavoritos.createdAt));
+
+  return results;
+}
+
+export async function addWodFavorito(userId: number, wodId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Verificar se já existe
+  const existing = await db
+    .select()
+    .from(wodFavoritos)
+    .where(and(
+      eq(wodFavoritos.userId, userId),
+      eq(wodFavoritos.wodId, wodId)
+    ))
+    .limit(1);
+
+  if (existing.length > 0) {
+    return existing[0];
+  }
+
+  const [result] = await db
+    .insert(wodFavoritos)
+    .values({ userId, wodId });
+
+  return { id: result.insertId, userId, wodId };
+}
+
+export async function removeWodFavorito(userId: number, wodId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db
+    .delete(wodFavoritos)
+    .where(and(
+      eq(wodFavoritos.userId, userId),
+      eq(wodFavoritos.wodId, wodId)
+    ));
+
+  return { success: true };
+}
+
+export async function isWodFavorito(userId: number, wodId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const results = await db
+    .select()
+    .from(wodFavoritos)
+    .where(and(
+      eq(wodFavoritos.userId, userId),
+      eq(wodFavoritos.wodId, wodId)
+    ))
+    .limit(1);
+
+  return results.length > 0;
 }

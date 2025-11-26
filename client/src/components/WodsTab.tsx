@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Dumbbell, Plus, Edit, Trash2, Calendar as CalendarIcon, Copy, Save, Search, CalendarDays } from "lucide-react";
+import { Dumbbell, Plus, Edit, Trash2, Calendar as CalendarIcon, Copy, Save, Search, CalendarDays, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { WodCalendarView } from "./WodCalendarView";
@@ -48,6 +48,9 @@ export function WodsTab({ boxId }: WodsTabProps) {
         endDate: filterDates.end,
       })
     : trpc.wods.getByBox.useQuery({ boxId, limit: 50 }, { enabled: !!boxId });
+
+  // Query de favoritos
+  const { data: favoritos } = trpc.wodFavoritos.getByUser.useQuery();
 
   const createWodMutation = trpc.wods.create.useMutation({
     onSuccess: () => {
@@ -107,6 +110,26 @@ export function WodsTab({ boxId }: WodsTabProps) {
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao copiar semana");
+    },
+  });
+
+  const addFavoritoMutation = trpc.wodFavoritos.add.useMutation({
+    onSuccess: () => {
+      toast.success("⭐ WOD adicionado aos favoritos!");
+      utils.wodFavoritos.getByUser.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao adicionar favorito");
+    },
+  });
+
+  const removeFavoritoMutation = trpc.wodFavoritos.remove.useMutation({
+    onSuccess: () => {
+      toast.success("WOD removido dos favoritos");
+      utils.wodFavoritos.getByUser.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao remover favorito");
     },
   });
 
@@ -213,6 +236,15 @@ export function WodsTab({ boxId }: WodsTabProps) {
       startDate,
       daysOffset: 7,
     });
+  };
+
+  const handleToggleFavorito = (wodId: number) => {
+    const isFav = favoritos?.some((f) => f.wodId === wodId);
+    if (isFav) {
+      removeFavoritoMutation.mutate({ wodId });
+    } else {
+      addFavoritoMutation.mutate({ wodId });
+    }
   };
 
   // Filtrar WODs por busca
@@ -473,6 +505,14 @@ export function WodsTab({ boxId }: WodsTabProps) {
                           <p className="text-foreground whitespace-pre-wrap">{wod.descricao}</p>
                         </div>
                         <div className="flex gap-2 ml-4">
+                          <Button
+                            variant={favoritos?.some((f) => f.wodId === wod.id) ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => handleToggleFavorito(wod.id)}
+                            title={favoritos?.some((f) => f.wodId === wod.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                          >
+                            <Star className={`w-4 h-4 ${favoritos?.some((f) => f.wodId === wod.id) ? "fill-current" : ""}`} />
+                          </Button>
                           <Button
                             variant="outline"
                             size="icon"

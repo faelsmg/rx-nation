@@ -57,6 +57,9 @@ export const wods = mysqlTable("wods", {
   data: timestamp("data").notNull(), // data do WOD
   oficial: boolean("oficial").default(false).notNull(), // se é da planilha oficial da liga
   videoYoutubeUrl: text("videoYoutubeUrl"), // URL do vídeo demonstrativo no YouTube
+  criadoPor: int("criadoPor"), // userId de quem criou
+  editadoPor: int("editadoPor"), // userId de quem editou por último
+  editadoEm: timestamp("editadoEm"), // quando foi editado por último
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1075,5 +1078,29 @@ export const wodTemplatesRelations = relations(wodTemplates, ({ one }) => ({
   box: one(boxes, {
     fields: [wodTemplates.boxId],
     references: [boxes.id],
+  }),
+}));
+
+/**
+ * WODs Favoritos (para Box Masters salvarem WODs favoritos)
+ */
+export const wodFavoritos = mysqlTable("wod_favoritos", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // Box Master que favoritou
+  wodId: int("wodId").notNull(), // WOD favoritado
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WodFavorito = typeof wodFavoritos.$inferSelect;
+export type InsertWodFavorito = typeof wodFavoritos.$inferInsert;
+
+export const wodFavoritosRelations = relations(wodFavoritos, ({ one }) => ({
+  user: one(users, {
+    fields: [wodFavoritos.userId],
+    references: [users.id],
+  }),
+  wod: one(wods, {
+    fields: [wodFavoritos.wodId],
+    references: [wods.id],
   }),
 }));

@@ -137,8 +137,11 @@ export const appRouter = router({
         data: z.date(),
         oficial: z.boolean().optional(),
       }))
-      .mutation(async ({ input }) => {
-        const wod = await db.createWod(input);
+      .mutation(async ({ input, ctx }) => {
+        const wod = await db.createWod({
+          ...input,
+          criadoPor: ctx.user.id,
+        });
         
         // Notificar todos os alunos do box sobre o novo WOD
         await db.notifyBoxStudents(input.boxId, {
@@ -193,8 +196,12 @@ export const appRouter = router({
         timeCap: z.number().optional(),
         oficial: z.boolean().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return db.updateWod(input.id, input);
+      .mutation(async ({ input, ctx }) => {
+        return db.updateWod(input.id, {
+          ...input,
+          editadoPor: ctx.user.id,
+          editadoEm: new Date(),
+        });
       }),
 
     delete: protectedProcedure
@@ -296,6 +303,38 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return db.deleteWodTemplate(input.id);
+      }),
+  }),
+
+  // ===== FAVORITOS DE WOD =====
+  wodFavoritos: router({
+    getByUser: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getWodFavoritosByUser(ctx.user.id);
+      }),
+
+    add: boxMasterProcedure
+      .input(z.object({
+        wodId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.addWodFavorito(ctx.user.id, input.wodId);
+      }),
+
+    remove: boxMasterProcedure
+      .input(z.object({
+        wodId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.removeWodFavorito(ctx.user.id, input.wodId);
+      }),
+
+    isFavorite: protectedProcedure
+      .input(z.object({
+        wodId: z.number(),
+      }))
+      .query(async ({ input, ctx }) => {
+        return db.isWodFavorito(ctx.user.id, input.wodId);
       }),
   }),
 

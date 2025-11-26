@@ -2306,3 +2306,11 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar campo de busca na aba Lista de WODs (buscar por título, tipo, descrição)
 - [x] Implementar botão "Copiar Semana" para duplicar WODs de uma semana (+7 dias)
 - [x] Criar dashboard de estatísticas (templates mais usados, WODs por mês, tipos)
+
+- [ ] Implementar notificações push automáticas ao criar WOD
+- [ ] Adicionar histórico de edições de WOD (campos editadoPor e editadoEm)
+- [ ] Criar sistema de favoritos para WODs (tabela wod_favoritos)
+
+- [x] Implementar notificações push automáticas ao criar WOD
+- [x] Adicionar histórico de edições de WOD (campos editadoPor e editadoEm)
+- [x] Criar sistema de favoritos para WODs (tabela wod_favoritos)
