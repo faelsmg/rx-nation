@@ -7101,7 +7101,8 @@ export async function getBoxesMetrics() {
       COUNT(DISTINCT w.id) as totalWods,
       COALESCE(AVG(
         (SELECT COUNT(*) FROM resultados_treinos rt 
-         WHERE rt.boxId = b.id AND rt.createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) * 100.0 /
+         INNER JOIN users u2 ON rt.userId = u2.id
+         WHERE u2.boxId = b.id AND rt.dataRegistro >= DATE_SUB(NOW(), INTERVAL 30 DAY)) * 100.0 /
         NULLIF((SELECT COUNT(*) FROM wods w2 
          WHERE w2.boxId = b.id AND w2.data >= DATE_SUB(NOW(), INTERVAL 30 DAY)), 0)
       ), 0) as avgEngajamento

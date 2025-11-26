@@ -2260,3 +2260,5 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar menus específicos por role (atleta, box_master, franqueado, admin_liga)
 
 - [x] Adicionar botão de Logout visível no topo do menu lateral
+
+- [x] Corrigir erro SQL na página de campeonatos (tabela resultados_treinos não existe)
