@@ -83,6 +83,8 @@ import {
   InsertReacaoComentario,
   mencoesComentarios,
   InsertMencaoComentario,
+  estatisticasEngajamento,
+  InsertEstatisticaEngajamento,
   playlists,
   InsertPlaylist,
   playlistItems,
@@ -11354,4 +11356,496 @@ export async function notificarMencao(comentarioId: number, usuarioMencionadoId:
     link: `/wod-do-dia`,
     lida: false,
   });
+}
+
+
+// ===== ESTATÍSTICAS DE ENGAJAMENTO =====
+
+export async function getOrCreateEstatisticasEngajamento(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar estatísticas existentes
+  const existing = await db
+    .select()
+    .from(estatisticasEngajamento)
+    .where(eq(estatisticasEngajamento.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    return existing[0];
+  }
+
+  // Criar novas estatísticas
+  await db.insert(estatisticasEngajamento).values({
+    userId,
+    totalComentarios: 0,
+    totalReacoesRecebidas: 0,
+    totalReacoesDadas: 0,
+    totalMencoesRecebidas: 0,
+    comentariosMaisReagidos: 0,
+  });
+
+  const newStats = await db
+    .select()
+    .from(estatisticasEngajamento)
+    .where(eq(estatisticasEngajamento.userId, userId))
+    .limit(1);
+
+  return newStats[0];
+}
+
+export async function atualizarEstatisticasEngajamento(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Contar comentários
+  const comentarios = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(comentariosWod)
+    .where(eq(comentariosWod.userId, userId));
+
+  const totalComentarios = Number(comentarios[0]?.count || 0);
+
+  // Contar reações recebidas
+  const reacoesRecebidas = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(reacoesComentarios)
+    .leftJoin(comentariosWod, eq(reacoesComentarios.comentarioId, comentariosWod.id))
+    .where(eq(comentariosWod.userId, userId));
+
+  const totalReacoesRecebidas = Number(reacoesRecebidas[0]?.count || 0);
+
+  // Contar reações dadas
+  const reacoesDadas = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(reacoesComentarios)
+    .where(eq(reacoesComentarios.userId, userId));
+
+  const totalReacoesDadas = Number(reacoesDadas[0]?.count || 0);
+
+  // Contar menções recebidas
+  const mencoesRecebidas = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(mencoesComentarios)
+    .where(eq(mencoesComentarios.usuarioMencionadoId, userId));
+
+  const totalMencoesRecebidas = Number(mencoesRecebidas[0]?.count || 0);
+
+  // Contar comentários com 5+ reações
+  const comentariosVirais = await db
+    .select({
+      comentarioId: reacoesComentarios.comentarioId,
+      count: sql<number>`count(*)`,
+    })
+    .from(reacoesComentarios)
+    .leftJoin(comentariosWod, eq(reacoesComentarios.comentarioId, comentariosWod.id))
+    .where(eq(comentariosWod.userId, userId))
+    .groupBy(reacoesComentarios.comentarioId)
+    .having(sql`count(*) >= 5`);
+
+  const comentariosMaisReagidos = comentariosVirais.length;
+
+  // Atualizar ou criar estatísticas
+  const existing = await db
+    .select()
+    .from(estatisticasEngajamento)
+    .where(eq(estatisticasEngajamento.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db
+      .update(estatisticasEngajamento)
+      .set({
+        totalComentarios,
+        totalReacoesRecebidas,
+        totalReacoesDadas,
+        totalMencoesRecebidas,
+        comentariosMaisReagidos,
+      })
+      .where(eq(estatisticasEngajamento.userId, userId));
+  } else {
+    await db.insert(estatisticasEngajamento).values({
+      userId,
+      totalComentarios,
+      totalReacoesRecebidas,
+      totalReacoesDadas,
+      totalMencoesRecebidas,
+      comentariosMaisReagidos,
+    });
+  }
+}
+
+export async function verificarConquistasEngajamento(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Atualizar estatísticas primeiro
+  await atualizarEstatisticasEngajamento(userId);
+
+  const stats = await getOrCreateEstatisticasEngajamento(userId);
+  if (!stats) return [];
+
+  // Buscar badges de engajamento social
+  const badgesSociais = await db
+    .select()
+    .from(badges)
+    .where(eq(badges.categoria, 'social'));
+
+  // Verificar quais badges o usuário já tem
+  const badgesUsuario = await db
+    .select({ badgeId: userBadges.badgeId })
+    .from(userBadges)
+    .where(eq(userBadges.userId, userId));
+
+  const badgesConquistados = new Set(badgesUsuario.map(b => b.badgeId));
+  const novosBadges = [];
+
+  for (const badge of badgesSociais) {
+    if (badgesConquistados.has(badge.id)) continue;
+
+    let conquistou = false;
+
+    // Verificar critérios baseados no nome do badge
+    if (badge.nome.includes('comentário') || badge.nome.includes('Voz') || badge.nome.includes('Conversador') || badge.nome.includes('Influenciador') || badge.nome.includes('Líder')) {
+      conquistou = stats.totalComentarios >= (badge.valorObjetivo || 0);
+    } else if (badge.nome.includes('Reação') && !badge.nome.includes('Popular')) {
+      conquistou = stats.totalReacoesDadas >= (badge.valorObjetivo || 0);
+    } else if (badge.nome.includes('Popular') || badge.nome.includes('Celebridade')) {
+      conquistou = stats.totalReacoesRecebidas >= (badge.valorObjetivo || 0);
+    } else if (badge.nome.includes('Viral') || badge.nome.includes('Influência')) {
+      conquistou = stats.comentariosMaisReagidos >= (badge.valorObjetivo || 0);
+    } else if (badge.nome.includes('Mencionado') || badge.nome.includes('Referência') || badge.nome.includes('Mentor')) {
+      conquistou = stats.totalMencoesRecebidas >= (badge.valorObjetivo || 0);
+    }
+
+    if (conquistou) {
+      // Conceder badge
+      await db.insert(userBadges).values({
+        userId,
+        badgeId: badge.id,
+      });
+
+      novosBadges.push(badge);
+
+      // Criar notificação
+      await db.insert(notificacoes).values({
+        userId,
+        tipo: 'badge',
+        titulo: 'Nova Conquista Desbloqueada!',
+        mensagem: `Você conquistou o badge "${badge.nome}": ${badge.descricao}`,
+        link: '/badges',
+        lida: false,
+      });
+    }
+  }
+
+  return novosBadges;
+}
+
+
+// ===== FEED SOCIAL DE ATIVIDADES =====
+
+export async function getFeedAtividadesUsuario(
+  userId: number,
+  tipo?: 'prs' | 'comentarios' | 'mencoes' | 'all',
+  limit: number = 20
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const atividades: any[] = [];
+
+  // PRs recentes (últimos 30 dias)
+  if (!tipo || tipo === 'prs' || tipo === 'all') {
+    const prsRecentes = await db
+      .select({
+        id: prs.id,
+        tipo: sql<string>`'pr'`,
+        movimento: prs.movimento,
+        carga: prs.carga,
+        data: prs.data,
+        videoUrl: prs.videoUrl,
+        observacoes: prs.observacoes,
+      })
+      .from(prs)
+      .where(
+        and(
+          eq(prs.userId, userId),
+          sql`${prs.data} >= DATE_SUB(NOW(), INTERVAL 30 DAY)`
+        )
+      )
+      .orderBy(desc(prs.data))
+      .limit(limit);
+
+    atividades.push(...prsRecentes.map(pr => ({
+      ...pr,
+      tipo: 'pr' as const,
+    })));
+  }
+
+  // Comentários populares (com 3+ reações)
+  if (!tipo || tipo === 'comentarios' || tipo === 'all') {
+    const comentariosPopulares = await db
+      .select({
+        id: comentariosWod.id,
+        tipo: sql<string>`'comentario'`,
+        wodId: comentariosWod.wodId,
+        comentario: comentariosWod.comentario,
+        createdAt: comentariosWod.createdAt,
+        reacoes: sql<number>`COUNT(${reacoesComentarios.id})`,
+      })
+      .from(comentariosWod)
+      .leftJoin(reacoesComentarios, eq(comentariosWod.id, reacoesComentarios.comentarioId))
+      .where(eq(comentariosWod.userId, userId))
+      .groupBy(comentariosWod.id)
+      .having(sql`COUNT(${reacoesComentarios.id}) >= 3`)
+      .orderBy(desc(comentariosWod.createdAt))
+      .limit(limit);
+
+    atividades.push(...comentariosPopulares.map(c => ({
+      ...c,
+      tipo: 'comentario' as const,
+      data: c.createdAt,
+    })));
+  }
+
+  // Menções recebidas
+  if (!tipo || tipo === 'mencoes' || tipo === 'all') {
+    const mencoesRecebidas = await db
+      .select({
+        id: mencoesComentarios.id,
+        tipo: sql<string>`'mencao'`,
+        comentarioId: mencoesComentarios.comentarioId,
+        comentario: comentariosWod.comentario,
+        wodId: comentariosWod.wodId,
+        autorId: comentariosWod.userId,
+        autorNome: users.name,
+        createdAt: mencoesComentarios.createdAt,
+      })
+      .from(mencoesComentarios)
+      .leftJoin(comentariosWod, eq(mencoesComentarios.comentarioId, comentariosWod.id))
+      .leftJoin(users, eq(comentariosWod.userId, users.id))
+      .where(eq(mencoesComentarios.usuarioMencionadoId, userId))
+      .orderBy(desc(mencoesComentarios.createdAt))
+      .limit(limit);
+
+    atividades.push(...mencoesRecebidas.map(m => ({
+      ...m,
+      tipo: 'mencao' as const,
+      data: m.createdAt,
+    })));
+  }
+
+  // Ordenar tudo por data
+  atividades.sort((a, b) => {
+    const dateA = new Date(a.data || a.createdAt).getTime();
+    const dateB = new Date(b.data || b.createdAt).getTime();
+    return dateB - dateA;
+  });
+
+  return atividades.slice(0, limit);
+}
+
+export async function getComentariosPopulares(boxId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const comentarios = await db
+    .select({
+      id: comentariosWod.id,
+      wodId: comentariosWod.wodId,
+      userId: comentariosWod.userId,
+      userName: users.name,
+      comentario: comentariosWod.comentario,
+      createdAt: comentariosWod.createdAt,
+      reacoes: sql<number>`COUNT(${reacoesComentarios.id})`,
+    })
+    .from(comentariosWod)
+    .leftJoin(users, eq(comentariosWod.userId, users.id))
+    .leftJoin(reacoesComentarios, eq(comentariosWod.id, reacoesComentarios.comentarioId))
+    .leftJoin(wods, eq(comentariosWod.wodId, wods.id))
+    .where(eq(wods.boxId, boxId))
+    .groupBy(comentariosWod.id)
+    .having(sql`COUNT(${reacoesComentarios.id}) >= 3`)
+    .orderBy(desc(sql`COUNT(${reacoesComentarios.id})`))
+    .limit(limit);
+
+  return comentarios;
+}
+
+
+// ===== COMPARAÇÃO DE RESULTADOS =====
+
+export async function getMediaResultadosBox(wodId: number, boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const medias = await db
+    .select({
+      mediaTempo: sql<number>`AVG(${resultadosTreinos.tempo})`,
+      mediaReps: sql<number>`AVG(${resultadosTreinos.reps})`,
+      mediaCarga: sql<number>`AVG(${resultadosTreinos.carga})`,
+      totalAtletas: sql<number>`COUNT(DISTINCT ${resultadosTreinos.userId})`,
+    })
+    .from(resultadosTreinos)
+    .leftJoin(users, eq(resultadosTreinos.userId, users.id))
+    .where(
+      and(
+        eq(resultadosTreinos.wodId, wodId),
+        eq(users.boxId, boxId)
+      )
+    );
+
+  return medias[0];
+}
+
+export async function getMediaResultadosPorCategoria(
+  wodId: number,
+  boxId: number,
+  categoria: string,
+  faixaEtaria?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const conditions = [
+    eq(resultadosTreinos.wodId, wodId),
+    eq(users.boxId, boxId),
+    eq(users.categoria, categoria as any),
+  ];
+
+  if (faixaEtaria) {
+    conditions.push(eq(users.faixaEtaria, faixaEtaria));
+  }
+
+  const medias = await db
+    .select({
+      mediaTempo: sql<number>`AVG(${resultadosTreinos.tempo})`,
+      mediaReps: sql<number>`AVG(${resultadosTreinos.reps})`,
+      mediaCarga: sql<number>`AVG(${resultadosTreinos.carga})`,
+      totalAtletas: sql<number>`COUNT(DISTINCT ${resultadosTreinos.userId})`,
+    })
+    .from(resultadosTreinos)
+    .leftJoin(users, eq(resultadosTreinos.userId, users.id))
+    .where(and(...conditions));
+
+  return medias[0];
+}
+
+export async function getPercentilUsuario(
+  wodId: number,
+  userId: number,
+  metrica: 'tempo' | 'reps' | 'carga'
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar resultado do usuário
+  const resultadoUsuario = await db
+    .select()
+    .from(resultadosTreinos)
+    .where(
+      and(
+        eq(resultadosTreinos.wodId, wodId),
+        eq(resultadosTreinos.userId, userId)
+      )
+    )
+    .limit(1);
+
+  if (resultadoUsuario.length === 0) return null;
+
+  const valorUsuario = resultadoUsuario[0][metrica];
+  if (!valorUsuario) return null;
+
+  // Contar quantos atletas têm resultado melhor/pior
+  const column = {
+    tempo: resultadosTreinos.tempo,
+    reps: resultadosTreinos.reps,
+    carga: resultadosTreinos.carga,
+  }[metrica];
+
+  // Para tempo, menor é melhor; para reps e carga, maior é melhor
+  const comparacao = metrica === 'tempo'
+    ? sql`${column} < ${valorUsuario}`
+    : sql`${column} > ${valorUsuario}`;
+
+  const melhores = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(
+      and(
+        eq(resultadosTreinos.wodId, wodId),
+        comparacao
+      )
+    );
+
+  const total = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.wodId, wodId));
+
+  const numMelhores = Number(melhores[0]?.count || 0);
+  const numTotal = Number(total[0]?.count || 0);
+
+  if (numTotal === 0) return 0;
+
+  // Percentil = (número de piores / total) * 100
+  const percentil = ((numTotal - numMelhores) / numTotal) * 100;
+
+  return Math.round(percentil);
+}
+
+export async function getComparacaoResultado(wodId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Buscar informações do usuário
+  const usuario = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (usuario.length === 0 || !usuario[0].boxId) return null;
+
+  const user = usuario[0];
+
+  // Buscar resultado do usuário
+  const resultadoUsuario = await db
+    .select()
+    .from(resultadosTreinos)
+    .where(
+      and(
+        eq(resultadosTreinos.wodId, wodId),
+        eq(resultadosTreinos.userId, userId)
+      )
+    )
+    .limit(1);
+
+  if (resultadoUsuario.length === 0) return null;
+
+  const resultado = resultadoUsuario[0];
+
+  // Buscar médias
+  const mediaBox = user.boxId ? await getMediaResultadosBox(wodId, user.boxId) : null;
+  const mediaCategoria = user.categoria && user.boxId
+    ? await getMediaResultadosPorCategoria(wodId, user.boxId, user.categoria, user.faixaEtaria || undefined)
+    : null;
+
+  // Calcular percentis
+  const percentilTempo = resultado.tempo ? await getPercentilUsuario(wodId, userId, 'tempo') : null;
+  const percentilReps = resultado.reps ? await getPercentilUsuario(wodId, userId, 'reps') : null;
+  const percentilCarga = resultado.carga ? await getPercentilUsuario(wodId, userId, 'carga') : null;
+
+  return {
+    resultado,
+    mediaBox,
+    mediaCategoria,
+    percentis: {
+      tempo: percentilTempo,
+      reps: percentilReps,
+      carga: percentilCarga,
+    },
+  };
 }

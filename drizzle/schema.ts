@@ -1186,3 +1186,30 @@ export const mencoesComentariosRelations = relations(mencoesComentarios, ({ one 
     references: [users.id],
   }),
 }));
+
+
+// ==================== ESTATÍSTICAS DE ENGAJAMENTO ====================
+
+/**
+ * Estatísticas de Engajamento do Usuário (cache)
+ */
+export const estatisticasEngajamento = mysqlTable("estatisticas_engajamento", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  totalComentarios: int("total_comentarios").default(0).notNull(),
+  totalReacoesRecebidas: int("total_reacoes_recebidas").default(0).notNull(),
+  totalReacoesDadas: int("total_reacoes_dadas").default(0).notNull(),
+  totalMencoesRecebidas: int("total_mencoes_recebidas").default(0).notNull(),
+  comentariosMaisReagidos: int("comentarios_mais_reagidos").default(0).notNull(), // comentários com 5+ reações
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EstatisticaEngajamento = typeof estatisticasEngajamento.$inferSelect;
+export type InsertEstatisticaEngajamento = typeof estatisticasEngajamento.$inferInsert;
+
+export const estatisticasEngajamentoRelations = relations(estatisticasEngajamento, ({ one }) => ({
+  user: one(users, {
+    fields: [estatisticasEngajamento.userId],
+    references: [users.id],
+  }),
+}));

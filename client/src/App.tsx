@@ -34,6 +34,7 @@ import Equipes from "./pages/Equipes";
 import EquipeDetalhes from "./pages/EquipeDetalhes";
 import LeaderboardEquipes from "./pages/LeaderboardEquipes";
 import Conquistas from "./pages/Conquistas";
+import FeedSocial from "./pages/FeedSocial";
 import AnalisePerformance from "./pages/AnalisePerformance";
 import RealtimeNotifications from "./components/RealtimeNotifications";
 import DashboardCoach from "./pages/DashboardCoach";
@@ -108,6 +109,7 @@ function Router() {
       <Route path={"/equipes/:id"} component={EquipeDetalhes} />
       <Route path={"/leaderboard-equipes"} component={LeaderboardEquipes} />
       <Route path={"/conquistas"} component={Conquistas} />
+      <Route path={"/feed-social"} component={FeedSocial} />
       <Route path={"/analise-performance"} component={AnalisePerformance} />
       <Route path={"/dashboard-coach"} component={DashboardCoach} />
       <Route path={"/comparacao"} component={ComparacaoAtletas} />

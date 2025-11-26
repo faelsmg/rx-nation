@@ -31,6 +31,10 @@ export default function WodDoDia() {
     { wodId: wodHoje?.id!, orderBy, orderDir },
     { enabled: !!wodHoje?.id }
   );
+  const { data: comparacao } = trpc.comparacao.getMeuResultado.useQuery(
+    { wodId: wodHoje?.id! },
+    { enabled: !!wodHoje?.id }
+  );
   const checkinMutation = trpc.checkins.create.useMutation();
   const resultadoMutation = trpc.resultados.create.useMutation();
   const utils = trpc.useUtils();

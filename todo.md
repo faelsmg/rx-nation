@@ -2385,3 +2385,53 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar dropdown de ordenação (Tempo, Reps, Carga, Data)
 - [x] Implementar ordenação ASC/DESC dinâmica
 - [x] Manter filtro de modalidade funcionando junto
+
+
+## Sistema de Conquistas Progressivas
+- [ ] Criar badges específicos de engajamento (10 comentários, 50 reações, etc)
+- [ ] Criar tabela de estatísticas de engajamento do usuário
+- [ ] Criar procedures para contar comentários e reações
+- [ ] Implementar verificação automática de conquistas
+- [ ] Criar notificação ao desbloquear badge de engajamento
+- [ ] Adicionar página de conquistas com progresso
+
+## Feed Social de Atividades
+- [ ] Criar query para PRs recentes do atleta
+- [ ] Criar query para comentários populares (mais reações)
+- [ ] Criar query para menções do atleta
+- [ ] Implementar filtros por tipo de atividade
+- [ ] Criar componente de timeline com cards
+- [ ] Adicionar paginação no feed
+
+## Comparação de Resultados
+- [ ] Criar procedure para calcular média do box
+- [ ] Criar procedure para média por categoria/faixa etária
+- [ ] Adicionar comparação visual no leaderboard
+- [ ] Criar gráfico de comparação (você vs média)
+- [ ] Adicionar indicador de percentil
+- [ ] Mostrar diferença em porcentagem
+
+## ✅ Funcionalidades Gamificação Implementadas
+
+### Sistema de Conquistas Progressivas
+- [x] Criar badges específicos de engajamento (15 badges criados)
+- [x] Criar tabela de estatísticas de engajamento do usuário
+- [x] Criar procedures para contar comentários e reações
+- [x] Implementar verificação automática de conquistas
+- [x] Criar notificação ao desbloquear badge de engajamento
+- [x] Adicionar página de conquistas com progresso
+
+### Feed Social de Atividades
+- [x] Criar query para PRs recentes do atleta
+- [x] Criar query para comentários populares (mais reações)
+- [x] Criar query para menções do atleta
+- [x] Implementar filtros por tipo de atividade
+- [x] Criar componente de timeline com cards
+- [x] Adicionar rota /feed-social
+
+### Comparação de Resultados
+- [x] Criar procedure para calcular média do box
+- [x] Criar procedure para média por categoria/faixa etária
+- [x] Adicionar query de comparação no WodDoDia
+- [x] Criar função de cálculo de percentil
+- [x] Implementar comparação completa de resultados

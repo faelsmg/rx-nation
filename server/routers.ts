@@ -1570,6 +1570,20 @@ export const appRouter = router({
         };
       }),
 
+    verificarConquistasEngajamento: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const novosBadges = await db.verificarConquistasEngajamento(ctx.user.id);
+        return {
+          success: true,
+          novosBadges,
+        };
+      }),
+
+    getEstatisticasEngajamento: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getOrCreateEstatisticasEngajamento(ctx.user.id);
+      }),
+
     getUserStats: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
@@ -2107,7 +2121,72 @@ export const appRouter = router({
       }),
   }),
 
-  // ===== COMPARAÇÃO DE ATLETAS =====
+  // ===== FEED SOCIAL DE ATIVIDADES =====
+  feedSocial: router({
+    getMinhaTimeline: protectedProcedure
+      .input(z.object({
+        tipo: z.enum(['prs', 'comentarios', 'mencoes', 'all']).optional(),
+        limit: z.number().default(20),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getFeedAtividadesUsuario(ctx.user.id, input.tipo, input.limit);
+      }),
+
+    getComentariosPopulares: protectedProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não vinculado a um box' });
+        }
+        return db.getComentariosPopulares(ctx.user.boxId, input.limit);
+      }),
+  }),
+
+  // ===== COMPARAÇÃO DE RESULTADOS =====
+  comparacao: router({
+    getMediaBox: protectedProcedure
+      .input(z.object({ wodId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não vinculado a um box' });
+        }
+        return db.getMediaResultadosBox(input.wodId, ctx.user.boxId);
+      }),
+
+    getMediaCategoria: protectedProcedure
+      .input(z.object({
+        wodId: z.number(),
+        categoria: z.string(),
+        faixaEtaria: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não vinculado a um box' });
+        }
+        return db.getMediaResultadosPorCategoria(
+          input.wodId,
+          ctx.user.boxId,
+          input.categoria,
+          input.faixaEtaria
+        );
+      }),
+
+    getMeuResultado: protectedProcedure
+      .input(z.object({ wodId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getComparacaoResultado(input.wodId, ctx.user.id);
+      }),
+
+    getPercentil: protectedProcedure
+      .input(z.object({
+        wodId: z.number(),
+        metrica: z.enum(['tempo', 'reps', 'carga']),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getPercentilUsuario(input.wodId, ctx.user.id, input.metrica);
+      }),
+  }),
+
   // ===== DESAFIOS =====
   desafios: router({
     create: protectedProcedure
@@ -2498,7 +2577,7 @@ export const appRouter = router({
   }),
 
   // ===== COMPARAÇÃO ENTRE ATLETAS =====
-  comparacao: router({
+  comparacaoAtletas: router({
     getAtletasBox: protectedProcedure
       .query(async ({ ctx }) => {
         return db.getAtletasBox(ctx.user.boxId || 0);
