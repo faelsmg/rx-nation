@@ -42,7 +42,7 @@ import {
   Video,
   Compass,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useState } from "react";
 
 interface AppLayoutProps {
@@ -51,7 +51,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const [location] = useLocation();
+  const location = window.location.pathname;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {

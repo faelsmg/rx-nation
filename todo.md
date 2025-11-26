@@ -2262,3 +2262,5 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar botão de Logout visível no topo do menu lateral
 
 - [x] Corrigir erro SQL na página de campeonatos (tabela resultados_treinos não existe)
+
+- [x] Corrigir erro de hooks do React no AppLayout (useLocation fora do contexto Router)
