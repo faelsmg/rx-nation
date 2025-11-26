@@ -85,6 +85,9 @@ import {
   InsertMencaoComentario,
   estatisticasEngajamento,
   InsertEstatisticaEngajamento,
+  streaks,
+  InsertStreak,
+  Streak,
   playlists,
   InsertPlaylist,
   playlistItems,
@@ -2974,76 +2977,6 @@ export async function calcularStreak(userId: number) {
   }
 
   return { streakAtual, streakRecorde };
-}
-
-export async function atualizarStreak(userId: number) {
-  const db = await getDb();
-  if (!db) return false;
-
-  const { streakAtual, streakRecorde } = await calcularStreak(userId);
-
-  await db.execute(sql`
-    UPDATE users
-    SET streak_atual = ${streakAtual},
-        streak_recorde = ${streakRecorde},
-        ultima_atividade = CURDATE()
-    WHERE id = ${userId}
-  `);
-
-  // Verificar e conceder badges de streak
-  await verificarBadgesStreak(userId, streakAtual, streakRecorde);
-
-  return true;
-}
-
-export async function verificarBadgesStreak(userId: number, streakAtual: number, streakRecorde: number) {
-  const db = await getDb();
-  if (!db) return;
-
-  const badgesParaConceder: string[] = [];
-
-  if (streakAtual >= 7) badgesParaConceder.push('streak_7_dias');
-  if (streakAtual >= 30) badgesParaConceder.push('streak_30_dias');
-  if (streakAtual >= 100) badgesParaConceder.push('streak_100_dias');
-  if (streakRecorde >= 50) badgesParaConceder.push('streak_recorde_50');
-
-  for (const criterio of badgesParaConceder) {
-    // Buscar badge
-    const badgeResult = await db.execute(sql`
-      SELECT id FROM badges WHERE criterio = ${criterio} LIMIT 1
-    `);
-    
-    const badgeRows = (badgeResult as any)[0];
-    if (!badgeRows || badgeRows.length === 0) continue;
-    
-    const badgeId = badgeRows[0].id;
-
-    // Verificar se já possui
-    const possuiResult = await db.execute(sql`
-      SELECT id FROM users_badges 
-      WHERE user_id = ${userId} AND badge_id = ${badgeId}
-      LIMIT 1
-    `);
-    
-    const possuiRows = (possuiResult as any)[0];
-    if (possuiRows && possuiRows.length > 0) continue;
-
-    // Conceder badge
-    await db.execute(sql`
-      INSERT INTO users_badges (user_id, badge_id)
-      VALUES (${userId}, ${badgeId})
-    `);
-
-    // Notificar usuário
-    const badgeNome = badgeRows[0].nome || 'Badge de Streak';
-    await createNotification({
-      userId,
-      tipo: 'badge',
-      titulo: 'Novo Badge Conquistado! 🏆',
-      mensagem: `Você conquistou: ${badgeNome}`,
-      link: '/badges',
-    });
-  }
 }
 
 export async function getStreakInfo(userId: number) {
@@ -12043,4 +11976,181 @@ export async function getProximoBadge(userId: number) {
     percentual: Math.round(proximo.percentual),
     distancia: proximo.distancia,
   };
+}
+
+
+// ==================== SISTEMA DE STREAKS ====================
+
+/**
+ * Obter ou criar streak do usuário
+ */
+export async function getOrCreateStreak(userId: number): Promise<Streak> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await db.select().from(streaks).where(eq(streaks.userId, userId)).limit(1);
+  
+  if (existing.length > 0) {
+    return existing[0]!;
+  }
+
+  // Criar novo streak
+  const result = await db.insert(streaks).values({
+    userId,
+    streakAtual: 0,
+    melhorStreak: 0,
+    ativo: true,
+  });
+
+  const newStreak = await db.select().from(streaks).where(eq(streaks.userId, userId)).limit(1);
+  return newStreak[0]!;
+}
+
+/**
+ * Atualizar streak após check-in
+ * Retorna true se o streak foi atualizado (novo dia)
+ */
+export async function atualizarStreak(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const streak = await getOrCreateStreak(userId);
+  const agora = new Date();
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+  // Se não tem último check-in, iniciar streak
+  if (!streak.ultimoCheckin) {
+    await db.update(streaks)
+      .set({
+        streakAtual: 1,
+        melhorStreak: Math.max(1, streak.melhorStreak),
+        ultimoCheckin: agora,
+        ativo: true,
+      })
+      .where(eq(streaks.userId, userId));
+    return true;
+  }
+
+  const ultimoCheckin = new Date(streak.ultimoCheckin);
+  const ultimoDia = new Date(ultimoCheckin.getFullYear(), ultimoCheckin.getMonth(), ultimoCheckin.getDate());
+  
+  // Já fez check-in hoje
+  if (hoje.getTime() === ultimoDia.getTime()) {
+    return false;
+  }
+
+  // Calcular diferença em dias
+  const diffTime = hoje.getTime() - ultimoDia.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 1) {
+    // Dia consecutivo
+    const novoStreak = streak.streakAtual + 1;
+    await db.update(streaks)
+      .set({
+        streakAtual: novoStreak,
+        melhorStreak: Math.max(novoStreak, streak.melhorStreak),
+        ultimoCheckin: agora,
+        ativo: true,
+      })
+      .where(eq(streaks.userId, userId));
+    
+    // Verificar badges de streak
+    await verificarBadgesStreak(userId, novoStreak);
+    return true;
+  } else {
+    // Quebrou o streak
+    await db.update(streaks)
+      .set({
+        streakAtual: 1,
+        ultimoCheckin: agora,
+        ativo: true,
+      })
+      .where(eq(streaks.userId, userId));
+    
+    // Notificar quebra de streak se tinha pelo menos 7 dias
+    if (streak.streakAtual >= 7) {
+      await createNotification({
+        userId,
+        tipo: "badge",
+        titulo: "Streak Quebrado! 😢",
+        mensagem: `Você quebrou seu streak de ${streak.streakAtual} dias. Mas não desista! Comece um novo hoje mesmo! 💪`,
+        link: "/dashboard",
+      });
+    }
+    return true;
+  }
+}
+
+/**
+ * Verificar e conceder badges de streak
+ */
+async function verificarBadgesStreak(userId: number, streakAtual: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const badgesStreak = [
+    { criterio: "streak_7_dias", dias: 7 },
+    { criterio: "streak_30_dias", dias: 30 },
+    { criterio: "streak_100_dias", dias: 100 },
+  ];
+
+  for (const { criterio, dias } of badgesStreak) {
+    if (streakAtual === dias) {
+      // Buscar badge
+      const badge = await db.select().from(badges).where(eq(badges.criterio, criterio)).limit(1);
+      if (badge.length === 0) continue;
+
+      // Verificar se já tem
+      const jaTemBadge = await db.select()
+        .from(userBadges)
+        .where(and(
+          eq(userBadges.userId, userId),
+          eq(userBadges.badgeId, badge[0]!.id)
+        ))
+        .limit(1);
+
+      if (jaTemBadge.length === 0) {
+        // Conceder badge
+        await db.insert(userBadges).values({
+          userId,
+          badgeId: badge[0]!.id,
+        });
+
+        // Criar notificação
+        await createNotification({
+          userId,
+          tipo: "badge",
+          titulo: "🎉 Novo Badge Desbloqueado!",
+          mensagem: `Parabéns! Você conquistou o badge "${badge[0]!.nome}" por ${dias} dias consecutivos de treino! 🔥`,
+          link: "/conquistas",
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Obter streak atual do usuário
+ */
+export async function getStreakAtual(userId: number): Promise<number> {
+  const streak = await getOrCreateStreak(userId);
+  
+  // Verificar se o streak ainda está ativo (último check-in foi ontem ou hoje)
+  if (!streak.ultimoCheckin) return 0;
+
+  const agora = new Date();
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const ultimoCheckin = new Date(streak.ultimoCheckin);
+  const ultimoDia = new Date(ultimoCheckin.getFullYear(), ultimoCheckin.getMonth(), ultimoCheckin.getDate());
+  
+  const diffTime = hoje.getTime() - ultimoDia.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // Se passou mais de 1 dia, streak quebrado
+  if (diffDays > 1) {
+    return 0;
+  }
+
+  return streak.streakAtual;
 }

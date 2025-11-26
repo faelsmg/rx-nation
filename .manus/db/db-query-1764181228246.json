@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO badges (nome, descricao, icone, criterio, nivel, categoria, valorObjetivo)\nVALUES \n  ('Consistência Iniciante', '7 dias consecutivos de treino', '🔥', 'streak_7_dias', 'bronze', 'frequencia', 7),\n  ('Guerreiro Dedicado', '30 dias consecutivos de treino', '💪', 'streak_30_dias', 'prata', 'frequencia', 30),\n  ('Lenda Inabalável', '100 dias consecutivos de treino', '👑', 'streak_100_dias', 'ouro', 'frequencia', 100)\nON DUPLICATE KEY UPDATE nome=nome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute INSERT INTO badges (nome, descricao, icone, criterio, nivel, categoria, valorObjetivo)\nVALUES \n  ('Consistência Iniciante', '7 dias consecutivos de treino', '🔥', 'streak_7_dias', 'bronze', 'frequencia', 7),\n  ('Guerreiro Dedicado', '30 dias consecutivos de treino', '💪', 'streak_30_dias', 'prata', 'frequencia', 30),\n  ('Lenda Inabalável', '100 dias consecutivos de treino', '👑', 'streak_100_dias', 'ouro', 'frequencia', 100)\nON DUPLICATE KEY UPDATE nome=nome;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 129
+}

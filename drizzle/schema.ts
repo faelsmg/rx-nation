@@ -1213,3 +1213,30 @@ export const estatisticasEngajamentoRelations = relations(estatisticasEngajament
     references: [users.id],
   }),
 }));
+
+
+// ==================== SISTEMA DE STREAKS ====================
+/**
+ * Streaks (Sequências de Check-ins Consecutivos)
+ */
+export const streaks = mysqlTable("streaks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  streakAtual: int("streak_atual").default(0).notNull(),
+  melhorStreak: int("melhor_streak").default(0).notNull(),
+  ultimoCheckin: timestamp("ultimo_checkin"),
+  dataInicio: timestamp("data_inicio").defaultNow().notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Streak = typeof streaks.$inferSelect;
+export type InsertStreak = typeof streaks.$inferInsert;
+
+export const streaksRelations = relations(streaks, ({ one }) => ({
+  user: one(users, {
+    fields: [streaks.userId],
+    references: [users.id],
+  }),
+}));

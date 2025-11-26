@@ -2519,3 +2519,25 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Widget de Progresso de Badges - Mini-widget no Dashboard mostrando próximo badge com barra de progresso
 - [ ] Sistema de Streaks - Contador de dias consecutivos com badges especiais (7, 30, 100 dias)
 - [ ] Compartilhamento Social - Botão para gerar card visual de resultados para Instagram/WhatsApp
+
+
+## Sistema de Streaks Completo
+- [x] Criar tabela de histórico de check-ins diários no schema
+- [x] Implementar função de cálculo de streak atual
+- [x] Criar badges especiais para 7, 30 e 100 dias de streak
+- [x] Adicionar notificação de quebra de streak
+- [x] Atualizar componente StreakIndicator com contador visual
+
+## Compartilhamento Social de Resultados
+- [ ] Criar endpoint para gerar card visual de resultados
+- [ ] Implementar canvas HTML5 com logo do box e resultado
+- [ ] Adicionar comparação vs média do box no card
+- [ ] Criar botão de download/compartilhamento no WOD do Dia
+- [ ] Otimizar imagem para Instagram Stories e WhatsApp Status
+
+## Desafios Semanais com IA
+- [ ] Criar tabela de desafios semanais no schema
+- [ ] Implementar geração automática de desafios com IA
+- [ ] Criar sistema de tracking de progresso de desafios
+- [ ] Adicionar recompensas em pontos e badges exclusivos
+- [ ] Criar componente de visualização de desafios ativos

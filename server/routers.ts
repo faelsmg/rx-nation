@@ -1591,6 +1591,24 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== SISTEMA DE STREAKS =====
+  streaks: router({
+    getAtual: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getStreakAtual(ctx.user.id);
+      }),
+
+    getDetalhes: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getOrCreateStreak(ctx.user.id);
+      }),
+
+    atualizar: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        return db.atualizarStreak(ctx.user.id);
+      }),
+  }),
+
   // ===== ESTATÍSTICAS PESSOAIS =====
   estatisticas: router({
     getMensais: protectedProcedure

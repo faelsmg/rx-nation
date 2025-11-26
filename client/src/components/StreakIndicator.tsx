@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Flame, Trophy, TrendingUp } from "lucide-react";
+import { Flame, Trophy } from "lucide-react";
 
 export function StreakIndicator() {
-  const { data: streakInfo } = trpc.streak.getInfo.useQuery();
+  const { data: streakDetalhes } = trpc.streaks.getDetalhes.useQuery();
 
-  if (!streakInfo) return null;
+  if (!streakDetalhes) return null;
 
-  const streakAtual = streakInfo.streak_atual || 0;
-  const streakRecorde = streakInfo.streak_recorde || 0;
+  const streakAtual = streakDetalhes.streakAtual || 0;
+  const melhorStreak = streakDetalhes.melhorStreak || 0;
 
   // Próximo marco de streak
   const proximoMarco = streakAtual < 7 ? 7 : streakAtual < 30 ? 30 : streakAtual < 100 ? 100 : null;
@@ -34,7 +34,7 @@ export function StreakIndicator() {
             <p className="text-sm text-muted-foreground">Recorde</p>
             <p className="text-2xl font-bold flex items-center gap-1">
               <Trophy className="w-5 h-5 text-primary" />
-              {streakRecorde}
+              {melhorStreak}
             </p>
           </div>
         </div>
@@ -55,7 +55,7 @@ export function StreakIndicator() {
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Faltam {proximoMarco - streakAtual} dias para o próximo badge!
+              Faltam {proximoMarco - streakAtual} dias para o próximo badge! 🔥
             </p>
           </div>
         )}
