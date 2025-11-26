@@ -1913,158 +1913,6 @@ export async function getPublicProfile(userId: number) {
 // Metas Personalizadas
 // ============================================================================
 
-export async function createMeta(data: InsertMeta) {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  const result = await db.insert(metas).values(data);
-  return result;
-}
-
-export async function getMetasByUser(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-
-  return db
-    .select()
-    .from(metas)
-    .where(eq(metas.userId, userId))
-    .orderBy(desc(metas.createdAt));
-}
-
-export async function updateMetaProgress(metaId: number, valorAtual: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  // Buscar meta para verificar se atingiu o alvo
-  const meta = await db
-    .select()
-    .from(metas)
-    .where(eq(metas.id, metaId))
-    .limit(1);
-
-  if (meta.length === 0) return undefined;
-
-  const concluida = valorAtual >= meta[0].valorAlvo;
-
-  return db
-    .update(metas)
-    .set({ valorAtual, concluida, updatedAt: new Date() })
-    .where(eq(metas.id, metaId));
-}
-
-export async function completarMeta(metaId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  // Buscar meta antes de atualizar
-  const meta = await db
-    .select()
-    .from(metas)
-    .where(eq(metas.id, metaId))
-    .limit(1);
-
-  if (meta.length === 0) throw new Error("Meta not found");
-
-  // Atualizar meta como completada
-  await db
-    .update(metas)
-    .set({ 
-      concluida: true, 
-      status: 'completada',
-      completadaEm: new Date(),
-      updatedAt: new Date() 
-    })
-    .where(eq(metas.id, metaId));
-
-  return meta[0];
-}
-
-export async function checkAndUpdateGoals(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-
-  const userMetas = await getMetasByUser(userId);
-  const notifiedGoals: string[] = [];
-
-  for (const meta of userMetas) {
-    if (meta.concluida) continue;
-
-    let currentValue = 0;
-
-    // Calcular progresso baseado no tipo
-    switch (meta.tipo) {
-      case "wods": {
-        const count = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(resultadosTreinos)
-          .where(
-            and(
-              eq(resultadosTreinos.userId, userId),
-              sql`${resultadosTreinos.dataRegistro} >= ${meta.dataInicio}`
-            )
-          );
-        currentValue = count[0]?.count || 0;
-        break;
-      }
-      case "prs": {
-        const count = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(prs)
-          .where(
-            and(
-              eq(prs.userId, userId),
-              sql`${prs.data} >= ${meta.dataInicio}`
-            )
-          );
-        currentValue = count[0]?.count || 0;
-        break;
-      }
-      case "frequencia": {
-        // Contar dias únicos com atividade
-        const activities = await db
-          .select({ data: resultadosTreinos.dataRegistro })
-          .from(resultadosTreinos)
-          .where(
-            and(
-              eq(resultadosTreinos.userId, userId),
-              sql`${resultadosTreinos.dataRegistro} >= ${meta.dataInicio}`
-            )
-          );
-        const uniqueDays = new Set(
-          activities.map((a) => new Date(a.data).toDateString())
-        );
-        currentValue = uniqueDays.size;
-        break;
-      }
-    }
-
-    // Atualizar progresso
-    await updateMetaProgress(meta.id, currentValue);
-
-    // Verificar marcos (25%, 50%, 75%, 100%)
-    const previousProgress = Math.floor((meta.valorAtual / meta.valorAlvo) * 100);
-    const newProgress = Math.floor((currentValue / meta.valorAlvo) * 100);
-
-    const milestones = [25, 50, 75, 100];
-    for (const milestone of milestones) {
-      if (previousProgress < milestone && newProgress >= milestone) {
-        await createNotification({
-          userId,
-          tipo: "geral",
-          titulo: `Meta ${milestone}% Completa! 🎯`,
-          mensagem: `Você atingiu ${milestone}% da meta "${meta.titulo}"!`,
-          link: "/dashboard",
-        });
-        notifiedGoals.push(`${meta.titulo} - ${milestone}%`);
-      }
-    }
-  }
-
-  return notifiedGoals;
-}
-
-
 // ==================== FEED SOCIAL ====================
 
 export async function createFeedAtividade(atividade: InsertFeedAtividade) {
@@ -12153,4 +12001,181 @@ export async function getStreakAtual(userId: number): Promise<number> {
   }
 
   return streak.streakAtual;
+}
+
+
+// ==================== SISTEMA DE METAS PESSOAIS ====================
+
+/**
+ * Criar nova meta
+ */
+export async function createMeta(data: InsertMeta) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(metas).values(data);
+  return result;
+}
+
+/**
+ * Listar metas do usuário
+ */
+export async function getMetasByUser(userId: number, status?: "ativa" | "completada" | "cancelada" | "expirada") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  let query = db.select().from(metas).where(eq(metas.userId, userId));
+  
+  if (status) {
+    query = query.where(and(eq(metas.userId, userId), eq(metas.status, status)));
+  }
+
+  return query.orderBy(desc(metas.createdAt));
+}
+
+/**
+ * Atualizar progresso da meta
+ */
+export async function atualizarProgressoMeta(metaId: number, novoValor: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar meta
+  const meta = await db.select().from(metas).where(eq(metas.id, metaId)).limit(1);
+  if (meta.length === 0) return false;
+
+  const metaAtual = meta[0]!;
+
+  // Verificar se completou
+  const completou = novoValor >= metaAtual.valorAlvo;
+
+  await db.update(metas)
+    .set({
+      valorAtual: novoValor,
+      status: completou ? "completada" : metaAtual.status,
+      concluida: completou,
+      completadaEm: completou ? new Date() : metaAtual.completadaEm,
+    })
+    .where(eq(metas.id, metaId));
+
+  // Se completou, criar notificação e conceder pontos
+  if (completou && !metaAtual.concluida) {
+    await createNotification({
+      userId: metaAtual.userId,
+      tipo: "conquista",
+      titulo: "🎯 Meta Conquistada!",
+      mensagem: `Parabéns! Você atingiu sua meta: ${metaAtual.titulo}`,
+      link: "/metas",
+    });
+
+    // Conceder pontos
+    await createPontuacao({
+      userId: metaAtual.userId,
+      tipo: "desafio",
+      pontos: 50,
+      descricao: `Meta conquistada: ${metaAtual.titulo}`,
+    });
+  }
+
+  return true;
+}
+
+/**
+ * Atualizar progresso automático de metas baseado em tipo
+ */
+export async function atualizarMetasAutomaticas(userId: number, tipo: "wods" | "prs" | "frequencia" | "pontos") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar metas ativas do tipo
+  const metasAtivas = await db.select()
+    .from(metas)
+    .where(and(
+      eq(metas.userId, userId),
+      eq(metas.tipo, tipo),
+      eq(metas.status, "ativa")
+    ));
+
+  for (const meta of metasAtivas) {
+    let novoValor = meta.valorAtual;
+
+    switch (tipo) {
+      case "wods":
+        // Contar WODs completados desde dataInicio
+        const wods = await db.select({ count: sql<number>`count(*)` })
+          .from(resultadosTreinos)
+          .where(and(
+            eq(resultadosTreinos.userId, userId),
+            gte(resultadosTreinos.dataRegistro, meta.dataInicio)
+          ));
+        novoValor = Number(wods[0]?.count || 0);
+        break;
+
+      case "prs":
+        // Contar PRs desde dataInicio
+        const prsCount = await db.select({ count: sql<number>`count(*)` })
+          .from(prs)
+          .where(and(
+            eq(prs.userId, userId),
+            gte(prs.data, meta.dataInicio)
+          ));
+        novoValor = Number(prsCount[0]?.count || 0);
+        break;
+
+      case "frequencia":
+        // Contar check-ins desde dataInicio
+        const checkinCount = await db.select({ count: sql<number>`count(*)` })
+          .from(checkins)
+          .where(and(
+            eq(checkins.userId, userId),
+            gte(checkins.dataHora, meta.dataInicio)
+          ));
+        novoValor = Number(checkinCount[0]?.count || 0);
+        break;
+
+      case "pontos":
+        // Somar pontos desde dataInicio
+        const pontos = await db.select({ total: sql<number>`sum(pontos)` })
+          .from(pontuacoes)
+          .where(and(
+            eq(pontuacoes.userId, userId),
+            gte(pontuacoes.data, meta.dataInicio)
+          ));
+        novoValor = Number(pontos[0]?.total || 0);
+        break;
+    }
+
+    await atualizarProgressoMeta(meta.id, novoValor);
+  }
+}
+
+/**
+ * Cancelar meta
+ */
+export async function cancelarMeta(metaId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(metas)
+    .set({ status: "cancelada" })
+    .where(eq(metas.id, metaId));
+
+  return true;
+}
+
+/**
+ * Verificar metas expiradas
+ */
+export async function verificarMetasExpiradas() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const agora = new Date();
+
+  await db.update(metas)
+    .set({ status: "expirada" })
+    .where(and(
+      eq(metas.status, "ativa"),
+      lt(metas.dataFim, agora)
+    ));
 }

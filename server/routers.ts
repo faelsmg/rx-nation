@@ -4776,7 +4776,36 @@ export const appRouter = router({
       }),
   }),
 
-});
+  // ===== SISTEMA DE METAS PESSOAIS =====
+  metas: router({
+    create: protectedProcedure
+      .input(z.object({
+        tipo: z.enum(["wods", "prs", "frequencia", "peso", "pontos", "badges", "personalizada"]),
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        valorAlvo: z.number(),
+        unidade: z.string().optional(),
+        dataFim: z.date(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createMeta({
+          userId: ctx.user.id,
+          ...input,
+        });
+      }),
 
+    getByUser: protectedProcedure
+      .input(z.object({ status: z.enum(["ativa", "completada", "cancelada", "expirada"]).optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getMetasByUser(ctx.user.id, input.status);
+      }),
+
+    cancelar: protectedProcedure
+      .input(z.object({ metaId: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.cancelarMeta(input.metaId);
+      }),
+  }),
+});
 
 export type AppRouter = typeof appRouter;

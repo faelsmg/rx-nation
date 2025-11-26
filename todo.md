@@ -2541,3 +2541,35 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Criar sistema de tracking de progresso de desafios
 - [ ] Adicionar recompensas em pontos e badges exclusivos
 - [ ] Criar componente de visualização de desafios ativos
+
+
+## Sistema de Metas Pessoais
+- [x] Verificar schema de metas (já existe)
+- [x] Criar procedures para criar meta
+- [x] Criar procedures para listar metas do atleta
+- [x] Criar procedures para atualizar progresso automático
+- [x] Criar página de Metas com formulário de criação
+- [x] Adicionar tracking automático baseado em PRs e check-ins
+- [x] Criar notificações ao atingir metas
+- [x] Criar badges especiais por metas conquistadas
+
+## Compartilhamento Social de Resultados
+- [ ] Criar endpoint para gerar card visual de resultados
+- [ ] Implementar Canvas API para gerar imagem 1080x1920
+- [ ] Adicionar logo do box, resultado e comparação vs média
+- [ ] Criar botão de download/compartilhamento no WOD do Dia
+- [ ] Otimizar para Instagram Stories e WhatsApp Status
+
+## Desafios Semanais com IA
+- [ ] Verificar schema de desafios semanais (já existe)
+- [ ] Implementar geração automática de desafios com LLM
+- [ ] Criar sistema de tracking de progresso de desafios
+- [ ] Adicionar recompensas em pontos e badges exclusivos
+- [ ] Criar componente de visualização de desafios ativos no Dashboard
+
+## Histórico Visual de Streaks
+- [ ] Criar componente de heatmap estilo GitHub
+- [ ] Buscar dados de check-ins dos últimos 3 meses
+- [ ] Implementar cores graduadas por intensidade
+- [ ] Adicionar tooltip com detalhes ao passar mouse
+- [ ] Integrar no Dashboard ou página de Streaks
