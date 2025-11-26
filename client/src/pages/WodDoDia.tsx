@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { trpc } from "@/lib/trpc";
 import { Dumbbell, CheckCircle, Trophy, Medal, Clock, Zap } from "lucide-react";
+import { WodComments } from "@/components/WodComments";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ export default function WodDoDia() {
   const [carga, setCarga] = useState("");
   const [rxOuScale, setRxOuScale] = useState<"rx" | "scale">("rx");
   const [observacoes, setObservacoes] = useState("");
+  const [modalidadeFilter, setModalidadeFilter] = useState<"all" | "rx" | "scaled" | "masters">("all");
 
   const handleCheckin = async () => {
     if (!wodHoje) return;
@@ -149,17 +151,46 @@ export default function WodDoDia() {
             {resultados && resultados.length > 0 && (
               <Card className="card-impacto">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="w-6 h-6 text-yellow-500" />
-                    Leaderboard
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {resultados.length} atleta{resultados.length > 1 ? 's' : ''} completou este WOD
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Trophy className="w-6 h-6 text-yellow-500" />
+                        Leaderboard
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {resultados.filter((r: any) => modalidadeFilter === "all" || r.rxOuScale === modalidadeFilter).length} atleta{resultados.filter((r: any) => modalidadeFilter === "all" || r.rxOuScale === modalidadeFilter).length > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={modalidadeFilter === "all" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setModalidadeFilter("all")}
+                      >
+                        Todos
+                      </Button>
+                      <Button
+                        variant={modalidadeFilter === "rx" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setModalidadeFilter("rx")}
+                      >
+                        RX
+                      </Button>
+                      <Button
+                        variant={modalidadeFilter === "scaled" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setModalidadeFilter("scaled")}
+                      >
+                        Scaled
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {resultados.map((resultado: any, index: number) => {
+                    {resultados
+                      .filter((r: any) => modalidadeFilter === "all" || r.rxOuScale === modalidadeFilter)
+                      .map((resultado: any, index: number) => {
                       const isTop3 = index < 3;
                       const medalColor = index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : 'text-orange-600';
                       
@@ -308,6 +339,8 @@ export default function WodDoDia() {
                 </CardContent>
               </Card>
             )}
+            {/* Comentários */}
+            <WodComments wodId={wodHoje.id} />
           </>
         ) : (
           <Card className="card-impacto">

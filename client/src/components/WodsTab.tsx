@@ -28,6 +28,7 @@ export function WodsTab({ boxId }: WodsTabProps) {
   const [currentFilter, setCurrentFilter] = useState<DateFilter>("all");
   const [filterDates, setFilterDates] = useState<{ start?: Date; end?: Date }>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [modalidadeFilter, setModalidadeFilter] = useState<"all" | "rx" | "scaled" | "masters">("all");
 
   // Form state
   const [titulo, setTitulo] = useState("");

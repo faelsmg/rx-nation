@@ -77,6 +77,8 @@ import {
   InsertMeta,
   comentariosFeed,
   InsertComentarioFeed,
+  comentariosWod,
+  InsertComentarioWod,
   playlists,
   InsertPlaylist,
   playlistItems,
@@ -11132,4 +11134,56 @@ export async function isWodFavorito(userId: number, wodId: number): Promise<bool
     .limit(1);
 
   return results.length > 0;
+}
+
+
+// ===== COMENTÁRIOS DE WOD =====
+
+export async function createComentarioWod(data: InsertComentarioWod) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(comentariosWod).values(data);
+  return result;
+}
+
+export async function getComentariosByWod(wodId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db
+    .select({
+      id: comentariosWod.id,
+      wodId: comentariosWod.wodId,
+      userId: comentariosWod.userId,
+      comentario: comentariosWod.comentario,
+      createdAt: comentariosWod.createdAt,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(comentariosWod)
+    .leftJoin(users, eq(comentariosWod.userId, users.id))
+    .where(eq(comentariosWod.wodId, wodId))
+    .orderBy(desc(comentariosWod.createdAt));
+
+  return results;
+}
+
+export async function deleteComentarioWod(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Verificar se o comentário pertence ao usuário
+  const comentario = await db
+    .select()
+    .from(comentariosWod)
+    .where(eq(comentariosWod.id, id))
+    .limit(1);
+
+  if (comentario.length === 0 || comentario[0].userId !== userId) {
+    return false;
+  }
+
+  await db.delete(comentariosWod).where(eq(comentariosWod.id, id));
+  return true;
 }

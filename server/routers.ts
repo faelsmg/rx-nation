@@ -262,6 +262,41 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== COMENTÁRIOS DE WOD =====
+  comentariosWod: router({
+    create: protectedProcedure
+      .input(z.object({
+        wodId: z.number(),
+        comentario: z.string().min(1).max(1000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.createComentarioWod({
+          wodId: input.wodId,
+          userId: ctx.user.id,
+          comentario: input.comentario,
+        });
+      }),
+
+    getByWod: publicProcedure
+      .input(z.object({ wodId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getComentariosByWod(input.wodId);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const success = await db.deleteComentarioWod(input.id, ctx.user.id);
+        if (!success) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Você não tem permissão para deletar este comentário',
+          });
+        }
+        return { success: true };
+      }),
+  }),
+
   // ===== TEMPLATES DE WOD =====
   wodTemplates: router({
     getAll: publicProcedure

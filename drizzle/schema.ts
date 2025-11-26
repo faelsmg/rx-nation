@@ -709,6 +709,31 @@ export const comentariosFeedRelations = relations(comentariosFeed, ({ one }) => 
 }));
 
 
+// ==================== COMENTÁRIOS DE WOD ====================
+
+export const comentariosWod = mysqlTable("comentarios_wod", {
+  id: int("id").autoincrement().primaryKey(),
+  wodId: int("wod_id").notNull().references(() => wods.id, { onDelete: "cascade" }),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  comentario: text("comentario").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ComentarioWod = typeof comentariosWod.$inferSelect;
+export type InsertComentarioWod = typeof comentariosWod.$inferInsert;
+
+export const comentariosWodRelations = relations(comentariosWod, ({ one }) => ({
+  wod: one(wods, {
+    fields: [comentariosWod.wodId],
+    references: [wods.id],
+  }),
+  user: one(users, {
+    fields: [comentariosWod.userId],
+    references: [users.id],
+  }),
+}));
+
+
 /**
  * Playlists de Vídeos Personalizadas
  */

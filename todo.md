@@ -2322,3 +2322,24 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar seção "Meus Favoritos" na aba Templates
 - [x] Exibir histórico de edições (criado por, editado por) nos cards de WOD
 - [x] Implementar sistema de preferências de notificações por tipo
+
+- [ ] Adicionar filtro por modalidade (RX, Scaled, Masters) na lista de WODs
+- [ ] Criar schema e procedures para comentários em WODs
+- [ ] Implementar interface de comentários no WOD do Dia
+
+
+## Sistema de Comentários em WODs e Filtros de Modalidade
+- [ ] Criar schema de comentários em WODs
+- [ ] Criar procedures para adicionar comentário
+- [ ] Criar procedures para listar comentários de um WOD
+- [ ] Criar procedures para deletar comentário
+- [ ] Implementar interface de comentários no WOD do Dia
+- [ ] Adicionar filtro por modalidade nos resultados do WOD do Dia
+- [ ] Criar testes para funcionalidades de comentários
+
+- [x] Criar schema de comentários em WODs
+- [x] Criar procedures para adicionar comentário
+- [x] Criar procedures para listar comentários de um WOD
+- [x] Criar procedures para deletar comentário
+- [x] Implementar interface de comentários no WOD do Dia
+- [x] Adicionar filtro por modalidade nos resultados do WOD do Dia
