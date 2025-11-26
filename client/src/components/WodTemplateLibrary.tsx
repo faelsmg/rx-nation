@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { BookOpen, Play, TrendingUp } from "lucide-react";
+import { BookOpen, Play, TrendingUp, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ export function WodTemplateLibrary({ boxId, onSelectTemplate }: WodTemplateLibra
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: templates = [], isLoading } = trpc.wodTemplates.getAll.useQuery({ boxId });
+  const { data: favoritos = [] } = trpc.wodFavoritos.getByUser.useQuery();
   const incrementUsageMutation = trpc.wodTemplates.incrementUsage.useMutation();
 
   const handleSelectTemplate = (template: any) => {
@@ -35,6 +36,11 @@ export function WodTemplateLibrary({ boxId, onSelectTemplate }: WodTemplateLibra
   // Separar templates por categoria
   const classicTemplates = templates.filter((t) => t.categoria === "classico");
   const customTemplates = templates.filter((t) => t.categoria === "personalizado");
+  
+  // WODs favoritados (com dados completos do WOD)
+  const favoritosWods = favoritos
+    .map((f) => f.wod)
+    .filter((wod): wod is NonNullable<typeof wod> => wod !== null);
 
   return (
     <>
@@ -53,6 +59,52 @@ export function WodTemplateLibrary({ boxId, onSelectTemplate }: WodTemplateLibra
             <p className="text-muted-foreground text-center py-8">Carregando templates...</p>
           ) : (
             <div className="space-y-6">
+              {/* Meus Favoritos */}
+              {favoritosWods.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    Meus Favoritos
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {favoritosWods.map((wod) => (
+                      <button
+                        key={wod.id}
+                        onClick={() => {
+                          // Converter WOD para formato de template
+                          const templateFromWod = {
+                            id: wod.id,
+                            nome: wod.titulo,
+                            descricao: wod.descricao,
+                            tipo: wod.tipo,
+                            duracao: wod.duracao,
+                            timeCap: wod.timeCap,
+                            videoYoutubeUrl: wod.videoYoutubeUrl,
+                          };
+                          onSelectTemplate(templateFromWod);
+                          toast.success(`WOD favorito "${wod.titulo}" selecionado!`);
+                        }}
+                        className="text-left p-4 rounded-lg border-2 border-yellow-500/30 hover:border-yellow-500 transition-all bg-card hover:bg-accent"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-bold text-foreground">{wod.titulo}</h4>
+                          <span className="text-xs bg-yellow-500/10 text-yellow-600 px-2 py-1 rounded">
+                            {wod.tipo.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                          {wod.descricao}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {wod.timeCap && <span>⏱️ {wod.timeCap} min</span>}
+                          <span className="text-yellow-600">⭐ Favorito</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Templates Clássicos */}
               {classicTemplates.length > 0 && (
                 <div>

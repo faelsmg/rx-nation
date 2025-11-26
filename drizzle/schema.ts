@@ -602,6 +602,8 @@ export const notificationPreferences = mysqlTable("notification_preferences", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   wods: boolean("wods").default(true).notNull(), // Notificações de novos WODs
+  prs: boolean("prs").default(true).notNull(), // Notificações de novos PRs
+  campeonatos: boolean("campeonatos").default(true).notNull(), // Notificações de campeonatos
   comunicados: boolean("comunicados").default(true).notNull(), // Notificações de comunicados
   lembretes: boolean("lembretes").default(true).notNull(), // Lembretes de aulas
   badges: boolean("badges").default(true).notNull(), // Notificações de badges desbloqueados

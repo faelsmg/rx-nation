@@ -2314,3 +2314,11 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Implementar notificações push automáticas ao criar WOD
 - [x] Adicionar histórico de edições de WOD (campos editadoPor e editadoEm)
 - [x] Criar sistema de favoritos para WODs (tabela wod_favoritos)
+
+- [ ] Adicionar seção "Meus Favoritos" na aba Templates
+- [ ] Exibir histórico de edições (criado por, editado por) nos cards de WOD
+- [ ] Implementar sistema de preferências de notificações por tipo
+
+- [x] Adicionar seção "Meus Favoritos" na aba Templates
+- [x] Exibir histórico de edições (criado por, editado por) nos cards de WOD
+- [x] Implementar sistema de preferências de notificações por tipo

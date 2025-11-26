@@ -1814,6 +1814,8 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         wods: z.boolean().optional(),
+        prs: z.boolean().optional(),
+        campeonatos: z.boolean().optional(),
         comunicados: z.boolean().optional(),
         lembretes: z.boolean().optional(),
         badges: z.boolean().optional(),

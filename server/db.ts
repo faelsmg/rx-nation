@@ -1,4 +1,5 @@
 import { eq, and, gte, lte, sql, desc, asc, count, sum, or, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -261,7 +262,37 @@ export async function getWodsByBox(boxId: number, limit = 10) {
   const db = await getDb();
   if (!db) return [];
 
-  return db.select().from(wods).where(eq(wods.boxId, boxId)).orderBy(desc(wods.data)).limit(limit);
+  const criador = alias(users, "criador");
+  const editor = alias(users, "editor");
+
+  const results = await db
+    .select({
+      id: wods.id,
+      boxId: wods.boxId,
+      titulo: wods.titulo,
+      descricao: wods.descricao,
+      tipo: wods.tipo,
+      duracao: wods.duracao,
+      timeCap: wods.timeCap,
+      data: wods.data,
+      oficial: wods.oficial,
+      videoYoutubeUrl: wods.videoYoutubeUrl,
+      criadoPor: wods.criadoPor,
+      editadoPor: wods.editadoPor,
+      editadoEm: wods.editadoEm,
+      createdAt: wods.createdAt,
+      updatedAt: wods.updatedAt,
+      criadorNome: criador.name,
+      editorNome: editor.name,
+    })
+    .from(wods)
+    .leftJoin(criador, eq(wods.criadoPor, criador.id))
+    .leftJoin(editor, eq(wods.editadoPor, editor.id))
+    .where(eq(wods.boxId, boxId))
+    .orderBy(desc(wods.data))
+    .limit(limit);
+
+  return results;
 }
 
 export async function getWodByBoxAndDate(boxId: number, date: Date) {
@@ -1558,6 +1589,8 @@ export async function updateNotificationPreferences(
   userId: number,
   preferences: {
     wods?: boolean;
+    prs?: boolean;
+    campeonatos?: boolean;
     comunicados?: boolean;
     lembretes?: boolean;
     badges?: boolean;
@@ -10990,9 +11023,32 @@ export async function getWodsByDateRange(boxId: number, startDate: Date, endDate
   const db = await getDb();
   if (!db) return [];
 
+  const criador = alias(users, "criador");
+  const editor = alias(users, "editor");
+
   return db
-    .select()
+    .select({
+      id: wods.id,
+      boxId: wods.boxId,
+      titulo: wods.titulo,
+      descricao: wods.descricao,
+      tipo: wods.tipo,
+      duracao: wods.duracao,
+      timeCap: wods.timeCap,
+      data: wods.data,
+      oficial: wods.oficial,
+      videoYoutubeUrl: wods.videoYoutubeUrl,
+      criadoPor: wods.criadoPor,
+      editadoPor: wods.editadoPor,
+      editadoEm: wods.editadoEm,
+      createdAt: wods.createdAt,
+      updatedAt: wods.updatedAt,
+      criadorNome: criador.name,
+      editorNome: editor.name,
+    })
     .from(wods)
+    .leftJoin(criador, eq(wods.criadoPor, criador.id))
+    .leftJoin(editor, eq(wods.editadoPor, editor.id))
     .where(
       and(
         eq(wods.boxId, boxId),

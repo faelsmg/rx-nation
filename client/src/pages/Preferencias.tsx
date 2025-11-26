@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
-import { Bell, Dumbbell, MessageSquare, Calendar, Award } from "lucide-react";
+import { Bell, Dumbbell, MessageSquare, Calendar, Award, Trophy, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Preferencias() {
@@ -20,7 +20,7 @@ export default function Preferencias() {
     },
   });
 
-  const handleToggle = (key: "wods" | "comunicados" | "lembretes" | "badges", value: boolean) => {
+  const handleToggle = (key: "wods" | "prs" | "campeonatos" | "comunicados" | "lembretes" | "badges", value: boolean) => {
     updateMutation.mutate({ [key]: value });
   };
 
@@ -78,6 +78,52 @@ export default function Preferencias() {
                   id="wods"
                   checked={preferences?.wods ?? true}
                   onCheckedChange={(checked) => handleToggle("wods", checked)}
+                  disabled={updateMutation.isPending}
+                />
+              </div>
+
+              {/* PRs */}
+              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <Label htmlFor="prs" className="text-base font-medium cursor-pointer">
+                      Personal Records (PRs)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receba notificações quando atletas baterem novos recordes
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="prs"
+                  checked={preferences?.prs ?? true}
+                  onCheckedChange={(checked) => handleToggle("prs", checked)}
+                  disabled={updateMutation.isPending}
+                />
+              </div>
+
+              {/* Campeonatos */}
+              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                    <Label htmlFor="campeonatos" className="text-base font-medium cursor-pointer">
+                      Campeonatos
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receba notificações sobre novos campeonatos e resultados
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="campeonatos"
+                  checked={preferences?.campeonatos ?? true}
+                  onCheckedChange={(checked) => handleToggle("campeonatos", checked)}
                   disabled={updateMutation.isPending}
                 />
               </div>

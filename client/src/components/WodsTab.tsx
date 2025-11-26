@@ -502,7 +502,34 @@ export function WodsTab({ boxId }: WodsTabProps) {
                             {wod.timeCap && ` • Time Cap: ${wod.timeCap} min`}
                             {wod.duracao && ` • Duração: ${wod.duracao} min`}
                           </p>
-                          <p className="text-foreground whitespace-pre-wrap">{wod.descricao}</p>
+                          <p className="text-foreground whitespace-pre-wrap mb-3">{wod.descricao}</p>
+                          {/* Histórico de edições */}
+                          <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
+                            {(wod as any).criadorNome && (
+                              <p>
+                                👤 Criado por <span className="font-medium">{(wod as any).criadorNome}</span> em{" "}
+                                {new Date(wod.createdAt).toLocaleDateString("pt-BR", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            )}
+                            {(wod as any).editorNome && (wod as any).editadoEm && (
+                              <p>
+                                ✏️ Última edição por <span className="font-medium">{(wod as any).editorNome}</span> em{" "}
+                                {new Date((wod as any).editadoEm).toLocaleDateString("pt-BR", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-2 ml-4">
                           <Button
