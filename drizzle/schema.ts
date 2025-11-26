@@ -1041,3 +1041,39 @@ export const mensagensChatRelations = relations(mensagensChat, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+
+/**
+ * Templates de WOD
+ * Biblioteca de WODs reutilizáveis (clássicos + personalizados)
+ */
+export const wodTemplates = mysqlTable("wod_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(), // ex: "Fran", "Murph", "Grace"
+  descricao: text("descricao").notNull(),
+  tipo: mysqlEnum("tipo", ["for_time", "amrap", "emom", "tabata", "strength", "outro"]).default("for_time").notNull(),
+  duracao: int("duracao"), // em minutos
+  timeCap: int("timeCap"), // em minutos
+  videoYoutubeUrl: text("videoYoutubeUrl"),
+  categoria: mysqlEnum("categoria", ["classico", "personalizado"]).default("personalizado").notNull(), // clássico (Fran, Murph) ou personalizado (criado pelo usuário)
+  criadoPor: int("criadoPor"), // ID do usuário que criou (null para clássicos)
+  boxId: int("boxId"), // Box que criou (null para clássicos e templates globais)
+  publico: boolean("publico").default(false).notNull(), // Se outros boxes podem usar
+  vezesUsado: int("vezesUsado").default(0).notNull(), // Contador de uso
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WodTemplate = typeof wodTemplates.$inferSelect;
+export type InsertWodTemplate = typeof wodTemplates.$inferInsert;
+
+export const wodTemplatesRelations = relations(wodTemplates, ({ one }) => ({
+  criador: one(users, {
+    fields: [wodTemplates.criadoPor],
+    references: [users.id],
+  }),
+  box: one(boxes, {
+    fields: [wodTemplates.boxId],
+    references: [boxes.id],
+  }),
+}));

@@ -232,6 +232,13 @@
       "when": 1763759733073,
       "tag": "0032_sticky_lilandra",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1764173190168,
+      "tag": "0033_quiet_energizer",
+      "breakpoints": true
     }
   ]
 }

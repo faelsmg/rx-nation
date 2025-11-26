@@ -7,6 +7,8 @@ import {
   InsertBox,
   wods,
   InsertWod,
+  wodTemplates,
+  InsertWodTemplate,
   checkins,
   InsertCheckin,
   resultadosTreinos,
@@ -10918,4 +10920,82 @@ export async function getPontosTotaisUsuario(userId: number) {
     .where(eq(pontuacoes.userId, userId));
 
   return pontosResult[0]?.total || 0;
+}
+
+
+// ===== TEMPLATES DE WOD =====
+
+export async function getWodTemplates(boxId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Retorna templates clássicos + templates públicos + templates do próprio box
+  const conditions = boxId 
+    ? or(
+        eq(wodTemplates.categoria, "classico"),
+        eq(wodTemplates.publico, true),
+        eq(wodTemplates.boxId, boxId)
+      )
+    : or(
+        eq(wodTemplates.categoria, "classico"),
+        eq(wodTemplates.publico, true)
+      );
+
+  return db
+    .select()
+    .from(wodTemplates)
+    .where(conditions)
+    .orderBy(desc(wodTemplates.vezesUsado), desc(wodTemplates.createdAt));
+}
+
+export async function createWodTemplate(data: InsertWodTemplate) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(wodTemplates).values(data);
+  return result;
+}
+
+export async function getWodTemplateById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(wodTemplates).where(eq(wodTemplates.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function incrementTemplateUsage(templateId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db
+    .update(wodTemplates)
+    .set({ vezesUsado: sql`${wodTemplates.vezesUsado} + 1` })
+    .where(eq(wodTemplates.id, templateId));
+}
+
+export async function deleteWodTemplate(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  return db.delete(wodTemplates).where(eq(wodTemplates.id, id));
+}
+
+/**
+ * Buscar WODs por período
+ */
+export async function getWodsByDateRange(boxId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(wods)
+    .where(
+      and(
+        eq(wods.boxId, boxId),
+        sql`${wods.data} >= ${startDate} AND ${wods.data} <= ${endDate}`
+      )
+    )
+    .orderBy(wods.data);
 }

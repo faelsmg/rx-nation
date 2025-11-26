@@ -2282,3 +2282,19 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Permitir cadastro de WODs com datas futuras (semana inteira de uma vez)
 - [x] Garantir que "WOD do Dia" mostra apenas WOD com data = hoje
 - [x] Melhorar interface de cadastro para facilitar cadastro em lote da semana
+
+- [ ] Criar schema de templates de WOD no banco de dados
+- [ ] Criar procedures para gerenciar templates (listar, criar, usar)
+- [ ] Implementar componente de visualização em calendário mensal
+- [ ] Criar biblioteca de templates de WODs clássicos (Fran, Murph, Grace, etc)
+- [ ] Adicionar opção "Salvar como Template" em WODs existentes
+- [ ] Implementar filtros de data (Esta semana, Próxima semana, Este mês)
+- [ ] Integrar calendário, templates e filtros na aba WODs
+
+- [x] Criar schema de templates de WOD no banco de dados
+- [x] Criar procedures para gerenciar templates (listar, criar, usar)
+- [x] Implementar componente de visualização em calendário mensal
+- [x] Criar biblioteca de templates de WODs clássicos (Fran, Murph, Grace, etc)
+- [x] Adicionar opção "Salvar como Template" em WODs existentes
+- [x] Implementar filtros de data (Esta semana, Próxima semana, Este mês)
+- [x] Integrar calendário, templates e filtros na aba WODs

@@ -202,6 +202,60 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return db.deleteWod(input.id);
       }),
+
+    getByDateRange: publicProcedure
+      .input(z.object({ 
+        boxId: z.number(), 
+        startDate: z.date(), 
+        endDate: z.date() 
+      }))
+      .query(async ({ input }) => {
+        return db.getWodsByDateRange(input.boxId, input.startDate, input.endDate);
+      }),
+  }),
+
+  // ===== TEMPLATES DE WOD =====
+  wodTemplates: router({
+    getAll: publicProcedure
+      .input(z.object({ boxId: z.number().optional() }))
+      .query(async ({ input }) => {
+        return db.getWodTemplates(input.boxId);
+      }),
+
+    create: boxMasterProcedure
+      .input(z.object({
+        nome: z.string(),
+        descricao: z.string(),
+        tipo: z.enum(["for_time", "amrap", "emom", "tabata", "strength", "outro"]),
+        duracao: z.number().optional(),
+        timeCap: z.number().optional(),
+        videoYoutubeUrl: z.string().optional(),
+        categoria: z.enum(["classico", "personalizado"]).default("personalizado"),
+        criadoPor: z.number().optional(),
+        boxId: z.number().optional(),
+        publico: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        return db.createWodTemplate(input);
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getWodTemplateById(input.id);
+      }),
+
+    incrementUsage: publicProcedure
+      .input(z.object({ templateId: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.incrementTemplateUsage(input.templateId);
+      }),
+
+    delete: boxMasterProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return db.deleteWodTemplate(input.id);
+      }),
   }),
 
   // ===== CHECK-INS =====
