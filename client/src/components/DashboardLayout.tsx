@@ -22,16 +22,87 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  LogOut, 
+  PanelLeft, 
+  Users, 
+  Building2,
+  Dumbbell,
+  History,
+  Trophy,
+  TrendingUp,
+  Award,
+  Target,
+  ShoppingCart,
+  Brain,
+  FileText,
+  Calendar,
+  MessageSquare,
+  BarChart3,
+  Settings
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
-];
+// Menu items serão definidos dinamicamente baseado na role do usuário
+const getMenuItems = (userRole?: string) => {
+  // ATLETA - Foco em treino e performance
+  if (userRole === "atleta") {
+    return [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+      { icon: Dumbbell, label: "WOD do Dia", path: "/wod-do-dia" },
+      { icon: History, label: "Histórico", path: "/historico" },
+      { icon: Trophy, label: "PRs", path: "/prs" },
+      { icon: TrendingUp, label: "Rankings", path: "/rankings" },
+      { icon: Award, label: "Badges", path: "/badges" },
+      { icon: Target, label: "Metas", path: "/metas" },
+      { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
+      { icon: Brain, label: "Insights IA", path: "/insights-ia" },
+    ];
+  }
+
+  // BOX MASTER - Gestão do box
+  if (userRole === "box_master") {
+    return [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+      { icon: Building2, label: "Gestão do Box", path: "/gestao-box" },
+      { icon: Users, label: "Alunos", path: "/alunos" },
+      { icon: Dumbbell, label: "WODs", path: "/wods" },
+      { icon: MessageSquare, label: "Comunicados", path: "/comunicados" },
+      { icon: Calendar, label: "Agenda", path: "/agenda" },
+      { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
+    ];
+  }
+
+  // FRANQUEADO - Visão consolidada de múltiplos boxes
+  if (userRole === "franqueado") {
+    return [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+      { icon: Building2, label: "Meus Boxes", path: "/meus-boxes" },
+      { icon: BarChart3, label: "Analytics", path: "/analytics-avancado" },
+      { icon: FileText, label: "Relatórios", path: "/relatorios-franqueado" },
+    ];
+  }
+
+  // ADMIN DA LIGA - Gestão global
+  if (userRole === "admin_liga") {
+    return [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+      { icon: Building2, label: "Gestão de Boxes", path: "/gestao-boxes-liga" },
+      { icon: Trophy, label: "Campeonatos", path: "/campeonatos" },
+      { icon: Settings, label: "Configurações", path: "/configuracoes" },
+      { icon: BarChart3, label: "Relatórios Globais", path: "/relatorios-globais" },
+    ];
+  }
+
+  // Fallback - Dashboard apenas
+  return [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  ];
+};
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -125,6 +196,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuItems = getMenuItems(user?.role);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
 
@@ -201,8 +273,15 @@ function DashboardLayoutContent({
                     </span>
                   </div>
                   <button
+                    onClick={logout}
+                    className="ml-auto h-8 w-8 flex items-center justify-center hover:bg-destructive/10 text-destructive rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                    title="Sair"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={toggleSidebar}
-                    className="ml-auto h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                    className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                   >
                     <PanelLeft className="h-4 w-4 text-muted-foreground" />
                   </button>

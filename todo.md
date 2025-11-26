@@ -2251,3 +2251,12 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Configurar monitoramento de erros (Sentry)
 - [x] Configurar backup automático do banco de dados
 - [x] Documentar fluxos principais para suporte
+
+
+## CORREÇÃO URGENTE
+
+- [x] Adicionar link "Gestão de Boxes" no menu lateral do DashboardLayout para Admin da Liga
+
+- [x] Criar menus específicos por role (atleta, box_master, franqueado, admin_liga)
+
+- [x] Adicionar botão de Logout visível no topo do menu lateral

@@ -69,53 +69,66 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return null;
   }
 
-  const menuItems = [
-    { icon: Home, label: "Dashboard", path: "/dashboard", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Dumbbell, label: "WOD do Dia", path: "/wod", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: History, label: "Histórico", path: "/historico", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: TrendingUp, label: "Análise de Performance", path: "/analise-performance", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: BarChart3, label: "Analytics Avançado", path: "/analytics-avancado", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Trophy, label: "Rankings", path: "/rankings", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Award, label: "Badges", path: "/badges", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Target, label: "Metas", path: "/metas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Users, label: "Feed", path: "/feed", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Swords, label: "Desafios", path: "/desafios", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Users, label: "Equipes", path: "/equipes", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Trophy, label: "Leaderboard Equipes", path: "/leaderboard-equipes", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Target, label: "Conquistas", path: "/conquistas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Trophy, label: "Árvore de Conquistas", path: "/arvore-conquistas", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Users, label: "Comparar Atletas", path: "/comparacao", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: MessageCircle, label: "Mensagens", path: "/mensagens", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: MessageCircle, label: "Chat", path: "/chat", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: BookOpen, label: "Biblioteca de Vídeos", path: "/biblioteca-videos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Video, label: "WODs Famosos", path: "/wods-famosos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: LineChart, label: "Minhas Playlists", path: "/minhas-playlists", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Compass, label: "Descobrir Playlists", path: "/descobrir-playlists", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Calendar, label: "Eventos", path: "/calendario-eventos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: QrCode, label: "Meu QR Code", path: "/meu-qrcode", roles: ["atleta"] },
-    { icon: ScanLine, label: "Scanner Check-in", path: "/scanner-qrcode", roles: ["box_master", "admin_liga"] },
-    { icon: CreditCard, label: "Minha Assinatura", path: "/minha-assinatura", roles: ["atleta"] },
-    { icon: FileText, label: "Gestão de Planos", path: "/gestao-planos", roles: ["box_master", "admin_liga"] },
-    { icon: Users, label: "Gestão de Assinaturas", path: "/gestao-assinaturas", roles: ["box_master", "admin_liga"] },
-    { icon: BarChart3, label: "Dashboard Financeiro", path: "/dashboard-financeiro", roles: ["box_master", "admin_liga"] },
-    { icon: Tag, label: "Gestão de Cupons", path: "/gestao-cupons", roles: ["box_master", "admin_liga"] },
-    { icon: UserPlus, label: "Minhas Indicações", path: "/minhas-indicacoes", roles: ["atleta"] },
-    { icon: Scale, label: "Avaliações Físicas", path: "/avaliacoes-fisicas", roles: ["atleta", "box_master", "admin_liga"] },
-    { icon: Briefcase, label: "Gestão Administrativa", path: "/gestao-administrativa", roles: ["box_master", "admin_liga"] },
-    { icon: ShoppingCart, label: "Gestão de Compras", path: "/gestao-compras", roles: ["box_master", "admin_liga"] },
-    { icon: Package, label: "Gestão de Estoque", path: "/gestao-estoque", roles: ["box_master", "admin_liga"] },
-    { icon: Banknote, label: "PDV - Ponto de Venda", path: "/pdv", roles: ["box_master", "admin_liga"] },
-    { icon: LineChart, label: "Dashboard Financeiro Geral", path: "/financeiro-geral", roles: ["box_master", "admin_liga"] },
-    { icon: Calendar, label: "Campeonatos", path: "/campeonatos", roles: ["atleta", "box_master", "franqueado", "admin_liga"] },
-    { icon: Activity, label: "Dashboard Coach", path: "/dashboard-coach", roles: ["box_master", "admin_liga"] },
-    { icon: Users, label: "Gestão do Box", path: "/gestao-box", roles: ["box_master", "admin_liga"] },
-    { icon: Building2, label: "Painel Franqueado", path: "/franqueado", roles: ["franqueado"] },
-    { icon: Shield, label: "Admin da Liga", path: "/admin", roles: ["admin_liga"] },
-  ];
+  // Menus específicos por role
+  const getMenuItems = () => {
+    const role = user?.role || "atleta";
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(user?.role || "atleta")
-  );
+    // ATLETA - Foco em treino e performance
+    if (role === "atleta") {
+      return [
+        { icon: Home, label: "Dashboard", path: "/dashboard" },
+        { icon: Dumbbell, label: "WOD do Dia", path: "/wod" },
+        { icon: History, label: "Histórico", path: "/historico" },
+        { icon: Trophy, label: "PRs", path: "/prs" },
+        { icon: TrendingUp, label: "Rankings", path: "/rankings" },
+        { icon: Award, label: "Badges", path: "/badges" },
+        { icon: Target, label: "Metas", path: "/metas" },
+        { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
+        { icon: Activity, label: "Insights IA", path: "/insights-ia" },
+        { icon: MessageCircle, label: "Mensagens", path: "/mensagens" },
+      ];
+    }
+
+    // BOX MASTER - Gestão do box
+    if (role === "box_master") {
+      return [
+        { icon: Home, label: "Dashboard", path: "/dashboard" },
+        { icon: Building2, label: "Gestão do Box", path: "/gestao-box" },
+        { icon: Users, label: "Alunos", path: "/alunos" },
+        { icon: Dumbbell, label: "WODs", path: "/wods" },
+        { icon: MessageCircle, label: "Comunicados", path: "/comunicados" },
+        { icon: Calendar, label: "Agenda", path: "/agenda" },
+        { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
+        { icon: ScanLine, label: "Scanner Check-in", path: "/scanner-qrcode" },
+      ];
+    }
+
+    // FRANQUEADO - Visão consolidada
+    if (role === "franqueado") {
+      return [
+        { icon: Home, label: "Dashboard", path: "/dashboard" },
+        { icon: Building2, label: "Meus Boxes", path: "/meus-boxes" },
+        { icon: BarChart3, label: "Analytics", path: "/analytics-avancado" },
+        { icon: FileText, label: "Relatórios", path: "/relatorios-franqueado" },
+      ];
+    }
+
+    // ADMIN DA LIGA - Gestão global
+    if (role === "admin_liga") {
+      return [
+        { icon: Home, label: "Dashboard", path: "/dashboard" },
+        { icon: Building2, label: "Gestão de Boxes", path: "/gestao-boxes-liga" },
+        { icon: Trophy, label: "Campeonatos", path: "/campeonatos" },
+        { icon: Settings, label: "Configurações", path: "/configuracoes" },
+        { icon: BarChart3, label: "Relatórios Globais", path: "/relatorios-globais" },
+      ];
+    }
+
+    // Fallback
+    return [{ icon: Home, label: "Dashboard", path: "/dashboard" }];
+  };
+
+  const filteredMenuItems = getMenuItems();
 
   const handleLogout = async () => {
     await logout();
@@ -128,10 +141,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <img src={APP_LOGO} alt={APP_TITLE} className="w-12 h-12" />
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-bold text-primary">IMPACTO</h1>
             <p className="text-xs text-muted-foreground">PRO LEAGUE</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            title="Sair"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
         </div>
       </div>
 
