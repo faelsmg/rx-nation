@@ -3115,3 +3115,28 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Corrigir erros em GraficoEvolucaoPRs.tsx (1 erro - type assertion)
 - [x] Corrigir erros em SharePositionCard.tsx (2 erros - canShare e Avatar props)
 - [x] Validar compilação TypeScript sem erros (0 erros!)
+
+
+## 🚀 Melhorias de Qualidade (27/11/2024)
+
+### Upload de Avatar
+- [x] Criar procedure perfil.uploadAvatar no router
+- [x] Implementar função updateUserAvatar em db.ts
+- [x] Adicionar componente AvatarUpload no frontend
+- [x] Integrar upload com S3 usando storagePut
+- [x] Adicionar botão de edição de avatar na página de perfil
+- [x] Testar upload e visualização de avatar (modal abre corretamente)
+
+### Testes E2E com Playwright
+- [ ] Instalar e configurar Playwright
+- [ ] Criar teste E2E: Login de usuário
+- [ ] Criar teste E2E: Registro de WOD
+- [ ] Criar teste E2E: Completar meta
+- [ ] Executar todos os testes e validar
+
+### Otimizações de Performance
+- [x] Adicionar índices compostos em resultados_treinos (userId + dataRegistro, wodId)
+- [x] Adicionar índices compostos em checkins (userId + dataHora, boxId + dataHora)
+- [x] Adicionar índices compostos em feed_atividades (boxId + createdAt, userId + createdAt)
+- [x] Implementar paginação cursor-based no feed social (procedure getAtividades)
+- [x] Aplicar migrações de índices no banco de dados (migration 0049)

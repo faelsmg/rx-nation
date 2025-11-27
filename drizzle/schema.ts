@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, index } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 
 /**
@@ -79,7 +79,10 @@ export const checkins = mysqlTable("checkins", {
   boxId: int("boxId").notNull(),
   dataHora: timestamp("dataHora").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdDataIdx: index("idx_checkins_userId_dataHora").on(table.userId, table.dataHora),
+  boxIdDataIdx: index("idx_checkins_boxId_dataHora").on(table.boxId, table.dataHora),
+}));
 
 export type Checkin = typeof checkins.$inferSelect;
 export type InsertCheckin = typeof checkins.$inferInsert;
@@ -99,7 +102,10 @@ export const resultadosTreinos = mysqlTable("resultados_treinos", {
   dataRegistro: timestamp("dataRegistro").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  userIdDataIdx: index("idx_resultados_userId_dataRegistro").on(table.userId, table.dataRegistro),
+  wodIdIdx: index("idx_resultados_wodId").on(table.wodId),
+}));
 
 export type ResultadoTreino = typeof resultadosTreinos.$inferSelect;
 export type InsertResultadoTreino = typeof resultadosTreinos.$inferInsert;
@@ -669,7 +675,10 @@ export const feedAtividades = mysqlTable("feed_atividades", {
   metadata: text("metadata"), // JSON com dados específicos (wodId, prId, badgeId, etc)
   curtidas: int("curtidas").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  boxIdCreatedIdx: index("idx_feed_boxId_createdAt").on(table.boxId, table.createdAt),
+  userIdCreatedIdx: index("idx_feed_userId_createdAt").on(table.userId, table.createdAt),
+}));
 
 export type FeedAtividade = typeof feedAtividades.$inferSelect;
 export type InsertFeedAtividade = typeof feedAtividades.$inferInsert;

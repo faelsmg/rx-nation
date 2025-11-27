@@ -17,9 +17,9 @@ import {
 import { Link } from "wouter";
 import GraficoEvolucaoPRs from "@/components/GraficoEvolucaoPRs";
 import { Avatar } from "@/components/Avatar";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 export default function Perfil() {
-  const { user } = useAuth();
   const { data: perfilCompleto, isLoading } = trpc.perfil.getCompleto.useQuery();
   const { data: historicoTreinos } = trpc.perfil.getHistoricoTreinos.useQuery({ limite: 5 });
 
@@ -77,6 +77,11 @@ export default function Perfil() {
                   fallback={userData.name || undefined}
                   size="xl"
                   className="w-24 h-24"
+                />
+                {/* Botão de Upload de Avatar */}
+                <AvatarUpload
+                  currentAvatar={userData.avatarUrl}
+                  userName={userData.name || "Atleta"}
                 />
                 <div className="absolute -bottom-2 -right-2 bg-background border-2 border-primary rounded-full px-3 py-1 text-sm font-bold">
                   {nivel.icone} {nivel.nome}

@@ -2172,11 +2172,20 @@ export const appRouter = router({
 
     // Novas procedures
     getAtividades: protectedProcedure
-      .input(z.object({ boxId: z.number().optional(), limit: z.number().default(50) }))
+      .input(z.object({ 
+        boxId: z.number().optional(), 
+        limit: z.number().default(20),
+        cursor: z.number().optional() // ID da última atividade da página anterior
+      }))
       .query(async ({ ctx, input }) => {
         const boxId = input.boxId || ctx.user.boxId;
         if (!boxId) throw new TRPCError({ code: "BAD_REQUEST", message: "BoxId não encontrado" });
-        return db.getFeedBox(boxId, input.limit);
+        const atividades = await db.getFeedBoxPaginado(boxId, input.limit, input.cursor);
+        
+        return {
+          items: atividades,
+          nextCursor: atividades.length === input.limit ? atividades[atividades.length - 1]?.id : undefined,
+        };
       }),
 
     getAtividadesPorTipo: protectedProcedure
@@ -4909,6 +4918,15 @@ export const appRouter = router({
     getCompleto: protectedProcedure
       .query(async ({ ctx }) => {
         return db.getPerfilCompleto(ctx.user.id);
+      }),
+
+    uploadAvatar: protectedProcedure
+      .input(z.object({
+        base64Image: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.updateUserAvatar(ctx.user.id, input.base64Image, input.mimeType);
       }),
 
     getHistoricoTreinos: protectedProcedure

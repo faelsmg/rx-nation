@@ -1,6 +1,7 @@
-import { eq, and, gte, lte, lt, sql, desc, asc, count, sum, or, isNull } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, asc, sql, inArray, isNull, lt, gt, ne, count, sum } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
+import { storagePut } from "./storage";
 import { 
   InsertUser, 
   users, 
@@ -8953,6 +8954,40 @@ export async function getFeedBox(boxId: number, limit: number = 50) {
     .limit(limit);
 }
 
+/**
+ * Feed paginado usando cursor-based pagination
+ * @param boxId - ID do box
+ * @param limit - Número de itens por página
+ * @param cursor - ID da última atividade da página anterior (opcional)
+ */
+export async function getFeedBoxPaginado(boxId: number, limit: number = 20, cursor?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = cursor 
+    ? and(eq(feedAtividades.boxId, boxId), lt(feedAtividades.id, cursor))
+    : eq(feedAtividades.boxId, boxId);
+
+  return db
+    .select({
+      id: feedAtividades.id,
+      userId: feedAtividades.userId,
+      userName: users.name,
+      boxId: feedAtividades.boxId,
+      tipo: feedAtividades.tipo,
+      titulo: feedAtividades.titulo,
+      descricao: feedAtividades.descricao,
+      metadata: feedAtividades.metadata,
+      curtidas: feedAtividades.curtidas,
+      createdAt: feedAtividades.createdAt,
+    })
+    .from(feedAtividades)
+    .leftJoin(users, eq(feedAtividades.userId, users.id))
+    .where(conditions)
+    .orderBy(desc(feedAtividades.id)) // Ordenar por ID DESC para cursor-based pagination
+    .limit(limit);
+}
+
 export async function getFeedPorTipo(boxId: number, tipo: string, limit: number = 20) {
   const db = await getDb();
   if (!db) return [];
@@ -12321,6 +12356,32 @@ export async function completarMeta(metaId: number, userId: number) {
   });
 
   return true;
+}
+
+/**
+ * Atualizar avatar do usuário
+ */
+export async function updateUserAvatar(userId: number, base64Image: string, mimeType: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Converter base64 para buffer
+  const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  // Upload para S3 com nome único
+  const timestamp = Date.now();
+  const extension = mimeType.split('/')[1] || 'jpg';
+  const fileName = `avatars/user-${userId}-${timestamp}.${extension}`;
+  
+  const { url } = await storagePut(fileName, buffer, mimeType);
+
+  // Atualizar URL no banco
+  await db.update(users)
+    .set({ avatarUrl: url })
+    .where(eq(users.id, userId));
+
+  return { avatarUrl: url };
 }
 
 /**
