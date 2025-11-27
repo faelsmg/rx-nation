@@ -2814,3 +2814,37 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Frontend: criar modal de todos os títulos conquistados
 - [ ] Frontend: adicionar ícone de título no feed
 - [ ] Criar testes para sistema de títulos
+
+
+## Interface Visual de Níveis
+- [x] Criar componente BadgeNivel com gradientes (Bronze, Prata, Ouro, Platina)
+- [x] Adicionar animações de brilho/pulso no badge
+- [x] Criar componente de barra de progresso até próximo nível
+- [ ] Exibir badge de nível no perfil do usuário
+- [ ] Exibir badge de nível no feed de atividades
+- [ ] Exibir badge de nível nos rankings
+- [ ] Exibir badge de nível no Dashboard
+- [ ] Criar animação de "Level Up" ao subir de nível
+- [ ] Adicionar tooltip com detalhes de pontos no badge
+
+## Página de Títulos e Conquistas
+- [x] Criar rota /titulos
+- [x] Criar layout da página com grid de títulos
+- [x] Exibir títulos conquistados
+- [x] Adicionar estatísticas de pontos por categoria
+- [x] Criar modal de detalhes do título
+- [x] Implementar função de definir título principal
+- [ ] Exibir título principal no perfil
+- [x] Adicionar filtros por tipo de título (WODs, PRs, Frequência, etc)
+- [x] Criar seção de histórico de pontos
+
+## Integração Automática de Pontos
+- [x] Adicionar pontos ao fazer check-in (10 pts)
+- [ ] Adicionar pontos ao completar WOD (20 pts)
+- [ ] Adicionar pontos ao quebrar PR (50 pts)
+- [ ] Adicionar pontos ao conquistar badge (100 pts)
+- [ ] Disparar verificação de títulos após cada ação
+- [ ] Criar toast de notificação ao ganhar pontos
+- [ ] Criar toast especial ao subir de nível
+- [ ] Criar toast ao conquistar novo título
+- [ ] Testar integração em todos os fluxos

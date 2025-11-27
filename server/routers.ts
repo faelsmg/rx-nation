@@ -2877,6 +2877,13 @@ export const appRouter = router({
             wodId: 0,
           });
 
+          // Adicionar pontos de gamificação (10 pts por check-in)
+          await db.adicionarPontos(
+            userId,
+            "checkin",
+            "Check-in realizado"
+          );
+
           // Buscar informações do usuário
           const user = await db.getUserById(userId);
 
@@ -4956,6 +4963,37 @@ export const appRouter = router({
       .input(z.object({ userId: z.number(), limit: z.number().default(50) }))
       .query(async ({ input }) => {
         return db.getSeguindo(input.userId, input.limit);
+      }),
+  }),
+
+  // ==================== GAMIFICAÇÃO ====================
+  gamificacao: router({
+    getPontuacao: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPontuacaoUsuario(ctx.user.id);
+      }),
+
+    getRankingNivel: publicProcedure
+      .input(z.object({ boxId: z.number().optional(), limit: z.number().default(50) }))
+      .query(async ({ input }) => {
+        return db.getRankingPorNivel(input.boxId, input.limit);
+      }),
+
+    getHistoricoPontos: protectedProcedure
+      .input(z.object({ limit: z.number().default(50) }))
+      .query(async ({ ctx, input }) => {
+        return db.getHistoricoPontos(ctx.user.id, input.limit);
+      }),
+
+    getTitulos: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getTitulosUsuario(ctx.user.id);
+      }),
+
+    setTituloPrincipal: protectedProcedure
+      .input(z.object({ tituloId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.setTituloPrincipal(ctx.user.id, input.tituloId);
       }),
   }),
 });
