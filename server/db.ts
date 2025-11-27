@@ -13658,7 +13658,7 @@ export async function updateConfiguracoesLiga(
   updatedBy: number
 ) {
   const db = await getDb();
-  if (!db) return false;
+  if (!db) return null;
 
   try {
     // Verificar se já existe configuração
@@ -13685,10 +13685,11 @@ export async function updateConfiguracoesLiga(
         .where(eq(configuracoesLiga.id, existing[0].id));
     }
 
-    return true;
+    // Retornar configuração atualizada
+    return getConfiguracoesLiga();
   } catch (error) {
     console.error("[Configurações] Erro ao atualizar configurações:", error);
-    return false;
+    return null;
   }
 }
 
