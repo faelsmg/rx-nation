@@ -3098,3 +3098,9 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Investigar erro na rota /perfil (erro 500 em perfil.getCompleto)
 - [x] Corrigir procedure perfil.getCompleto (queries SQL separadas usando Drizzle ORM)
 - [x] Testar todas as rotas corrigidas
+
+
+## 🐛 Correção de Erros de Acessibilidade - DialogTitle (27/11/2024)
+- [x] Identificar 4 componentes Dialog sem DialogTitle na página /relatorios-globais
+- [x] Adicionar DialogTitle em todos os Dialog components (corrigido em ui/command.tsx)
+- [x] Validar correções e testar página
