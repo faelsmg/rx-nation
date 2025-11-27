@@ -13525,3 +13525,79 @@ export async function setTituloPrincipal(userId: number, tituloId: number) {
     return false;
   }
 }
+
+
+// ==================== LEADERBOARD DE NÍVEIS ====================
+
+/**
+ * Buscar leaderboard de níveis com filtros
+ */
+export async function getLeaderboardNiveis(
+  boxId?: number,
+  categoria?: string,
+  limit: number = 100
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Construir condições de filtro
+    const conditions = [];
+    if (boxId) {
+      conditions.push(eq(users.boxId, boxId));
+    }
+    if (categoria) {
+      conditions.push(sql`${users.categoria} = ${categoria}`);
+    }
+
+    // Query com joins e agregação de pontos
+    const leaderboard = await db
+      .select({
+        userId: users.id,
+        userName: users.name,
+        userAvatar: users.avatarUrl,
+        userCategoria: users.categoria,
+        boxId: users.boxId,
+        boxNome: boxes.nome,
+        pontosCheckin: pontuacaoUsuarios.pontosCheckin,
+        pontosWod: pontuacaoUsuarios.pontosWod,
+        pontosPR: pontuacaoUsuarios.pontosPR,
+        pontosBadge: pontuacaoUsuarios.pontosBadge,
+      })
+      .from(users)
+      .leftJoin(boxes, eq(users.boxId, boxes.id))
+      .leftJoin(pontuacaoUsuarios, eq(users.id, pontuacaoUsuarios.userId))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(
+        sql`(COALESCE(${pontuacaoUsuarios.pontosCheckin}, 0) + 
+             COALESCE(${pontuacaoUsuarios.pontosWod}, 0) + 
+             COALESCE(${pontuacaoUsuarios.pontosPR}, 0) + 
+             COALESCE(${pontuacaoUsuarios.pontosBadge}, 0)) DESC`
+      )
+      .limit(limit);
+
+    // Calcular pontos totais e nível para cada atleta
+    return leaderboard.map((item, index) => {
+      const pontosTotal = 
+        (item.pontosCheckin || 0) + 
+        (item.pontosWod || 0) + 
+        (item.pontosPR || 0) + 
+        (item.pontosBadge || 0);
+
+      return {
+        posicao: index + 1,
+        userId: item.userId,
+        userName: item.userName || "Atleta",
+        userAvatar: item.userAvatar,
+        userCategoria: item.userCategoria || "iniciante",
+        boxId: item.boxId,
+        boxNome: item.boxNome || "Sem box",
+        pontosTotal,
+        nivel: calcularNivel(pontosTotal),
+      };
+    });
+  } catch (error) {
+    console.error("[Leaderboard] Erro ao buscar leaderboard de níveis:", error);
+    return [];
+  }
+}

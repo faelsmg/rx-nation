@@ -5001,6 +5001,16 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         return db.setTituloPrincipal(ctx.user.id, input.tituloId);
       }),
+
+    getLeaderboard: publicProcedure
+      .input(z.object({ 
+        boxId: z.number().optional(), 
+        categoria: z.string().optional(),
+        limit: z.number().default(100)
+      }))
+      .query(async ({ input }) => {
+        return db.getLeaderboardNiveis(input.boxId, input.categoria, input.limit);
+      }),
   }),
 });
 

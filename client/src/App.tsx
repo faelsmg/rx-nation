@@ -74,6 +74,7 @@ import RankingSemanal from "./pages/RankingSemanal";
 import MeuProgresso from "./pages/MeuProgresso";
 import Mentoria from "./pages/Mentoria";
 import Marketplace from "./pages/Marketplace";
+import Leaderboard from "./pages/Leaderboard";
 
 function Router() {
   return (
@@ -114,6 +115,7 @@ function Router() {
       <Route path={"/equipes/:id"} component={EquipeDetalhes} />
       <Route path={"/leaderboard-equipes"} component={LeaderboardEquipes} />
       <Route path={"/leaderboard-engajamento"} component={LeaderboardEngajamento} />
+      <Route path={"/leaderboard"} component={Leaderboard} />
       <Route path={"/conquistas"} component={Conquistas} />
       <Route path={"/feed-social"} component={FeedSocial} />
       <Route path={"/analise-performance"} component={AnalisePerformance} />

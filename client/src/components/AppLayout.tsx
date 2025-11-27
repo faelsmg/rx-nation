@@ -81,6 +81,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         { icon: History, label: "Histórico", path: "/historico" },
         { icon: Trophy, label: "PRs", path: "/prs" },
         { icon: TrendingUp, label: "Rankings", path: "/rankings" },
+        { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
         { icon: Award, label: "Badges", path: "/badges" },
         { icon: Target, label: "Metas", path: "/metas" },
         { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },

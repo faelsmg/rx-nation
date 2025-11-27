@@ -2863,3 +2863,19 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Exibir BadgeNivel no FeedAtividades
 - [x] Exibir BadgeNivel na página de Rankings
 - [x] Testar sistema completo de gamificação
+
+
+## Leaderboard de Níveis
+- [x] Criar função getLeaderboardNiveis no db.ts (top 100 atletas por pontos)
+- [x] Adicionar filtros por box e categoria
+- [x] Calcular nível automaticamente para cada atleta
+- [x] Incluir avatar_url, nome, categoria, box
+- [x] Criar procedure tRPC leaderboard.getNiveis
+- [x] Criar página /leaderboard com ranking visual
+- [x] Adicionar badges de nível (Bronze/Prata/Ouro/Platina) em cada card
+- [x] Implementar troféus para top 3 (🥇🥈🥉)
+- [x] Adicionar highlight para usuário logado
+- [x] Criar filtros dropdown (Todos os Boxes, Categoria)
+- [x] Adicionar rota no App.tsx
+- [x] Adicionar link no menu lateral
+- [x] Testar sistema completo de leaderboard
