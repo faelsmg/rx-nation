@@ -95,25 +95,34 @@ export function registerOAuthRoutes(app: Express) {
             const box = await db.getBoxById(targetBoxId);
             const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get('host')}`;
             
-            await sendWelcomeEmail({
+            const emailResult = await sendWelcomeEmail({
               userName: userInfo.name || "Atleta",
               userEmail: userInfo.email,
               boxName: box?.nome || "Box",
               profileUrl: `${baseUrl}/perfil`,
               welcomeUrl: `${baseUrl}/welcome`,
+              userId,
+              baseUrl,
             });
-            console.log("[OAuth] Email de boas-vindas enviado para:", userInfo.email);
+            
+            if (emailResult.success) {
+              console.log("[OAuth] Email de boas-vindas enviado para:", userInfo.email);
+              console.log("[OAuth] Tracking token:", emailResult.trackingToken);
 
-            // Registrar evento de email enviado (analytics)
-            if (userId) {
-              await db.registrarEventoOnboarding({
-                userId,
-                boxId: targetBoxId,
-                tipoEvento: "email_boas_vindas_enviado",
-                metadata: JSON.stringify({ email: userInfo.email }),
-                userAgent: req.headers['user-agent'] || null,
-                ipAddress: req.ip || null,
-              });
+              // Registrar evento de email enviado (analytics)
+              if (userId) {
+                await db.registrarEventoOnboarding({
+                  userId,
+                  boxId: targetBoxId,
+                  tipoEvento: "email_boas_vindas_enviado",
+                  metadata: JSON.stringify({ 
+                    email: userInfo.email,
+                    trackingToken: emailResult.trackingToken 
+                  }),
+                  userAgent: req.headers['user-agent'] || null,
+                  ipAddress: req.ip || null,
+                });
+              }
             }
           } catch (error) {
             console.error("[OAuth] Erro ao enviar email de boas-vindas:", error);

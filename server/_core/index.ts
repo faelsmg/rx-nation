@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import { initializeSocketIO } from "./socket";
 import { setupMonitoring, errorMonitoringMiddleware } from "./monitoring";
 import stripeRoutes from "../stripe-routes";
+import { registerTrackingRoutes } from "./trackingRoutes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -46,6 +47,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Tracking routes (email open, etc.)
+  registerTrackingRoutes(app);
   
   // Dev login route (apenas para desenvolvimento)
   if (process.env.NODE_ENV === "development") {

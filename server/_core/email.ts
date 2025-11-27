@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { generateEmailTrackingToken, generateTrackingPixel } from './emailTracking';
 
 /**
  * Configuração do transporter de email
@@ -256,7 +257,7 @@ interface WelcomeEmailData {
 /**
  * Envia email de boas-vindas para novo usuário
  */
-export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
+export async function sendWelcomeEmail(data: WelcomeEmailData & { userId?: number; baseUrl?: string }): Promise<{ success: boolean; trackingToken?: string }> {
   try {
     const htmlContent = `
 <!DOCTYPE html>
@@ -408,9 +409,14 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       </td>
     </tr>
   </table>
+  
+  <!-- Tracking Pixel -->
+  ${data.userId && data.baseUrl ? generateTrackingPixel(data.baseUrl, generateEmailTrackingToken(data.userId)) : ''}
 </body>
 </html>
     `;
+
+    const trackingToken = data.userId ? generateEmailTrackingToken(data.userId) : undefined;
 
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || '"RX Nation" <noreply@rxnation.com>',
@@ -443,9 +449,9 @@ RX Nation - Impacto Pro League
     });
 
     console.log('[Email] Email de boas-vindas enviado:', info.messageId);
-    return true;
+    return { success: true, trackingToken };
   } catch (error) {
     console.error('[Email] Erro ao enviar email de boas-vindas:', error);
-    return false;
+    return { success: false };
   }
 }

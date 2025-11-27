@@ -17,6 +17,8 @@ export const users = mysqlTable("users", {
   faixaEtaria: varchar("faixaEtaria", { length: 20 }), // ex: "18-29", "30-39", "40+"
   avatarUrl: text("avatarUrl"), // URL da foto de perfil no S3
   biografia: text("biografia"), // Biografia do atleta
+  whatsapp: varchar("whatsapp", { length: 20 }), // Número WhatsApp no formato +5511999999999
+  whatsappOptIn: boolean("whatsappOptIn").default(false).notNull(), // Opt-in para receber mensagens WhatsApp
   onboardingCompleted: boolean("onboardingCompleted").default(false).notNull(), // Se completou tour de boas-vindas
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

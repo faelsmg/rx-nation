@@ -14974,3 +14974,67 @@ export async function getFunilConversaoPorDia(boxId?: number, dias: number = 30)
 
   return eventos;
 }
+
+// ===== TESTE DE CONFIGURAÇÃO SMTP =====
+
+export async function testarConexaoSMTP(config: {
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  smtpUser: string;
+  smtpPass: string;
+  smtpFrom: string;
+  emailTeste: string;
+}) {
+  try {
+    const nodemailer = await import("nodemailer");
+    
+    // Criar transporter com as configurações fornecidas
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: config.smtpSecure,
+      auth: {
+        user: config.smtpUser,
+        pass: config.smtpPass,
+      },
+    });
+
+    // Verificar conexão
+    await transporter.verify();
+
+    // Enviar email de teste
+    await transporter.sendMail({
+      from: config.smtpFrom,
+      to: config.emailTeste,
+      subject: "✅ Teste de Configuração SMTP - RX Nation",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #2563eb;">🎉 Configuração SMTP Funcionando!</h2>
+          <p>Parabéns! Suas configurações de email foram testadas com sucesso.</p>
+          <p>Este é um email de teste enviado pela plataforma RX Nation para confirmar que:</p>
+          <ul>
+            <li>✅ A conexão com o servidor SMTP está funcionando</li>
+            <li>✅ As credenciais estão corretas</li>
+            <li>✅ Os emails podem ser enviados com sucesso</li>
+          </ul>
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">
+            RX Nation - Plataforma de Gestão CrossFit
+          </p>
+        </div>
+      `,
+    });
+
+    return {
+      success: true,
+      message: "Configuração SMTP testada com sucesso! Email de teste enviado.",
+    };
+  } catch (error: any) {
+    console.error("[SMTP] Erro ao testar configuração:", error);
+    return {
+      success: false,
+      message: error.message || "Erro ao testar configuração SMTP",
+      error: error.code || "UNKNOWN_ERROR",
+    };
+  }
+}

@@ -5167,6 +5167,44 @@ export const appRouter = router({
         }
         return db.updateConfiguracoesLiga(input, ctx.user.id);
       }),
+
+    // Configurar SMTP
+    updateSMTP: protectedProcedure
+      .input(z.object({
+        smtpHost: z.string(),
+        smtpPort: z.number(),
+        smtpSecure: z.boolean(),
+        smtpUser: z.string(),
+        smtpPass: z.string(),
+        smtpFrom: z.string(),
+        smtpProvider: z.enum(["gmail", "sendgrid", "aws_ses", "custom"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Apenas admin_liga pode configurar SMTP
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem configurar SMTP' });
+        }
+        return db.updateConfiguracoesLiga(input, ctx.user.id);
+      }),
+
+    // Testar configuração SMTP
+    testarSMTP: protectedProcedure
+      .input(z.object({
+        smtpHost: z.string(),
+        smtpPort: z.number(),
+        smtpSecure: z.boolean(),
+        smtpUser: z.string(),
+        smtpPass: z.string(),
+        smtpFrom: z.string(),
+        emailTeste: z.string().email(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Apenas admin_liga pode testar SMTP
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem testar SMTP' });
+        }
+        return db.testarConexaoSMTP(input);
+      }),
   }),
 
   // ==================== FEED DE SEGUIDOS ====================
@@ -5404,7 +5442,137 @@ export const appRouter = router({
         slug: z.string(),
       }))
       .query(async ({ input }) => {
-        return db.buscarBoxPorSlug(input.slug);
+          return db.buscarBoxPorSlug(input.slug);
+      }),
+  }),
+
+  // ==================== WHATSAPP ====================
+  whatsapp: router({
+    // Enviar mensagem WhatsApp
+    enviarMensagem: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        template: z.enum(["lembreteWOD", "comunicadoBox", "novoRecordePessoal", "lembreteCheckIn", "conviteCampeonato"]),
+        params: z.record(z.string()), // Parâmetros do template
+        mediaUrl: z.string().url().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Apenas box_master e admin_liga podem enviar mensagens
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas Box Masters e Administradores podem enviar mensagens WhatsApp' });
+        }
+
+        const { sendWhatsAppMessage, whatsappTemplates, formatarNumeroWhatsApp } = await import('./_core/whatsapp');
+
+        // Buscar usuário destinatário
+        const destinatario = await db.getUserById(input.userId);
+
+        if (!destinatario) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+        }
+
+        if (!destinatario.whatsapp) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não possui WhatsApp cadastrado' });
+        }
+
+        if (!destinatario.whatsappOptIn) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não autorizou receber mensagens WhatsApp' });
+        }
+
+        // Gerar mensagem a partir do template
+        let mensagem: string;
+        const p = input.params;
+
+        switch (input.template) {
+          case "lembreteWOD":
+            mensagem = whatsappTemplates.lembreteWOD(p.nomeAtleta, p.wodTitulo, p.horario);
+            break;
+          case "comunicadoBox":
+            mensagem = whatsappTemplates.comunicadoBox(p.titulo, p.mensagem);
+            break;
+          case "novoRecordePessoal":
+            mensagem = whatsappTemplates.novoRecordePessoal(p.nomeAtleta, p.movimento, p.valor);
+            break;
+          case "lembreteCheckIn":
+            mensagem = whatsappTemplates.lembreteCheckIn(p.nomeAtleta, p.horaTreino);
+            break;
+          case "conviteCampeonato":
+            mensagem = whatsappTemplates.conviteCampeonato(p.nomeAtleta, p.nomeCampeonato, p.dataInicio);
+            break;
+          default:
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Template inválido' });
+        }
+
+        // Enviar mensagem
+        const resultado = await sendWhatsAppMessage({
+          to: formatarNumeroWhatsApp(destinatario.whatsapp),
+          message: mensagem,
+          mediaUrl: input.mediaUrl,
+        });
+
+        if (!resultado.success) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: resultado.error || 'Erro ao enviar mensagem' });
+        }
+
+        return {
+          success: true,
+          messageId: resultado.messageId,
+        };
+      }),
+
+    // Atualizar opt-in de WhatsApp
+    atualizarOptIn: protectedProcedure
+      .input(z.object({
+        whatsapp: z.string().optional(),
+        optIn: z.boolean(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { formatarNumeroWhatsApp, validarNumeroWhatsApp } = await import('./_core/whatsapp');
+
+        let whatsappFormatado: string | undefined;
+
+        if (input.whatsapp) {
+          whatsappFormatado = formatarNumeroWhatsApp(input.whatsapp);
+
+          if (!validarNumeroWhatsApp(whatsappFormatado)) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Número WhatsApp inválido. Use o formato +5511999999999' });
+          }
+        }
+
+        await db.updateUser(ctx.user.id, {
+          whatsapp: whatsappFormatado,
+          whatsappOptIn: input.optIn,
+        });
+
+        return { success: true };
+      }),
+
+    // Testar envio de mensagem
+    testarEnvio: protectedProcedure
+      .input(z.object({
+        whatsapp: z.string(),
+        mensagem: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Apenas admin_liga pode testar
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem testar envio' });
+        }
+
+        const { sendWhatsAppMessage, formatarNumeroWhatsApp, validarNumeroWhatsApp } = await import('./_core/whatsapp');
+
+        const whatsappFormatado = formatarNumeroWhatsApp(input.whatsapp);
+
+        if (!validarNumeroWhatsApp(whatsappFormatado)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Número WhatsApp inválido' });
+        }
+
+        const resultado = await sendWhatsAppMessage({
+          to: whatsappFormatado,
+          message: input.mensagem,
+        });
+
+        return resultado;
       }),
   }),
 });

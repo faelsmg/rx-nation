@@ -3285,3 +3285,68 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Criar templates de mensagens
 - [ ] Adicionar opt-in no perfil
 - [ ] Interface de gestão de notificações
+
+## Funcionalidades Finais de Produção
+
+### 1. Interface de Configuração SMTP
+- [ ] Criar página ConfiguracaoSMTP.tsx
+- [ ] Formulário com campos: host, port, secure, user, password, from, provider
+- [ ] Implementar procedure para salvar configurações SMTP
+- [ ] Implementar procedure para testar conexão SMTP
+- [ ] Adicionar validação em tempo real
+- [ ] Botão "Testar Conexão" que envia email de teste
+- [ ] Mostrar status de sucesso/erro
+- [ ] Adicionar rota no App.tsx
+
+### 2. Tracking Pixel para Emails
+- [ ] Criar endpoint /api/track/email-open/:token
+- [ ] Gerar token único para cada email enviado
+- [ ] Adicionar pixel invisível no template de email
+- [ ] Registrar evento email_boas_vindas_aberto
+- [ ] Retornar imagem 1x1 transparente
+- [ ] Testar tracking em diferentes clientes de email
+
+### 3. Integração WhatsApp Business (Twilio)
+- [ ] Instalar twilio SDK
+- [ ] Criar módulo server/_core/whatsapp.ts
+- [ ] Implementar função sendWhatsAppMessage
+- [ ] Adicionar campo telefone/whatsapp no perfil do usuário
+- [ ] Criar procedure para enviar mensagem WhatsApp
+- [ ] Criar templates de mensagens (treino, comunicado)
+- [ ] Adicionar opt-in de WhatsApp no perfil
+- [ ] Testar envio de mensagem
+
+## ✅ Funcionalidades Finais de Produção - CONCLUÍDO
+
+### 1. Interface de Configuração SMTP ✅
+- [x] Criar página ConfiguracaoSMTP.tsx
+- [x] Formulário com campos: host, port, secure, user, password, from, provider
+- [x] Implementar procedure updateSMTP para salvar configurações
+- [x] Implementar procedure testarSMTP para testar conexão
+- [x] Adicionar validação em tempo real
+- [x] Botão "Testar Conexão" que envia email de teste
+- [x] Mostrar status de sucesso/erro
+- [x] Adicionar rota /configuracao-smtp no App.tsx
+- [x] Criar função testarConexaoSMTP no db.ts
+
+### 2. Tracking Pixel para Emails ✅
+- [x] Criar módulo server/_core/emailTracking.ts
+- [x] Criar endpoint /api/track/email-open/:token
+- [x] Gerar token único para cada email enviado
+- [x] Adicionar pixel invisível no template de email
+- [x] Registrar evento email_boas_vindas_aberto
+- [x] Retornar imagem 1x1 transparente (GIF)
+- [x] Integrar tracking no sendWelcomeEmail
+- [x] Registrar trackingToken no evento de email enviado
+
+### 3. Integração WhatsApp Business (Twilio) ✅
+- [x] Instalar twilio SDK
+- [x] Criar módulo server/_core/whatsapp.ts
+- [x] Implementar função sendWhatsAppMessage
+- [x] Adicionar campos whatsapp e whatsappOptIn no perfil do usuário
+- [x] Criar procedure whatsapp.enviarMensagem
+- [x] Criar procedure whatsapp.atualizarOptIn
+- [x] Criar procedure whatsapp.testarEnvio
+- [x] Criar 5 templates de mensagens (lembreteWOD, comunicadoBox, novoRecordePessoal, lembreteCheckIn, conviteCampeonato)
+- [x] Implementar validação e formatação de número WhatsApp
+- [x] Aplicar migration dos campos whatsapp
