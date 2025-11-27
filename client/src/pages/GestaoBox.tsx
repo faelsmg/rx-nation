@@ -19,6 +19,7 @@ import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { BadgesTab } from "@/components/BadgesTab";
 import { BadgesDashboardTab } from "@/components/BadgesDashboardTab";
 import { WodsTab } from "@/components/WodsTab";
+import AnalyticsAvancado from "@/components/AnalyticsAvancado";
 
 export default function GestaoBox() {
   const { user } = useAuth();
@@ -197,6 +198,10 @@ export default function GestaoBox() {
 
           <TabsContent value="analytics">
             <AnalyticsTab boxId={user.boxId} />
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-6">Analytics Avançado</h2>
+              <AnalyticsAvancado />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

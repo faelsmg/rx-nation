@@ -2686,3 +2686,22 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Horários mais populares
 - [ ] Gráficos de crescimento (Chart.js)
 - [x] Adicionar ao Dashboard do Box Master
+
+
+## Funcionalidades Finais (2)
+
+### Analytics Avançado (Box Master)
+- [x] Backend: função para calcular taxa de retenção mensal
+- [x] Backend: função para identificar alunos em risco (14+ dias sem check-in)
+- [x] Backend: função para calcular frequência média por aluno
+- [x] Backend: função para identificar horários mais populares
+- [x] Criar componente AnalyticsAvancado com Chart.js
+- [x] Adicionar ao Dashboard do Box Master
+
+### Upload de Foto de Perfil
+- [x] Backend: procedure para upload de foto (S3)
+- [x] Frontend: componente de upload na página /perfil/editar
+- [x] Adicionar campo avatarUrl na tabela users
+- [ ] Exibir foto no Dashboard
+- [ ] Exibir foto no ranking
+- [ ] Exibir foto na página de perfil

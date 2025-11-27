@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Camera, Save } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Camera, Save, User, Upload } from "lucide-react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -21,6 +21,46 @@ export default function EditarPerfil() {
   const [categoria, setCategoria] = useState(user?.categoria || "");
   const [faixaEtaria, setFaixaEtaria] = useState(user?.faixaEtaria || "");
   const [biografia, setBiografia] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const uploadAvatarMutation = trpc.user.uploadAvatar.useMutation({
+    onSuccess: (data) => {
+      toast.success("Foto de perfil atualizada!");
+      setAvatarPreview(data.url);
+      utils.auth.me.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Erro ao fazer upload: " + error.message);
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande! Máximo 5MB.");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Apenas imagens são permitidas!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Image = event.target?.result as string;
+      setAvatarPreview(base64Image);
+      
+      uploadAvatarMutation.mutate({
+        base64Image,
+        mimeType: file.type,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const updateProfileMutation = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
@@ -71,16 +111,43 @@ export default function EditarPerfil() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-4xl font-bold text-white">
-                  {nome?.charAt(0).toUpperCase()}
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-primary/20">
+                    {avatarPreview || user?.avatarUrl ? (
+                      <img
+                        src={avatarPreview || user?.avatarUrl || ""}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-16 h-16 text-muted-foreground" />
+                    )}
+                  </div>
+                  {uploadAvatarMutation.isPending && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
-                  <Button type="button" variant="outline" disabled>
-                    <Camera className="w-4 h-4 mr-2" />
-                    Alterar Foto (Em breve)
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadAvatarMutation.isPending}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploadAvatarMutation.isPending ? "Enviando..." : "Alterar Foto"}
                   </Button>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Formatos aceitos: JPG, PNG. Tamanho máximo: 2MB
+                    Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB
                   </p>
                 </div>
               </div>

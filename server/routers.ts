@@ -68,6 +68,32 @@ export const appRouter = router({
       .mutation(async ({ ctx }) => {
         return db.completeOnboarding(ctx.user.id);
       }),
+
+    uploadAvatar: protectedProcedure
+      .input(z.object({
+        base64Image: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { storagePut } = await import("./storage");
+        
+        // Converter base64 para Buffer
+        const base64Data = input.base64Image.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, "base64");
+        
+        // Gerar nome único para o arquivo
+        const fileExtension = input.mimeType.split("/")[1];
+        const fileName = `avatar-${ctx.user.id}-${Date.now()}.${fileExtension}`;
+        const fileKey = `avatars/${fileName}`;
+        
+        // Upload para S3
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        
+        // Atualizar avatarUrl no banco
+        await db.updateUserProfile(ctx.user.id, { avatarUrl: url });
+        
+        return { url };
+      }),
   }),
 
   // ===== BOXES =====
@@ -4759,6 +4785,20 @@ export const appRouter = router({
 
   // ===== SISTEMA DE METAS PESSOAIS (DUPLICADO - REMOVIDO) =====
   // Já existe um router 'metas' na linha 2038
+
+  // ===== ANALYTICS AVANÇADO (BOX MASTER) =====
+  analyticsAvancado: router({
+    getAvancado: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não está vinculado a um box' });
+        }
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas box masters podem acessar analytics' });
+        }
+        return db.getAnalyticsAvancado(ctx.user.boxId);
+      }),
+  }),
 
   // ===== GESTÃO DE ALUNOS (BOX MASTER) =====
   gestaoAlunos: router({

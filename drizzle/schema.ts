@@ -15,6 +15,8 @@ export const users = mysqlTable("users", {
   boxId: int("boxId"), // Box vinculado
   categoria: mysqlEnum("categoria", ["iniciante", "intermediario", "avancado", "elite"]),
   faixaEtaria: varchar("faixaEtaria", { length: 20 }), // ex: "18-29", "30-39", "40+"
+  avatarUrl: text("avatarUrl"), // URL da foto de perfil no S3
+  biografia: text("biografia"), // Biografia do atleta
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

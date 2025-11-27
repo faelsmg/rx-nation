@@ -12572,3 +12572,117 @@ export async function getWodsProximos7Dias(boxId: number, userId: number) {
 
   return wodsComStatus;
 }
+
+
+// ===== ANALYTICS AVANÇADO (BOX MASTER) =====
+
+export async function getAnalyticsAvancado(boxId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // 1. Taxa de retenção mensal (% de alunos que fizeram check-in no mês atual vs mês anterior)
+  const mesAtual = new Date();
+  mesAtual.setDate(1);
+  mesAtual.setHours(0, 0, 0, 0);
+
+  const mesAnterior = new Date(mesAtual);
+  mesAnterior.setMonth(mesAnterior.getMonth() - 1);
+
+  // Alunos ativos no mês anterior
+  const alunosMesAnteriorResult = await db.execute(sql`
+    SELECT COUNT(DISTINCT user_id) as total
+    FROM checkins
+    WHERE box_id = ${boxId}
+      AND data_hora >= ${mesAnterior}
+      AND data_hora < ${mesAtual}
+  `);
+  const alunosMesAnterior = (alunosMesAnteriorResult[0] as any)?.[0]?.total || 0;
+
+  // Alunos ativos no mês atual
+  const alunosMesAtualResult = await db.execute(sql`
+    SELECT COUNT(DISTINCT user_id) as total
+    FROM checkins
+    WHERE box_id = ${boxId}
+      AND data_hora >= ${mesAtual}
+  `);
+  const alunosMesAtual = (alunosMesAtualResult[0] as any)?.[0]?.total || 0;
+
+  const taxaRetencao = alunosMesAnterior > 0
+    ? Math.round((alunosMesAtual / alunosMesAnterior) * 100)
+    : 0;
+
+  // 2. Alunos em risco de evasão (sem check-in há 14+ dias)
+  const quatorzeDiasAtras = new Date();
+  quatorzeDiasAtras.setDate(quatorzeDiasAtras.getDate() - 14);
+
+  const alunosDoBox = await db
+    .select()
+    .from(users)
+    .where(eq(users.boxId, boxId));
+
+  const alunosEmRisco = [];
+  for (const aluno of alunosDoBox) {
+    const ultimoCheckinResult = await db
+      .select({ data: checkins.dataHora })
+      .from(checkins)
+      .where(eq(checkins.userId, aluno.id))
+      .orderBy(desc(checkins.dataHora))
+      .limit(1);
+
+    const ultimoCheckin = ultimoCheckinResult[0]?.data;
+    
+    if (!ultimoCheckin || new Date(ultimoCheckin) < quatorzeDiasAtras) {
+      const diasSemCheckin = ultimoCheckin
+        ? Math.floor((Date.now() - new Date(ultimoCheckin).getTime()) / (1000 * 60 * 60 * 24))
+        : 999;
+
+      alunosEmRisco.push({
+        id: aluno.id,
+        name: aluno.name,
+        email: aluno.email,
+        ultimoCheckin,
+        diasSemCheckin,
+      });
+    }
+  }
+
+  // 3. Frequência média por aluno (últimos 30 dias)
+  const trintaDiasAtras = new Date();
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+  const checkinsUltimos30DiasResult = await db.execute(sql`
+    SELECT COUNT(*) as total
+    FROM checkins
+    WHERE box_id = ${boxId}
+      AND data_hora >= ${trintaDiasAtras}
+  `);
+  const totalCheckins = (checkinsUltimos30DiasResult[0] as any)?.[0]?.total || 0;
+
+  const totalAlunosAtivos = alunosMesAtual || 1;
+  const frequenciaMedia = (totalCheckins / totalAlunosAtivos / 30) * 100;
+
+  // 4. Horários mais populares (últimos 30 dias)
+  const checkinsComHorarioResult = await db.execute(sql`
+    SELECT HOUR(data_hora) as hora, COUNT(*) as total
+    FROM checkins
+    WHERE box_id = ${boxId}
+      AND data_hora >= ${trintaDiasAtras}
+    GROUP BY HOUR(data_hora)
+    ORDER BY total DESC
+    LIMIT 10
+  `);
+
+  const horariosMaisPopulares = (checkinsComHorarioResult[0] as any[])?.map((row: any) => ({
+    hora: row.hora,
+    total: row.total,
+  })) || [];
+
+  return {
+    taxaRetencao,
+    alunosEmRisco: alunosEmRisco.sort((a, b) => b.diasSemCheckin - a.diasSemCheckin),
+    frequenciaMedia: Math.round(frequenciaMedia),
+    horariosMaisPopulares,
+    totalAlunosAtivos: alunosMesAtual,
+    totalAlunosMesAnterior: alunosMesAnterior,
+  };
+}
