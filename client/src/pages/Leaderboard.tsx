@@ -11,7 +11,7 @@ import { Trophy, TrendingUp } from "lucide-react";
 
 export default function Leaderboard() {
   const { user } = useAuth();
-  const [boxId, setBoxId] = useState<number | undefined>(user?.boxId);
+  const [boxId, setBoxId] = useState<number | undefined>(user?.boxId ?? undefined);
   const [categoria, setCategoria] = useState<string | undefined>(undefined);
 
   const { data: leaderboard, isLoading } = trpc.gamificacao.getLeaderboard.useQuery({
@@ -94,7 +94,7 @@ export default function Leaderboard() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <Avatar user={{ name: userPosition.userName, avatarUrl: userPosition.userAvatar }} size="md" />
+                  <Avatar src={userPosition.userAvatar || undefined} alt={userPosition.userName} fallback={userPosition.userName} size="md" />
                   <div>
                     <div className="font-semibold">{userPosition.userName}</div>
                     <div className="text-sm text-muted-foreground">{userPosition.boxNome}</div>
@@ -165,7 +165,7 @@ export default function Leaderboard() {
                     </div>
 
                     {/* Avatar e Nome */}
-                    <Avatar user={{ name: item.userName, avatarUrl: item.userAvatar }} size="md" />
+                    <Avatar src={item.userAvatar || undefined} alt={item.userName} fallback={item.userName} size="md" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate flex items-center gap-2">
                         {item.userName}

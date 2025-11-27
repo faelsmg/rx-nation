@@ -3013,3 +3013,25 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Verificar se router boxes possui procedure list
 - [x] Adicionar procedure boxes.list ou corrigir chamada
 - [x] Testar Dashboard sem erros
+
+
+## Correção de 21 Erros TypeScript Restantes
+- [ ] Corrigir avatar_url para avatarUrl em Perfil.tsx
+- [ ] Adicionar tipagem de erro em Metas.tsx
+- [ ] Corrigir outros erros TypeScript em Dashboard.tsx, Leaderboard.tsx, etc
+- [ ] Compilar TypeScript e verificar 0 erros
+
+## Página de Perfil Público com Sistema de Seguir
+- [x] Criar rota /perfil/:userId (já existia)
+- [x] Criar componente PerfilPublico.tsx (já existia)
+- [x] Exibir estatísticas do atleta (WODs, PRs, badges, seguidores)
+- [x] Adicionar botão Seguir/Deixar de Seguir
+- [x] Implementar lógica de seguir/deixar de seguir
+- [x] Exibir lista de seguidores e seguindo (via stats)
+- [ ] Testar notificações em tempo real ao seguir
+
+## Confetti Animation ao Subir de Nível
+- [x] Instalar biblioteca canvas-confetti
+- [x] Adicionar import confetti no hook
+- [x] Testar confetti ao subir de nível (via WebSocket)
+- [x] Adicionar confetti ao desbloquear badge

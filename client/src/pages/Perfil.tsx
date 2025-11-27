@@ -72,9 +72,9 @@ export default function Perfil() {
               {/* Avatar */}
               <div className="relative">
                 <Avatar
-                  src={userData.avatar_url}
+                  src={userData.avatarUrl || undefined}
                   alt={userData.name || "Atleta"}
-                  fallback={userData.name}
+                  fallback={userData.name || undefined}
                   size="xl"
                   className="w-24 h-24"
                 />

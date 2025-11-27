@@ -58,9 +58,9 @@ export default function Dashboard() {
       <div className="p-6 lg:p-8 space-y-8">
         <div className="flex items-center gap-4">
           <Avatar
-            src={user?.avatar_url}
+            src={user?.avatarUrl || undefined}
             alt={user?.name || "Atleta"}
-            fallback={user?.name}
+            fallback={user?.name || undefined}
             size="xl"
           />
           <div>

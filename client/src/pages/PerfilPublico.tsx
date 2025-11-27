@@ -2,7 +2,8 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Award, TrendingUp, Dumbbell, Trophy, Calendar, Share2 } from "lucide-react";
+import { Award, TrendingUp, Dumbbell, Trophy, Calendar, Share2, UserPlus, UserMinus, Users } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,8 +11,50 @@ import { toast } from "sonner";
 export default function PerfilPublico() {
   const params = useParams();
   const userId = parseInt(params.id || "0");
+  const { user: currentUser } = useAuth();
+  const utils = trpc.useUtils();
+
+  const isOwnProfile = currentUser?.id === userId;
 
   const { data: profile, isLoading } = trpc.user.getPublicProfile.useQuery({ userId });
+
+  // Verificar se está seguindo
+  const { data: estaSeguindo } = trpc.perfilPublico.verificarSeguindo.useQuery(
+    { seguidoId: userId },
+    { enabled: !!currentUser && !isOwnProfile }
+  );
+
+  // Mutation para seguir
+  const seguirMutation = trpc.perfilPublico.seguir.useMutation({
+    onSuccess: () => {
+      toast.success("👋 Você começou a seguir este atleta!");
+      utils.perfilPublico.verificarSeguindo.invalidate();
+      utils.user.getPublicProfile.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao seguir atleta");
+    },
+  });
+
+  // Mutation para deixar de seguir
+  const deixarDeSeguirMutation = trpc.perfilPublico.deixarDeSeguir.useMutation({
+    onSuccess: () => {
+      toast.info("Você deixou de seguir este atleta");
+      utils.perfilPublico.verificarSeguindo.invalidate();
+      utils.user.getPublicProfile.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao deixar de seguir");
+    },
+  });
+
+  const handleSeguir = () => {
+    if (estaSeguindo) {
+      deixarDeSeguirMutation.mutate({ seguidoId: userId });
+    } else {
+      seguirMutation.mutate({ seguidoId: userId });
+    }
+  };
 
   const handleShare = () => {
     const url = window.location.href;
@@ -89,10 +132,32 @@ export default function PerfilPublico() {
                     </span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleShare}>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Compartilhar
-                </Button>
+                <div className="flex gap-2">
+                  {!isOwnProfile && currentUser && (
+                    <Button
+                      onClick={handleSeguir}
+                      disabled={seguirMutation.isPending || deixarDeSeguirMutation.isPending}
+                      variant={estaSeguindo ? "outline" : "default"}
+                      size="sm"
+                    >
+                      {estaSeguindo ? (
+                        <>
+                          <UserMinus className="w-4 h-4 mr-2" />
+                          Deixar de Seguir
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Seguir
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleShare}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Compartilhar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

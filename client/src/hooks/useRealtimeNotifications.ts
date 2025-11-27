@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { COOKIE_NAME } from "@shared/const";
+import confetti from "canvas-confetti";
 
 interface RealtimeNotification {
   tipo: string;
@@ -76,6 +77,13 @@ export function useRealtimeNotifications() {
       console.log("[WebSocket] Badge notification:", data);
       setNotifications((prev) => [data, ...prev]);
       
+      // Confetti animation
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+      
       toast.success(data.titulo, {
         description: data.mensagem,
         action: data.link ? {
@@ -146,6 +154,13 @@ export function useRealtimeNotifications() {
     socket.on("notification:levelup", (data: RealtimeNotification) => {
       console.log("[WebSocket] Level up notification:", data);
       setNotifications((prev) => [data, ...prev]);
+      
+      // Confetti animation
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
       
       toast.success(data.titulo, {
         description: data.mensagem,

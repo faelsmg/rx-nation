@@ -34,7 +34,7 @@ export default function Metas() {
       toast.success("🎉 Parabéns! Meta completada!");
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Erro ao completar meta: ${error.message}`);
     },
   });
