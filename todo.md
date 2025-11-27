@@ -3035,3 +3035,49 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar import confetti no hook
 - [x] Testar confetti ao subir de nível (via WebSocket)
 - [x] Adicionar confetti ao desbloquear badge
+
+
+## 🚀 SPRINT ATUAL: Sistema de Comentários e Notificações Push
+
+### Fase 1: Schema de Comentários e Curtidas
+- [x] Criar tabela comentarios_feed no schema
+- [x] Criar tabela curtidas_feed no schema
+- [x] Executar pnpm db:push para aplicar migrations
+- [x] Verificar compilação TypeScript
+
+### Fase 2: Backend de Comentários
+- [ ] Criar query criarComentario no db.ts
+- [ ] Criar query listarComentarios no db.ts
+- [ ] Criar query deletarComentario no db.ts
+- [ ] Criar query curtirAtividade no db.ts
+- [ ] Criar query descurtirAtividade no db.ts
+- [ ] Criar query verificarCurtida no db.ts
+- [ ] Adicionar procedures tRPC no routers.ts
+- [ ] Testar compilação TypeScript
+
+### Fase 3: UI de Comentários
+- [ ] Adicionar seção de comentários no FeedSeguidos.tsx
+- [ ] Criar componente ComentarioCard
+- [ ] Adicionar botão de curtir em cada atividade
+- [ ] Adicionar campo de texto para novo comentário
+- [ ] Implementar otimistic updates para comentários
+- [ ] Testar interface completa
+
+### Fase 4: Notificações Push em Tempo Real
+- [ ] Criar função notifyFriendActivity no socket.ts
+- [ ] Adicionar trigger ao completar WOD
+- [ ] Adicionar trigger ao registrar PR
+- [ ] Adicionar trigger ao conquistar badge
+- [ ] Adicionar trigger ao comentar em atividade
+- [ ] Adicionar trigger ao curtir atividade
+- [ ] Testar notificações via WebSocket
+
+### Fase 5: Testes Unitários
+- [ ] Criar testes para comentários
+- [ ] Criar testes para curtidas
+- [ ] Criar testes para notificações
+- [ ] Executar pnpm test e validar 100% de sucesso
+
+### Fase 6: Checkpoint Final
+- [ ] Salvar checkpoint com descrição completa
+- [ ] Reportar ao usuário com resumo

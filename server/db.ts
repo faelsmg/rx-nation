@@ -77,6 +77,8 @@ import {
   InsertMeta,
   comentariosFeed,
   InsertComentarioFeed,
+  curtidasFeed,
+  InsertCurtidaFeed,
   comentariosWod,
   InsertComentarioWod,
   reacoesComentarios,
@@ -1994,12 +1996,32 @@ export async function curtirAtividade(atividadeId: number, userId: number) {
   const db = await getDb();
   if (!db) return false;
 
+  // Verificar se já curtiu
+  const [curtidaExistente] = await db
+    .select()
+    .from(curtidasFeed)
+    .where(and(
+      eq(curtidasFeed.userId, userId),
+      eq(curtidasFeed.atividadeId, atividadeId)
+    ))
+    .limit(1);
+
+  if (curtidaExistente) {
+    return false; // Já curtiu
+  }
+
   // Buscar autor da atividade
   const atividade = await db.select().from(feedAtividades).where(eq(feedAtividades.id, atividadeId)).limit(1);
   
   if (!atividade[0]) return false;
 
-  // Incrementar curtidas
+  // Inserir curtida na tabela
+  await db.insert(curtidasFeed).values({
+    userId,
+    atividadeId,
+  });
+
+  // Incrementar contador de curtidas
   await db
     .update(feedAtividades)
     .set({ curtidas: sql`${feedAtividades.curtidas} + 1` })
@@ -2015,6 +2037,44 @@ export async function curtirAtividade(atividadeId: number, userId: number) {
       link: "/feed",
     });
   }
+
+  return true;
+}
+
+/**
+ * Descurtir atividade do feed
+ */
+export async function descurtirAtividade(atividadeId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Verificar se curtiu
+  const [curtidaExistente] = await db
+    .select()
+    .from(curtidasFeed)
+    .where(and(
+      eq(curtidasFeed.userId, userId),
+      eq(curtidasFeed.atividadeId, atividadeId)
+    ))
+    .limit(1);
+
+  if (!curtidaExistente) {
+    return false; // Não curtiu
+  }
+
+  // Remover curtida
+  await db
+    .delete(curtidasFeed)
+    .where(and(
+      eq(curtidasFeed.userId, userId),
+      eq(curtidasFeed.atividadeId, atividadeId)
+    ));
+
+  // Decrementar contador de curtidas
+  await db
+    .update(feedAtividades)
+    .set({ curtidas: sql`GREATEST(${feedAtividades.curtidas} - 1, 0)` })
+    .where(eq(feedAtividades.id, atividadeId));
 
   return true;
 }
@@ -14106,4 +14166,126 @@ export async function getDadosTaxaRetencao(meses: number = 12) {
     console.error("[Relatórios] Erro ao buscar dados de taxa de retenção:", error);
     return [];
   }
+}
+
+
+// ==================== COMENTÁRIOS E CURTIDAS DO FEED ====================
+
+/**
+ * Criar comentário em uma atividade do feed
+ */
+export async function criarComentario(userId: number, atividadeId: number, comentario: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(comentariosFeed).values({
+    userId,
+    atividadeId,
+    comentario,
+  });
+
+  return result;
+}
+
+/**
+ * Listar comentários de uma atividade
+ */
+export async function listarComentarios(atividadeId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const comentarios = await db
+    .select({
+      id: comentariosFeed.id,
+      userId: comentariosFeed.userId,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+      comentario: comentariosFeed.comentario,
+      oculto: comentariosFeed.oculto,
+      createdAt: comentariosFeed.createdAt,
+    })
+    .from(comentariosFeed)
+    .leftJoin(users, eq(comentariosFeed.userId, users.id))
+    .where(and(
+      eq(comentariosFeed.atividadeId, atividadeId),
+      eq(comentariosFeed.oculto, 0)
+    ))
+    .orderBy(desc(comentariosFeed.createdAt))
+    .limit(limit);
+
+  return comentarios;
+}
+
+/**
+ * Deletar comentário (apenas o próprio usuário ou admin)
+ */
+export async function deletarComentario(comentarioId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar se o comentário pertence ao usuário
+  const [comentario] = await db
+    .select()
+    .from(comentariosFeed)
+    .where(eq(comentariosFeed.id, comentarioId))
+    .limit(1);
+
+  if (!comentario) {
+    throw new Error("Comentário não encontrado");
+  }
+
+  if (comentario.userId !== userId) {
+    throw new Error("Você não tem permissão para deletar este comentário");
+  }
+
+  await db.delete(comentariosFeed).where(eq(comentariosFeed.id, comentarioId));
+
+  return { success: true };
+}
+
+
+
+/**
+ * Verificar se usuário curtiu uma atividade
+ */
+export async function verificarCurtida(userId: number, atividadeId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const [curtida] = await db
+    .select()
+    .from(curtidasFeed)
+    .where(and(
+      eq(curtidasFeed.userId, userId),
+      eq(curtidasFeed.atividadeId, atividadeId)
+    ))
+    .limit(1);
+
+  return !!curtida;
+}
+
+/**
+ * Verificar múltiplas curtidas de uma vez (otimização)
+ */
+export async function verificarCurtidasMultiplas(userId: number, atividadesIds: number[]) {
+  const db = await getDb();
+  if (!db || atividadesIds.length === 0) return {};
+
+  const curtidas = await db
+    .select({
+      atividadeId: curtidasFeed.atividadeId,
+    })
+    .from(curtidasFeed)
+    .where(and(
+      eq(curtidasFeed.userId, userId),
+      sql`${curtidasFeed.atividadeId} IN (${sql.join(atividadesIds.map(id => sql`${id}`), sql`, `)})`
+    ));
+
+  // Criar mapa de curtidas
+  const mapa: Record<number, boolean> = {};
+  atividadesIds.forEach(id => {
+    mapa[id] = curtidas.some(c => c.atividadeId === id);
+  });
+
+  return mapa;
 }

@@ -712,6 +712,31 @@ export const comentariosFeedRelations = relations(comentariosFeed, ({ one }) => 
   }),
 }));
 
+/**
+ * Curtidas em atividades do feed
+ * Rastreia quem curtiu cada atividade para evitar curtidas duplicadas
+ */
+export const curtidasFeed = mysqlTable("curtidas_feed", {
+  id: int("id").autoincrement().primaryKey(),
+  atividadeId: int("atividade_id").notNull().references(() => feedAtividades.id, { onDelete: "cascade" }),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CurtidaFeed = typeof curtidasFeed.$inferSelect;
+export type InsertCurtidaFeed = typeof curtidasFeed.$inferInsert;
+
+export const curtidasFeedRelations = relations(curtidasFeed, ({ one }) => ({
+  atividade: one(feedAtividades, {
+    fields: [curtidasFeed.atividadeId],
+    references: [feedAtividades.id],
+  }),
+  user: one(users, {
+    fields: [curtidasFeed.userId],
+    references: [users.id],
+  }),
+}));
+
 
 // ==================== COMENTÁRIOS DE WOD ====================
 

@@ -5109,6 +5109,69 @@ export const appRouter = router({
         );
       }),
   }),
+
+  // ==================== COMENTÁRIOS E CURTIDAS ====================
+  comentarios: router({
+    criar: protectedProcedure
+      .input(z.object({
+        atividadeId: z.number(),
+        comentario: z.string().min(1).max(1000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.criarComentario(ctx.user.id, input.atividadeId, input.comentario);
+      }),
+
+    listar: publicProcedure
+      .input(z.object({
+        atividadeId: z.number(),
+        limit: z.number().default(50),
+      }))
+      .query(async ({ input }) => {
+        return db.listarComentarios(input.atividadeId, input.limit);
+      }),
+
+    deletar: protectedProcedure
+      .input(z.object({
+        comentarioId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.deletarComentario(input.comentarioId, ctx.user.id);
+      }),
+  }),
+
+  curtidas: router({
+    curtir: protectedProcedure
+      .input(z.object({
+        atividadeId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.curtirAtividade(ctx.user.id, input.atividadeId);
+      }),
+
+    descurtir: protectedProcedure
+      .input(z.object({
+        atividadeId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.descurtirAtividade(ctx.user.id, input.atividadeId);
+      }),
+
+    verificar: protectedProcedure
+      .input(z.object({
+        atividadeId: z.number(),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.verificarCurtida(ctx.user.id, input.atividadeId);
+      }),
+
+    verificarMultiplas: protectedProcedure
+      .input(z.object({
+        atividadesIds: z.array(z.number()),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.verificarCurtidasMultiplas(ctx.user.id, input.atividadesIds);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
