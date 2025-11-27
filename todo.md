@@ -2879,3 +2879,16 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar rota no App.tsx
 - [x] Adicionar link no menu lateral
 - [x] Testar sistema completo de leaderboard
+
+
+## Card de Compartilhamento Social
+- [x] Instalar biblioteca html2canvas para geração de imagem
+- [x] Criar componente SharePositionCard com design estilo FIFA
+- [x] Adicionar posição, nível, pontos totais, badges
+- [x] Incluir avatar do atleta e nome
+- [x] Adicionar QR code do perfil público
+- [x] Incluir branding da RX Nation (logo, cores)
+- [x] Implementar função de download da imagem
+- [x] Adicionar botão "Compartilhar Posição" no card "Sua Posição"
+- [x] Adicionar botão em cada item do leaderboard (opcional)
+- [x] Testar geração e download do card

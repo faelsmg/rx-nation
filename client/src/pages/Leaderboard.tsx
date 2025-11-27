@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar } from "@/components/Avatar";
 import { BadgeNivel } from "@/components/BadgeNivel";
+import { SharePositionCard } from "@/components/SharePositionCard";
 import { Trophy, TrendingUp } from "lucide-react";
 
 export default function Leaderboard() {
@@ -101,9 +102,21 @@ export default function Leaderboard() {
                 </div>
                 <BadgeNivel nivel={userPosition.nivel} pontosAtual={userPosition.pontosTotal} showProgress />
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-yellow-600">{userPosition.pontosTotal}</div>
-                <div className="text-sm text-muted-foreground">pontos totais</div>
+              <div className="flex flex-col items-end gap-3">
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-yellow-600">{userPosition.pontosTotal}</div>
+                  <div className="text-sm text-muted-foreground">pontos totais</div>
+                </div>
+                <SharePositionCard
+                  posicao={userPosition.posicao}
+                  userName={userPosition.userName}
+                  userAvatar={userPosition.userAvatar}
+                  nivel={userPosition.nivel}
+                  pontosTotal={userPosition.pontosTotal}
+                  boxNome={userPosition.boxNome}
+                  categoria={userPosition.userCategoria}
+                  userId={userPosition.userId}
+                />
               </div>
             </div>
           </CardContent>
