@@ -2646,7 +2646,7 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Criar componente de calendário semanal
 - [ ] Mostrar WODs dos próximos 7 dias
 - [ ] Indicar WODs já completados
-- [ ] Link direto para registrar resultado
+- [x] Link direto para registrar resultado
 
 ### 4. Inscrição em Campeonatos
 - [ ] Criar página de inscrição
@@ -2661,3 +2661,28 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Frequência média por aluno
 - [ ] Horários mais populares
 - [ ] Gráficos de crescimento
+
+
+## Funcionalidades Restantes (3/5)
+
+### 3. Calendário Semanal de WODs
+- [x] Criar componente CalendarioSemanal
+- [x] Backend: procedure para buscar WODs dos próximos 7 dias
+- [x] Indicar WODs já completados pelo atleta
+- [x] Link direto para registrar resultado
+- [x] Adicionar ao Dashboard
+
+### 4. Inscrição em Campeonatos
+- [ ] Criar página de inscrição em campeonato
+- [ ] Formulário com categoria e divisão
+- [ ] Integração com Stripe (pagamento)
+- [ ] Confirmação de inscrição
+- [ ] Backend: procedure de inscrição
+
+### 5. Analytics Avançado (Box Master)
+- [ ] Taxa de retenção mensal
+- [ ] Alunos em risco de evasão (sem check-in 14+ dias)
+- [ ] Frequência média por aluno
+- [ ] Horários mais populares
+- [ ] Gráficos de crescimento (Chart.js)
+- [x] Adicionar ao Dashboard do Box Master

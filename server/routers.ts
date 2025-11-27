@@ -4798,6 +4798,17 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== CALENDÁRIO SEMANAL =====
+  calendario: router({
+    proximos7Dias: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não está vinculado a um box' });
+        }
+        return db.getWodsProximos7Dias(ctx.user.boxId, ctx.user.id);
+      }),
+  }),
+
   // ===== PERFIL DO ATLETA =====
   perfil: router({
     getCompleto: protectedProcedure

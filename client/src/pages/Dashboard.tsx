@@ -15,6 +15,7 @@ import InsightsIA from "@/components/InsightsIA";
 import { WidgetProximoBadge } from "@/components/WidgetProximoBadge";
 import { StreakHeatmap } from "@/components/StreakHeatmap";
 import { DesafiosPersonalizadosIA } from "@/components/DesafiosPersonalizadosIA";
+import CalendarioSemanal from "@/components/CalendarioSemanal";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -59,6 +60,9 @@ export default function Dashboard() {
             
             {/* Widget de Próximo Badge */}
             <WidgetProximoBadge />
+            
+            {/* Calendário Semanal */}
+            <CalendarioSemanal />
             
             {/* Heatmap de Streaks */}
             <StreakHeatmap />

@@ -12519,3 +12519,56 @@ export async function getEstatisticasAluno(userId: number) {
     frequenciaMedia: (checkinsUltimos30Dias / 30) * 100,
   };
 }
+
+
+// ===== CALENDÁRIO SEMANAL DE WODs =====
+
+export async function getWodsProximos7Dias(boxId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const seteDiasDepois = new Date(hoje);
+  seteDiasDepois.setDate(seteDiasDepois.getDate() + 7);
+
+  // Buscar WODs dos próximos 7 dias
+  const wodsProximos = await db
+    .select()
+    .from(wods)
+    .where(
+      and(
+        eq(wods.boxId, boxId),
+        gte(wods.data, hoje),
+        lte(wods.data, seteDiasDepois)
+      )
+    )
+    .orderBy(asc(wods.data));
+
+  // Para cada WOD, verificar se o atleta já completou
+  const wodsComStatus = await Promise.all(
+    wodsProximos.map(async (wod) => {
+      // Verificar se tem resultado registrado
+      const resultadoResult = await db
+        .select()
+        .from(resultadosTreinos)
+        .where(
+          and(
+            eq(resultadosTreinos.userId, userId),
+            eq(resultadosTreinos.wodId, wod.id)
+          )
+        )
+        .limit(1);
+
+      const completado = resultadoResult.length > 0;
+
+      return {
+        ...wod,
+        completado,
+      };
+    })
+  );
+
+  return wodsComStatus;
+}
