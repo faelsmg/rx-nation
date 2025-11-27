@@ -9043,6 +9043,7 @@ export async function getProgressoDesafiosUsuario(userId: number, semanaAno: str
     const progresso = progressos.find(p => p.desafioId === desafio.id);
     return {
       ...desafio,
+      desafioId: desafio.id, // Adicionar desafioId explicitamente
       progressoAtual: progresso?.progressoAtual || 0,
       completado: progresso?.completado || false,
       recompensaRecebida: progresso?.recompensaRecebida || false
@@ -12280,6 +12281,49 @@ export async function atualizarMetasAutomaticas(userId: number, tipo: "wods" | "
 }
 
 /**
+ * Completar meta manualmente
+ */
+export async function completarMeta(metaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar meta
+  const meta = await db.select().from(metas).where(and(eq(metas.id, metaId), eq(metas.userId, userId))).limit(1);
+  if (meta.length === 0) throw new Error("Meta não encontrada");
+
+  const metaAtual = meta[0]!;
+
+  // Atualizar para completada
+  await db.update(metas)
+    .set({
+      status: "completada",
+      concluida: true,
+      completadaEm: new Date(),
+      valorAtual: metaAtual.valorAlvo, // Forçar 100%
+    })
+    .where(eq(metas.id, metaId));
+
+  // Criar notificação
+  await createNotification({
+    userId: metaAtual.userId,
+    tipo: "conquista",
+    titulo: "🎯 Meta Conquistada!",
+    mensagem: `Parabéns! Você atingiu sua meta: ${metaAtual.titulo}`,
+    link: "/metas",
+  });
+
+  // Conceder pontos
+  await createPontuacao({
+    userId: metaAtual.userId,
+    tipo: "desafio",
+    pontos: 50,
+    descricao: `Meta conquistada: ${metaAtual.titulo}`,
+  });
+
+  return true;
+}
+
+/**
  * Cancelar meta
  */
 export async function cancelarMeta(metaId: number) {
@@ -12377,6 +12421,8 @@ export async function getPerfilCompleto(userId: number) {
       faixaEtaria: user.faixaEtaria,
       role: user.role,
       boxId: user.boxId,
+      avatarUrl: user.avatarUrl,
+      biografia: user.biografia,
     },
     estatisticas: {
       pontosTotais,

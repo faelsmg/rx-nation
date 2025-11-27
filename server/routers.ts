@@ -2097,8 +2097,11 @@ export const appRouter = router({
         return db.getMetasByUser(ctx.user.id);
       }),
 
-    // updateProgress: protectedProcedure (função db.updateMetaProgress não implementada)
-    // completar: protectedProcedure (função db.completarMeta não implementada)
+    completar: protectedProcedure
+      .input(z.object({ metaId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.completarMeta(input.metaId, ctx.user.id);
+      }),
   }),
 
   // ===== FEED SOCIAL =====

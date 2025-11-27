@@ -89,7 +89,9 @@ export default function GraficoEvolucaoPRs() {
                 return label;
               },
               title: function (context) {
-                const date = new Date(context[0].parsed.x);
+                const item = context[0];
+                if (!item) return "";
+                const date = new Date(item.parsed.x as number);
                 return date.toLocaleDateString("pt-BR");
               },
             },

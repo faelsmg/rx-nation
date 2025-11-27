@@ -39,7 +39,7 @@ export function SharePositionCard({
   const [isSharing, setIsSharing] = useState(false);
 
   // Verificar suporte à Web Share API
-  const canShare = typeof navigator !== "undefined" && navigator.share && navigator.canShare;
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function" && typeof navigator.canShare === "function";
 
   // Configurações de cores por nível
   const niveisConfig = {
@@ -223,7 +223,9 @@ export function SharePositionCard({
                   <div className="flex items-center gap-4 mb-4">
                     <div className="relative">
                       <Avatar
-                        user={{ name: userName, avatarUrl: userAvatar }}
+                        src={userAvatar}
+                        alt={userName}
+                        fallback={userName}
                         size="lg"
                         className="border-4 border-white/30"
                       />
