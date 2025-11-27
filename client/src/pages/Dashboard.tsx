@@ -20,6 +20,7 @@ import { Avatar } from "@/components/Avatar";
 import { StreakBadgesProgress } from "@/components/StreakBadgesProgress";
 import { FeedAtividades } from "@/components/FeedAtividades";
 import { useLevelUpDetection } from "@/hooks/useLevelUpDetection";
+import { ShareBoxButton } from "@/components/ShareBoxButton";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -56,21 +57,30 @@ export default function Dashboard() {
     <AppLayout>
       {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
       <div className="p-6 lg:p-8 space-y-8">
-        <div className="flex items-center gap-4">
-          <Avatar
-            src={user?.avatarUrl || undefined}
-            alt={user?.name || "Atleta"}
-            fallback={user?.name || undefined}
-            size="xl"
-          />
-          <div>
-            <h1 className="text-4xl font-bold mb-2">
-              Bem-vindo, <span className="text-primary">{user?.name?.split(" ")[0]}</span>!
-            </h1>
-            <p className="text-muted-foreground">
-              Confira seu progresso e continue treinando forte.
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Avatar
+              src={user?.avatarUrl || undefined}
+              alt={user?.name || "Atleta"}
+              fallback={user?.name || undefined}
+              size="xl"
+            />
+            <div>
+              <h1 className="text-4xl font-bold mb-2">
+                Bem-vindo, <span className="text-primary">{user?.name?.split(" ")[0]}</span>!
+              </h1>
+              <p className="text-muted-foreground">
+                Confira seu progresso e continue treinando forte.
+              </p>
+            </div>
           </div>
+          {/* Botão de compartilhamento para Box Masters */}
+          {user?.role === "box_master" && user?.boxId && boxes && (
+            <ShareBoxButton
+              boxSlug={boxes.find(b => b.id === user.boxId)?.slug || ""}
+              boxName={boxes.find(b => b.id === user.boxId)?.nome || ""}
+            />
+          )}
         </div>
 
         {/* Streak Indicator, Nível e Desafios */}

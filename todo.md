@@ -3168,3 +3168,18 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar Box Impacto CrossFit inicial
 - [ ] Testar fluxo: Box Master cria conta → vira dono
 - [ ] Testar fluxo: Atleta acessa link → cria conta → vincula ao box
+
+
+## Melhorias de UX e Onboarding - ✅ CONCLUÍDO
+- [x] Criar componente de botão de compartilhamento com WhatsApp/Telegram
+- [x] Adicionar botão no dashboard do Box Master
+- [x] Gerar links dinâmicos para compartilhamento
+- [x] Criar página de boas-vindas (/welcome)
+- [x] Implementar tour interativo com passos principais
+- [x] Detectar primeiro login e redirecionar para boas-vindas
+- [x] Criar procedure para enviar notificação ao Box Master
+- [x] Modificar callback OAuth para notificar em novos cadastros
+- [x] Adicionar campo onboardingCompleted no schema
+- [ ] Testar fluxo completo de compartilhamento
+- [ ] Testar página de boas-vindas
+- [ ] Testar notificações de novos atletas

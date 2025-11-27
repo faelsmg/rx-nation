@@ -45,6 +45,10 @@ export function registerOAuthRoutes(app: Express) {
         }
       }
 
+      // Verificar se é primeiro login antes de criar usuário
+      const existingUser = await db.getUserByOpenId(userInfo.openId);
+      const isFirstLogin = !existingUser;
+
       // Criar/atualizar usuário com vinculação automática
       await db.upsertUser({
         openId: userInfo.openId,
@@ -56,6 +60,16 @@ export function registerOAuthRoutes(app: Express) {
         role: isBoxMaster ? "box_master" : undefined,
       });
 
+      // Enviar notificação para Box Master se novo atleta se cadastrou
+      if (isFirstLogin && targetBoxId && !isBoxMaster) {
+        try {
+          await db.notificarNovoAtleta(targetBoxId, userInfo.name || "Novo atleta");
+        } catch (error) {
+          console.error("[OAuth] Erro ao notificar Box Master:", error);
+          // Não bloquear login por erro de notificação
+        }
+      }
+
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
         expiresInMs: ONE_YEAR_MS,
@@ -64,8 +78,12 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      // Redirecionar para dashboard após login
-      res.redirect(302, "/dashboard");
+      // Redirecionar para welcome se for primeiro login de atleta, senão dashboard
+      if (isFirstLogin && !isBoxMaster) {
+        res.redirect(302, "/welcome");
+      } else {
+        res.redirect(302, "/dashboard");
+      }
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });

@@ -14794,3 +14794,44 @@ export async function buscarBoxPorSlug(slug: string) {
 
   return box || null;
 }
+
+
+/**
+ * Notificar Box Master quando novo atleta se cadastrar
+ */
+export async function notificarNovoAtleta(boxId: number, nomeAtleta: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot send notification: database not available");
+    return;
+  }
+
+  try {
+    // Buscar Box Master do box
+    const boxMasters = await db.select()
+      .from(users)
+      .where(and(
+        eq(users.boxId, boxId),
+        eq(users.role, "box_master")
+      ));
+
+    if (boxMasters.length === 0) {
+      console.warn(`[Database] No box master found for box ${boxId}`);
+      return;
+    }
+
+    // Criar notificação para cada Box Master
+    for (const master of boxMasters) {
+      await db.insert(notificacoes).values({
+        userId: master.id,
+        tipo: "geral",
+        titulo: "Novo Atleta Cadastrado! 🎉",
+        mensagem: `${nomeAtleta} acabou de se juntar ao seu box!`,
+        lida: false,
+      });
+    }
+  } catch (error) {
+    console.error("[Database] Failed to notify box master:", error);
+    throw error;
+  }
+}

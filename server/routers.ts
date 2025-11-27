@@ -52,6 +52,8 @@ export const appRouter = router({
       return db.getUserById(ctx.user.id);
     }),
 
+
+
     getByBox: protectedProcedure
       .input(z.object({ boxId: z.number() }))
       .query(async ({ input }) => {

@@ -17,6 +17,7 @@ export const users = mysqlTable("users", {
   faixaEtaria: varchar("faixaEtaria", { length: 20 }), // ex: "18-29", "30-39", "40+"
   avatarUrl: text("avatarUrl"), // URL da foto de perfil no S3
   biografia: text("biografia"), // Biografia do atleta
+  onboardingCompleted: boolean("onboardingCompleted").default(false).notNull(), // Se completou tour de boas-vindas
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
