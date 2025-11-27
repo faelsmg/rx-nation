@@ -9574,7 +9574,6 @@ export async function getEstatisticasMensais(userId: number, meses: number = 6) 
     .groupBy(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m')`)
     .orderBy(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m')`);
 
-  // Mesclar dados por mês
   const mesesUnicos = new Set([
     ...pontuacoesMensais.map((p) => p.mes),
     ...prsMensais.map((p) => p.mes),
@@ -12975,15 +12974,16 @@ export async function getPerfilPublico(userId: number) {
     .limit(1);
 
   // Contar seguidores e seguindo
-  const seguidoresCount = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(seguidores)
-    .where(eq(seguidores.seguidoId, userId));
+  // TODO: Implementar tabela seguidores no schema
+  // const seguidoresCount = await db
+  //   .select({ count: sql<number>`COUNT(*)` })
+  //   .from(seguidores)
+  //   .where(eq(seguidores.seguidoId, userId));
 
-  const seguindoCount = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(seguidores)
-    .where(eq(seguidores.seguidorId, userId));
+  // const seguindoCount = await db
+  //   .select({ count: sql<number>`COUNT(*)` })
+  //   .from(seguidores)
+  //   .where(eq(seguidores.seguidorId, userId));
 
   return {
     ...usuario[0],
@@ -12993,8 +12993,8 @@ export async function getPerfilPublico(userId: number) {
       totalBadges: totalBadges[0]?.count || 0,
       streakAtual: streakAtual[0]?.streakAtual || 0,
       melhorStreak: streakAtual[0]?.melhorStreak || 0,
-      seguidores: seguidoresCount[0]?.count || 0,
-      seguindo: seguindoCount[0]?.count || 0,
+      seguidores: 0, // TODO: Implementar quando tabela seguidores existir
+      seguindo: 0, // TODO: Implementar quando tabela seguidores existir
     },
   };
 }
@@ -13059,23 +13059,24 @@ export async function seguirAtleta(seguidorId: number, seguidoId: number) {
   // Não pode seguir a si mesmo
   if (seguidorId === seguidoId) return false;
 
-  // Verificar se já segue
-  const jaSegue = await db
-    .select()
-    .from(seguidores)
-    .where(and(
-      eq(seguidores.seguidorId, seguidorId),
-      eq(seguidores.seguidoId, seguidoId)
-    ))
-    .limit(1);
+  // TODO: Implementar quando tabela seguidores existir
+  // // Verificar se já segue
+  // const jaSegue = await db
+  //   .select()
+  //   .from(seguidores)
+  //   .where(and(
+  //     eq(seguidores.seguidorId, seguidorId),
+  //     eq(seguidores.seguidoId, seguidoId)
+  //   ))
+  //   .limit(1);
 
-  if (jaSegue.length > 0) return false;
+  // if (jaSegue.length > 0) return false;
 
-  // Criar relacionamento
-  await db.insert(seguidores).values({
-    seguidorId,
-    seguidoId,
-  });
+  // // Criar relacionamento
+  // await db.insert(seguidores).values({
+  //   seguidorId,
+  //   seguidoId,
+  // });
 
   // Notificar usuário seguido
   const seguidor = await db.select({ name: users.name }).from(users).where(eq(users.id, seguidorId)).limit(1);
@@ -13097,12 +13098,13 @@ export async function deixarDeSeguirAtleta(seguidorId: number, seguidoId: number
   const db = await getDb();
   if (!db) return false;
 
-  await db
-    .delete(seguidores)
-    .where(and(
-      eq(seguidores.seguidorId, seguidorId),
-      eq(seguidores.seguidoId, seguidoId)
-    ));
+  // TODO: Implementar quando tabela seguidores existir
+  // await db
+  //   .delete(seguidores)
+  //   .where(and(
+  //     eq(seguidores.seguidorId, seguidorId),
+  //     eq(seguidores.seguidoId, seguidoId)
+  //   ));
 
   return true;
 }
@@ -13114,16 +13116,18 @@ export async function verificarSeguindo(seguidorId: number, seguidoId: number) {
   const db = await getDb();
   if (!db) return false;
 
-  const resultado = await db
-    .select()
-    .from(seguidores)
-    .where(and(
-      eq(seguidores.seguidorId, seguidorId),
-      eq(seguidores.seguidoId, seguidoId)
-    ))
-    .limit(1);
+  // TODO: Implementar quando tabela seguidores existir
+  // const resultado = await db
+  //   .select()
+  //   .from(seguidores)
+  //   .where(and(
+  //     eq(seguidores.seguidorId, seguidorId),
+  //     eq(seguidores.seguidoId, seguidoId)
+  //   ))
+  //   .limit(1);
 
-  return resultado.length > 0;
+  // return resultado.length > 0;
+  return false; // Temporário até implementar tabela
 }
 
 /**
@@ -13134,20 +13138,21 @@ export async function getSeguidores(userId: number, limit: number = 50) {
   if (!db) return [];
 
   const lista = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      avatarUrl: users.avatarUrl,
-      categoria: users.categoria,
-      createdAt: seguidores.createdAt,
-    })
-    .from(seguidores)
-    .leftJoin(users, eq(seguidores.seguidorId, users.id))
-    .where(eq(seguidores.seguidoId, userId))
-    .orderBy(desc(seguidores.createdAt))
-    .limit(limit);
+    // TODO: Implementar quando tabela seguidores existir
+    // .select({
+    //   id: users.id,
+    //   name: users.name,
+    //   avatarUrl: users.avatarUrl,
+    //   categoria: users.categoria,
+    //   createdAt: seguidores.createdAt,
+    // })
+    // .from(seguidores)
+    // .leftJoin(users, eq(seguidores.seguidorId, users.id))
+    // .where(eq(seguidores.seguidoId, userId))
+    // .orderBy(desc(seguidores.createdAt))
+    // .limit(limit);
 
-  return lista;
+  return []; // Temporário até implementar tabela
 }
 
 /**
@@ -13158,20 +13163,21 @@ export async function getSeguindo(userId: number, limit: number = 50) {
   if (!db) return [];
 
   const lista = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      avatarUrl: users.avatarUrl,
-      categoria: users.categoria,
-      createdAt: seguidores.createdAt,
-    })
-    .from(seguidores)
-    .leftJoin(users, eq(seguidores.seguidoId, users.id))
-    .where(eq(seguidores.seguidorId, userId))
-    .orderBy(desc(seguidores.createdAt))
-    .limit(limit);
+    // TODO: Implementar quando tabela seguidores existir
+    // .select({
+    //   id: users.id,
+    //   name: users.name,
+    //   avatarUrl: users.avatarUrl,
+    //   categoria: users.categoria,
+    //   createdAt: seguidores.createdAt,
+    // })
+    // .from(seguidores)
+    // .leftJoin(users, eq(seguidores.seguidoId, users.id))
+    // .where(eq(seguidores.seguidorId, userId))
+    // .orderBy(desc(seguidores.createdAt))
+    // .limit(limit);
 
-  return lista;
+  return []; // Temporário até implementar tabela
 }
 
 
@@ -13443,11 +13449,13 @@ export async function verificarTitulosEspeciais(userId: number) {
         break;
       }
       case "social": {
-        const seguidoresCount = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(seguidores)
-          .where(eq(seguidores.seguidoId, userId));
-        cumpre = (seguidoresCount[0]?.count || 0) >= titulo.valorObjetivo;
+        // TODO: Implementar quando tabela seguidores existir
+        // const seguidoresCount = await db
+        //   .select({ count: sql<number>`COUNT(*)` })
+        //   .from(seguidores)
+        //   .where(eq(seguidores.seguidoId, userId));
+        // cumpre = (seguidoresCount[0]?.count || 0) >= titulo.valorObjetivo;
+        cumpre = false; // Temporário até implementar tabela
         break;
       }
     }
@@ -13707,16 +13715,16 @@ export async function getDadosAtletasAtivos(dias: number = 30) {
     const dataInicio = new Date();
     dataInicio.setDate(dataInicio.getDate() - dias);
 
-    // Buscar check-ins agrupados por dia
+    // Buscar atletas únicos por dia
     const result = await db
       .select({
-        data: sql<string>`DATE(${checkins.dataHora})`,
+        data: sql<string>`DATE(${checkins.dataHora}) as data`,
         atletasAtivos: sql<number>`COUNT(DISTINCT ${checkins.userId})`,
       })
       .from(checkins)
       .where(sql`${checkins.dataHora} >= ${dataInicio}`)
-      .groupBy(sql`DATE(${checkins.dataHora})`)
-      .orderBy(sql`DATE(${checkins.dataHora})`);
+      .groupBy(sql`data`)
+      .orderBy(sql`data`);
 
     return result.map(item => ({
       data: item.data,
@@ -13742,13 +13750,13 @@ export async function getDadosWODsRealizados(dias: number = 30) {
     // Buscar WODs agrupados por semana
     const result = await db
       .select({
-        semana: sql<string>`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U')`,
+        semana: sql<string>`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U') as semana`,
         wodsRealizados: sql<number>`COUNT(*)`,
       })
       .from(resultadosTreinos)
       .where(sql`${resultadosTreinos.dataRegistro} >= ${dataInicio}`)
-      .groupBy(sql`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U')`)
-      .orderBy(sql`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U')`);
+      .groupBy(sql`semana`)
+      .orderBy(sql`semana`);
 
     return result.map(item => ({
       semana: item.semana,

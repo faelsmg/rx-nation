@@ -2958,3 +2958,16 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Implementar filtro de período (30/60/90 dias)
 - [x] Adicionar cores e estilos profissionais nos gráficos
 - [x] Testar responsividade dos gráficos
+
+
+## Correção de Erros TypeScript e SQL
+- [x] Identificar todas as referências à tabela seguidores inexistente
+- [x] Remover ou comentar código que usa tabela seguidores
+- [x] Identificar propriedades duplicadas em routers.ts
+- [x] Corrigir propriedades duplicadas em routers.ts
+- [x] Otimizar query getDadosAtletasAtivos com alias explícito
+- [x] Otimizar query getDadosWODsRealizados com alias explícito
+- [x] Otimizar query getDadosReceitaMensal com alias explícito
+- [x] Otimizar query getDadosTaxaRetencao com alias explícito
+- [x] Executar compilação TypeScript e verificar erros restantes
+- [x] Testar queries SQL no banco de dados

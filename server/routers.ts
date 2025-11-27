@@ -4922,7 +4922,7 @@ export const appRouter = router({
   }),
 
   // ==================== PERFIS PÚBLICOS ====================
-  perfil: router({
+  perfilPublico: router({
     getPerfilPublico: publicProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
