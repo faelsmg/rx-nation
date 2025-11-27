@@ -19,6 +19,7 @@ import CalendarioSemanal from "@/components/CalendarioSemanal";
 import { Avatar } from "@/components/Avatar";
 import { StreakBadgesProgress } from "@/components/StreakBadgesProgress";
 import { FeedAtividades } from "@/components/FeedAtividades";
+import { useLevelUpDetection } from "@/hooks/useLevelUpDetection";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -31,6 +32,18 @@ export default function Dashboard() {
     { boxId: user?.boxId || 0, limit: 5 },
     { enabled: !!user?.boxId }
   );
+  const { data: boxes } = trpc.boxes.list.useQuery();
+
+  // Detectar Level Up automaticamente
+  useLevelUpDetection({
+    pontosAtual: pontuacaoTotal,
+    userName: user?.name || "Atleta",
+    userAvatar: user?.avatarUrl,
+    userId: user?.id || 0,
+    boxNome: boxes?.find(b => b.id === user?.boxId)?.nome || "Sem box",
+    categoria: user?.categoria || "iniciante",
+    enabled: user?.role === "atleta",
+  });
 
   useEffect(() => {
     // Mostrar onboarding apenas para atletas que nunca completaram

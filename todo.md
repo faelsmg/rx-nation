@@ -2904,3 +2904,19 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Testar em dispositivos móveis (Android/iOS)
 - [x] Testar compartilhamento para Instagram, WhatsApp, Facebook
 - [x] Adicionar toast de sucesso/erro ao compartilhar
+
+
+## Animação de Level Up
+- [x] Instalar biblioteca canvas-confetti para confetes
+- [x] Criar componente LevelUpModal com animações
+- [x] Adicionar animação de confetes explosivos
+- [x] Adicionar partículas brilhantes flutuantes
+- [x] Criar efeito de transição de badge (antes → depois)
+- [x] Adicionar som celebrativo de conquista
+- [x] Mostrar nível anterior e novo nível
+- [x] Exibir pontos necessários para próximo nível
+- [x] Adicionar botão de fechar e compartilhar
+- [x] Criar hook useLevelUpDetection para detectar mudança de nível
+- [x] Integrar detecção ao registrar WOD, PR e Badge
+- [x] Adicionar provider global para modal de Level Up
+- [x] Testar animação em todas as transições de nível
