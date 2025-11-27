@@ -23,6 +23,7 @@ import GestaoAlunos from "./pages/GestaoAlunos";
 import GestaoBox from "./pages/GestaoBox";
 import GestaoConvites from "./pages/GestaoConvites";
 import JoinBox from "./pages/JoinBox";
+import SetupBoxMaster from "./pages/SetupBoxMaster";
 import AdminLiga from "./pages/AdminLiga";
 import Agenda from "./pages/Agenda";
 import Franqueado from "./pages/Franqueado";
@@ -87,6 +88,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path="/join/:slug" component={JoinBox} />
+      <Route path="/setup-box/:slug" component={SetupBoxMaster} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/wod"} component={WodDoDia} />
       <Route path={"/historico"} component={Historico} />

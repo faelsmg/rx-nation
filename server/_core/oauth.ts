@@ -13,6 +13,8 @@ export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
+    const boxSlug = getQueryParam(req, "boxSlug"); // Slug do box para vincular
+    const setupBox = getQueryParam(req, "setupBox"); // Se é setup de Box Master
 
     if (!code || !state) {
       res.status(400).json({ error: "code and state are required" });
@@ -28,12 +30,30 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      // Buscar box se slug foi fornecido
+      let targetBoxId: number | null = null;
+      let isBoxMaster = false;
+
+      if (boxSlug) {
+        const box = await db.buscarBoxPorSlug(boxSlug);
+        if (box) {
+          targetBoxId = box.id;
+          // Se é setup de Box Master, marcar como tal
+          if (setupBox === "true") {
+            isBoxMaster = true;
+          }
+        }
+      }
+
+      // Criar/atualizar usuário com vinculação automática
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,
         email: userInfo.email ?? null,
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
+        boxId: targetBoxId,
+        role: isBoxMaster ? "box_master" : undefined,
       });
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
@@ -44,7 +64,8 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      // Redirecionar para dashboard após login
+      res.redirect(302, "/dashboard");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });

@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, MapPin, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Crown, CheckCircle2 } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-export default function JoinBox() {
-  const [, params] = useRoute("/join/:slug");
+export default function SetupBoxMaster() {
+  const [, params] = useRoute("/setup-box/:slug");
   const { user, loading: authLoading } = useAuth();
   
   const slug = params?.slug || "";
@@ -18,16 +18,16 @@ export default function JoinBox() {
     { enabled: !!slug }
   );
 
-  // Se usuário já está logado e vinculado a este box, redirecionar
+  // Se usuário já está logado e é box_master deste box, redirecionar
   useEffect(() => {
-    if (user && box && user.boxId === box.id) {
+    if (user && box && user.boxId === box.id && user.role === "box_master") {
       window.location.href = "/dashboard";
     }
   }, [user, box]);
 
   const handleLogin = () => {
-    // Construir URL de login com parâmetros para vinculação de atleta
-    const callbackUrl = `/api/oauth/callback?boxSlug=${slug}`;
+    // Construir URL de login com parâmetros para vinculação
+    const callbackUrl = `/api/oauth/callback?boxSlug=${slug}&setupBox=true`;
     const loginUrl = `${import.meta.env.VITE_OAUTH_PORTAL_URL}?app_id=${import.meta.env.VITE_APP_ID}&redirect_uri=${encodeURIComponent(window.location.origin + callbackUrl)}`;
     window.location.href = loginUrl;
   };
@@ -50,7 +50,7 @@ export default function JoinBox() {
             </div>
             <CardTitle>Link Inválido</CardTitle>
             <CardDescription>
-              Este link de convite não existe ou está incorreto
+              Este link de configuração não existe ou está incorreto
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -66,24 +66,6 @@ export default function JoinBox() {
     );
   }
 
-  if (!box.ativo) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-accent/20 p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-3xl">🔒</span>
-            </div>
-            <CardTitle>Box Inativo</CardTitle>
-            <CardDescription>
-              Este box não está aceitando novos cadastros no momento
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-accent/20 p-4">
       <Card className="max-w-md w-full">
@@ -93,42 +75,42 @@ export default function JoinBox() {
               <img src={APP_LOGO} alt={APP_TITLE} className="w-16 h-16 mx-auto" />
             ) : (
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-3xl font-bold text-primary">RX</span>
+                <Crown className="w-8 h-8 text-primary" />
               </div>
             )}
           </div>
-          <CardTitle className="text-2xl">Junte-se ao {box.nome}</CardTitle>
+          <CardTitle className="text-2xl">Configure seu Box</CardTitle>
           <CardDescription>
-            Você foi convidado para fazer parte deste box
+            Você está prestes a se tornar o administrador do box
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Informações do Box */}
-          <div className="bg-accent/50 rounded-lg p-4 space-y-2">
-            <h3 className="font-semibold text-lg">{box.nome}</h3>
+          <div className="bg-accent/50 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-lg">{box.nome}</h3>
+            </div>
             {(box.cidade || box.estado) && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>
-                  {box.cidade}
-                  {box.cidade && box.estado && ", "}
-                  {box.estado}
-                </span>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {box.cidade}
+                {box.cidade && box.estado && ", "}
+                {box.estado}
+              </p>
             )}
           </div>
 
           {/* Benefícios */}
           <div className="space-y-3">
-            <h4 className="font-semibold">O que você terá acesso:</h4>
+            <h4 className="font-semibold">Como Box Master você poderá:</h4>
             <ul className="space-y-2">
               {[
-                "WODs diários personalizados",
-                "Acompanhamento de PRs e evolução",
-                "Rankings e gamificação",
-                "Agenda de aulas e reservas",
-                "Comunicados e novidades do box",
-                "Badges e conquistas",
+                "Gerenciar WODs e treinos",
+                "Convidar e administrar atletas",
+                "Criar campeonatos e rankings",
+                "Configurar agenda de aulas",
+                "Acompanhar métricas e engajamento",
+                "Enviar comunicados para todos",
               ].map((beneficio, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
@@ -140,28 +122,17 @@ export default function JoinBox() {
 
           {/* CTA */}
           <div className="space-y-3 pt-4">
-            {user ? (
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Você já está logado! Redirecionando...
-                </p>
-                <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-              </div>
-            ) : (
-              <>
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  onClick={handleLogin}
-                >
-                  Criar Conta e Entrar
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Faça login com Google, Facebook ou Email.<br/>
-                  Você será automaticamente vinculado ao {box.nome}
-                </p>
-              </>
-            )}
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={handleLogin}
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              Criar Conta e Configurar Box
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Você pode fazer login com Google, Facebook ou Email
+            </p>
           </div>
         </CardContent>
       </Card>

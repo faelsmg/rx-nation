@@ -1,0 +1,24 @@
+{
+  "query": "INSERT INTO boxes (nome, slug, tipo, endereco, cidade, estado, ativo, dataAdesao, createdAt, updatedAt)\nVALUES (\n  'Impacto CrossFit',\n  'impacto-crossfit',\n  'proprio',\n  'Endereço a definir',\n  'São José dos Campos',\n  'SP',\n  true,\n  NOW(),\n  NOW(),\n  NOW()\n);\n\nSELECT * FROM boxes WHERE slug = 'impacto-crossfit';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute INSERT INTO boxes (nome, slug, tipo, endereco, cidade, estado, ativo, dataAdesao, createdAt, updatedAt)\nVALUES (\n  'Impacto CrossFit',\n  'impacto-crossfit',\n  'proprio',\n  'Endereço a definir',\n  'São José dos Campos',\n  'SP',\n  true,\n  NOW(),\n  NOW(),\n  NOW()\n);\n\nSELECT * FROM boxes WHERE slug = 'impacto-crossfit';",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Impacto CrossFit",
+      "tipo": "proprio",
+      "endereco": "Endereço a definir",
+      "cidade": "São José dos Campos",
+      "estado": "SP",
+      "ativo": "1",
+      "dataAdesao": "2025-11-27 20:10:20",
+      "createdAt": "2025-11-27 20:10:20",
+      "updatedAt": "2025-11-27 20:10:20",
+      "franqueadoId": "NULL",
+      "slug": "impacto-crossfit"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\ttipo\tendereco\tcidade\testado\tativo\tdataAdesao\tcreatedAt\tupdatedAt\tfranqueadoId\tslug\n1\tImpacto CrossFit\tproprio\tEndereço a definir\tSão José dos Campos\tSP\t1\t2025-11-27 20:10:20\t2025-11-27 20:10:20\t2025-11-27 20:10:20\tNULL\timpacto-crossfit\n",
+  "stderr": "",
+  "execution_time_ms": 73
+}

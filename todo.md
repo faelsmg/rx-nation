@@ -3156,3 +3156,15 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Implementar envio de email de convite - FUTURO
 - [x] Criar testes para fluxo de convite
 - [x] Criar testes para fluxo de link compartilhável
+
+
+## Auto-vinculação via OAuth - ✅ CONCLUÍDO
+- [x] Modificar callback OAuth para detectar contexto de convite/box
+- [x] Vincular usuário ao box automaticamente após primeiro login
+- [x] Criar link especial /setup-box/:slug para Box Master
+- [x] Definir role box_master automaticamente no primeiro acesso do dono
+- [x] Ajustar página JoinBox para usar OAuth com contexto
+- [x] Limpar banco de dados completamente (zerar tudo)
+- [x] Criar Box Impacto CrossFit inicial
+- [ ] Testar fluxo: Box Master cria conta → vira dono
+- [ ] Testar fluxo: Atleta acessa link → cria conta → vincula ao box
