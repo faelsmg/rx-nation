@@ -94,6 +94,14 @@ import {
   InsertPlaylistItem,
   playlistPurchases,
   InsertPlaylistPurchase,
+  pontuacaoUsuarios,
+  InsertPontuacaoUsuario,
+  historicoPontos,
+  InsertHistoricoPonto,
+  titulosEspeciais,
+  InsertTituloEspecial,
+  userTitulos,
+  InsertUserTitulo,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -12887,4 +12895,609 @@ export async function restaurarComentarioFeed(
     .where(eq(comentariosFeed.id, comentarioId));
 
   return true;
+}
+
+
+// ==================== PERFIS PÚBLICOS ====================
+
+/**
+ * Buscar dados completos do perfil público de um atleta
+ */
+export async function getPerfilPublico(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Dados básicos do usuário
+  const usuario = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      avatarUrl: users.avatarUrl,
+      categoria: users.categoria,
+      faixaEtaria: users.faixaEtaria,
+      role: users.role,
+      boxId: users.boxId,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!usuario[0]) return null;
+
+  // Estatísticas gerais
+  const totalWods = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.userId, userId));
+
+  const totalPRs = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prs)
+    .where(eq(resultadosTreinos.userId, userId));
+
+  const totalBadges = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(userBadges)
+    .where(eq(userBadges.userId, userId));
+
+  const streakAtual = await db
+    .select({ streakAtual: streaks.streakAtual, melhorStreak: streaks.melhorStreak })
+    .from(streaks)
+    .where(eq(streaks.userId, userId))
+    .limit(1);
+
+  // Contar seguidores e seguindo
+  const seguidoresCount = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(seguidores)
+    .where(eq(seguidores.seguidoId, userId));
+
+  const seguindoCount = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(seguidores)
+    .where(eq(seguidores.seguidorId, userId));
+
+  return {
+    ...usuario[0],
+    stats: {
+      totalWods: totalWods[0]?.count || 0,
+      totalPRs: totalPRs[0]?.count || 0,
+      totalBadges: totalBadges[0]?.count || 0,
+      streakAtual: streakAtual[0]?.streakAtual || 0,
+      melhorStreak: streakAtual[0]?.melhorStreak || 0,
+      seguidores: seguidoresCount[0]?.count || 0,
+      seguindo: seguindoCount[0]?.count || 0,
+    },
+  };
+}
+
+/**
+ * Buscar histórico de conquistas do atleta para perfil público
+ */
+export async function getHistoricoConquistasPerfilPublico(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conquistas = await db
+    .select({
+      id: feedAtividades.id,
+      tipo: feedAtividades.tipo,
+      titulo: feedAtividades.titulo,
+      descricao: feedAtividades.descricao,
+      createdAt: feedAtividades.createdAt,
+    })
+    .from(feedAtividades)
+    .where(eq(feedAtividades.userId, userId))
+    .orderBy(desc(feedAtividades.createdAt))
+    .limit(limit);
+
+  return conquistas;
+}
+
+/**
+ * Buscar evolução de PRs para gráfico (perfil público)
+ */
+export async function getEvolucaoPRsGrafico(userId: number, movimento?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(prs.userId, userId)];
+  if (movimento) {
+    conditions.push(eq(prs.movimento, movimento));
+  }
+
+  const prsData = await db
+    .select({
+      id: prs.id,
+      movimento: prs.movimento,
+      valor: prs.valor,
+      unidade: prs.unidade,
+      data: prs.data,
+    })
+    .from(prs)
+    .where(and(...conditions))
+    .orderBy(prs.data);
+
+  return prsData;
+}
+
+/**
+ * Seguir um atleta
+ */
+export async function seguirAtleta(seguidorId: number, seguidoId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Não pode seguir a si mesmo
+  if (seguidorId === seguidoId) return false;
+
+  // Verificar se já segue
+  const jaSegue = await db
+    .select()
+    .from(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      eq(seguidores.seguidoId, seguidoId)
+    ))
+    .limit(1);
+
+  if (jaSegue.length > 0) return false;
+
+  // Criar relacionamento
+  await db.insert(seguidores).values({
+    seguidorId,
+    seguidoId,
+  });
+
+  // Notificar usuário seguido
+  const seguidor = await db.select({ name: users.name }).from(users).where(eq(users.id, seguidorId)).limit(1);
+  await createNotification({
+    userId: seguidoId,
+    tipo: "geral" as any,
+    titulo: "Novo seguidor",
+    mensagem: `${seguidor[0]?.name || "Alguém"} começou a te seguir!`,
+    link: `/perfil/${seguidorId}`,
+  });
+
+  return true;
+}
+
+/**
+ * Deixar de seguir um atleta
+ */
+export async function deixarDeSeguirAtleta(seguidorId: number, seguidoId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .delete(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      eq(seguidores.seguidoId, seguidoId)
+    ));
+
+  return true;
+}
+
+/**
+ * Verificar se um usuário segue outro
+ */
+export async function verificarSeguindo(seguidorId: number, seguidoId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const resultado = await db
+    .select()
+    .from(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      eq(seguidores.seguidoId, seguidoId)
+    ))
+    .limit(1);
+
+  return resultado.length > 0;
+}
+
+/**
+ * Buscar lista de seguidores
+ */
+export async function getSeguidores(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const lista = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      categoria: users.categoria,
+      createdAt: seguidores.createdAt,
+    })
+    .from(seguidores)
+    .leftJoin(users, eq(seguidores.seguidorId, users.id))
+    .where(eq(seguidores.seguidoId, userId))
+    .orderBy(desc(seguidores.createdAt))
+    .limit(limit);
+
+  return lista;
+}
+
+/**
+ * Buscar lista de quem o usuário está seguindo
+ */
+export async function getSeguindo(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const lista = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      categoria: users.categoria,
+      createdAt: seguidores.createdAt,
+    })
+    .from(seguidores)
+    .leftJoin(users, eq(seguidores.seguidoId, users.id))
+    .where(eq(seguidores.seguidorId, userId))
+    .orderBy(desc(seguidores.createdAt))
+    .limit(limit);
+
+  return lista;
+}
+
+
+// ==================== GAMIFICAÇÃO COM NÍVEIS ====================
+
+/**
+ * Calcular nível baseado em pontos totais
+ */
+function calcularNivel(pontosTotal: number): "bronze" | "prata" | "ouro" | "platina" {
+  if (pontosTotal >= 5000) return "platina";
+  if (pontosTotal >= 2500) return "ouro";
+  if (pontosTotal >= 1000) return "prata";
+  return "bronze";
+}
+
+/**
+ * Inicializar pontuação para um novo usuário
+ */
+export async function inicializarPontuacao(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.insert(pontuacaoUsuarios).values({
+      userId,
+      pontosCheckin: 0,
+      pontosWod: 0,
+      pontosPR: 0,
+      pontosBadge: 0,
+      pontosTotal: 0,
+      nivel: "bronze",
+    });
+    return true;
+  } catch (error) {
+    console.error("[Gamificação] Erro ao inicializar pontuação:", error);
+    return false;
+  }
+}
+
+/**
+ * Adicionar pontos ao usuário
+ */
+export async function adicionarPontos(
+  userId: number,
+  tipo: "checkin" | "wod" | "pr" | "badge",
+  descricao: string,
+  metadata?: any
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Valores de pontos por tipo
+  const pontosPorTipo = {
+    checkin: 10,
+    wod: 20,
+    pr: 50,
+    badge: 100,
+  };
+
+  const pontos = pontosPorTipo[tipo];
+
+  try {
+    // Buscar pontuação atual ou criar se não existir
+    let pontuacao = await db
+      .select()
+      .from(pontuacaoUsuarios)
+      .where(eq(pontuacaoUsuarios.userId, userId))
+      .limit(1);
+
+    if (pontuacao.length === 0) {
+      await inicializarPontuacao(userId);
+      pontuacao = await db
+        .select()
+        .from(pontuacaoUsuarios)
+        .where(eq(pontuacaoUsuarios.userId, userId))
+        .limit(1);
+    }
+
+    const pontuacaoAtual = pontuacao[0];
+    if (!pontuacaoAtual) return false;
+
+    // Calcular novos valores
+    const novosPontosTipo = {
+      pontosCheckin: pontuacaoAtual.pontosCheckin + (tipo === "checkin" ? pontos : 0),
+      pontosWod: pontuacaoAtual.pontosWod + (tipo === "wod" ? pontos : 0),
+      pontosPR: pontuacaoAtual.pontosPR + (tipo === "pr" ? pontos : 0),
+      pontosBadge: pontuacaoAtual.pontosBadge + (tipo === "badge" ? pontos : 0),
+    };
+
+    const novosPontosTotal =
+      novosPontosTipo.pontosCheckin +
+      novosPontosTipo.pontosWod +
+      novosPontosTipo.pontosPR +
+      novosPontosTipo.pontosBadge;
+
+    const nivelAnterior = pontuacaoAtual.nivel;
+    const novoNivel = calcularNivel(novosPontosTotal);
+
+    // Atualizar pontuação
+    await db
+      .update(pontuacaoUsuarios)
+      .set({
+        ...novosPontosTipo,
+        pontosTotal: novosPontosTotal,
+        nivel: novoNivel,
+      })
+      .where(eq(pontuacaoUsuarios.userId, userId));
+
+    // Registrar no histórico
+    await db.insert(historicoPontos).values({
+      userId,
+      tipo,
+      pontos,
+      descricao,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    });
+
+    // Se subiu de nível, notificar
+    if (novoNivel !== nivelAnterior) {
+      await createNotification({
+        userId,
+        tipo: "nivel" as any,
+        titulo: `Parabéns! Você subiu para ${novoNivel.toUpperCase()}! 🎉`,
+        mensagem: `Você alcançou ${novosPontosTotal} pontos e subiu para o nível ${novoNivel.toUpperCase()}!`,
+        link: "/perfil",
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Gamificação] Erro ao adicionar pontos:", error);
+    return false;
+  }
+}
+
+/**
+ * Buscar pontuação e nível do usuário
+ */
+export async function getPontuacaoUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const pontuacao = await db
+    .select()
+    .from(pontuacaoUsuarios)
+    .where(eq(pontuacaoUsuarios.userId, userId))
+    .limit(1);
+
+  if (pontuacao.length === 0) {
+    await inicializarPontuacao(userId);
+    return {
+      pontosCheckin: 0,
+      pontosWod: 0,
+      pontosPR: 0,
+      pontosBadge: 0,
+      pontosTotal: 0,
+      nivel: "bronze" as const,
+    };
+  }
+
+  return pontuacao[0];
+}
+
+/**
+ * Buscar ranking por nível e pontos
+ */
+export async function getRankingPorNivel(boxId?: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      userId: pontuacaoUsuarios.userId,
+      nome: users.name,
+      avatarUrl: users.avatarUrl,
+      pontosTotal: pontuacaoUsuarios.pontosTotal,
+      nivel: pontuacaoUsuarios.nivel,
+    })
+    .from(pontuacaoUsuarios)
+    .leftJoin(users, eq(pontuacaoUsuarios.userId, users.id))
+    .orderBy(desc(pontuacaoUsuarios.pontosTotal));
+
+  if (boxId) {
+    query = query.where(eq(users.boxId, boxId)) as any;
+  }
+
+  const resultado = await query.limit(limit);
+  return resultado;
+}
+
+/**
+ * Buscar histórico de pontos do usuário
+ */
+export async function getHistoricoPontos(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const historico = await db
+    .select()
+    .from(historicoPontos)
+    .where(eq(historicoPontos.userId, userId))
+    .orderBy(desc(historicoPontos.createdAt))
+    .limit(limit);
+
+  return historico;
+}
+
+/**
+ * Verificar e conceder títulos especiais
+ */
+export async function verificarTitulosEspeciais(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Buscar todos os títulos ativos
+  const titulos = await db
+    .select()
+    .from(titulosEspeciais)
+    .where(eq(titulosEspeciais.ativo, true));
+
+  for (const titulo of titulos) {
+    // Verificar se usuário já possui o título
+    const jaTemTitulo = await db
+      .select()
+      .from(userTitulos)
+      .where(and(
+        eq(userTitulos.userId, userId),
+        eq(userTitulos.tituloId, titulo.id)
+      ))
+      .limit(1);
+
+    if (jaTemTitulo.length > 0) continue;
+
+    // Verificar se usuário cumpre o critério
+    let cumpre = false;
+
+    switch (titulo.tipo) {
+      case "wods": {
+        const totalWods = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(resultadosTreinos)
+          .where(eq(resultadosTreinos.userId, userId));
+        cumpre = (totalWods[0]?.count || 0) >= titulo.valorObjetivo;
+        break;
+      }
+      case "prs": {
+        const totalPRs = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(prs)
+          .where(eq(prs.userId, userId));
+        cumpre = (totalPRs[0]?.count || 0) >= titulo.valorObjetivo;
+        break;
+      }
+      case "frequencia": {
+        const totalCheckins = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(checkins)
+          .where(eq(checkins.userId, userId));
+        cumpre = (totalCheckins[0]?.count || 0) >= titulo.valorObjetivo;
+        break;
+      }
+      case "streak": {
+        const streak = await db
+          .select({ melhorStreak: streaks.melhorStreak })
+          .from(streaks)
+          .where(eq(streaks.userId, userId))
+          .limit(1);
+        cumpre = (streak[0]?.melhorStreak || 0) >= titulo.valorObjetivo;
+        break;
+      }
+      case "social": {
+        const seguidoresCount = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(seguidores)
+          .where(eq(seguidores.seguidoId, userId));
+        cumpre = (seguidoresCount[0]?.count || 0) >= titulo.valorObjetivo;
+        break;
+      }
+    }
+
+    // Se cumpre o critério, conceder título
+    if (cumpre) {
+      await db.insert(userTitulos).values({
+        userId,
+        tituloId: titulo.id,
+        principal: false,
+      });
+
+      // Notificar usuário
+      await createNotification({
+        userId,
+        tipo: "conquista" as any,
+        titulo: `Novo Título: ${titulo.nome}! ${titulo.icone || "🏆"}`,
+        mensagem: titulo.descricao,
+        link: "/perfil",
+      });
+    }
+  }
+}
+
+/**
+ * Buscar títulos do usuário
+ */
+export async function getTitulosUsuario(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const titulos = await db
+    .select({
+      id: userTitulos.id,
+      tituloId: titulosEspeciais.id,
+      nome: titulosEspeciais.nome,
+      descricao: titulosEspeciais.descricao,
+      icone: titulosEspeciais.icone,
+      tipo: titulosEspeciais.tipo,
+      principal: userTitulos.principal,
+      dataConquista: userTitulos.dataConquista,
+    })
+    .from(userTitulos)
+    .leftJoin(titulosEspeciais, eq(userTitulos.tituloId, titulosEspeciais.id))
+    .where(eq(userTitulos.userId, userId))
+    .orderBy(desc(userTitulos.dataConquista));
+
+  return titulos;
+}
+
+/**
+ * Definir título principal do usuário
+ */
+export async function setTituloPrincipal(userId: number, tituloId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Remover principal de todos os títulos
+    await db
+      .update(userTitulos)
+      .set({ principal: false })
+      .where(eq(userTitulos.userId, userId));
+
+    // Definir novo principal
+    await db
+      .update(userTitulos)
+      .set({ principal: true })
+      .where(and(
+        eq(userTitulos.userId, userId),
+        eq(userTitulos.tituloId, tituloId)
+      ));
+
+    return true;
+  } catch (error) {
+    console.error("[Gamificação] Erro ao definir título principal:", error);
+    return false;
+  }
 }

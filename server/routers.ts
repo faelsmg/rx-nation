@@ -4907,6 +4907,57 @@ export const appRouter = router({
         return db.getResumoConquistas(ctx.user.id);
       }),
   }),
+
+  // ==================== PERFIS PÚBLICOS ====================
+  perfil: router({
+    getPerfilPublico: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getPerfilPublico(input.userId);
+      }),
+
+    getHistorico: publicProcedure
+      .input(z.object({ userId: z.number(), limit: z.number().default(50) }))
+      .query(async ({ input }) => {
+        return db.getHistoricoConquistasPerfilPublico(input.userId, input.limit);
+      }),
+
+    getEvolucaoPRs: publicProcedure
+      .input(z.object({ userId: z.number(), movimento: z.string().optional() }))
+      .query(async ({ input }) => {
+        return db.getEvolucaoPRsGrafico(input.userId, input.movimento);
+      }),
+
+    seguir: protectedProcedure
+      .input(z.object({ seguidoId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.seguirAtleta(ctx.user.id, input.seguidoId);
+      }),
+
+    deixarDeSeguir: protectedProcedure
+      .input(z.object({ seguidoId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.deixarDeSeguirAtleta(ctx.user.id, input.seguidoId);
+      }),
+
+    verificarSeguindo: protectedProcedure
+      .input(z.object({ seguidoId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return db.verificarSeguindo(ctx.user.id, input.seguidoId);
+      }),
+
+    getSeguidores: publicProcedure
+      .input(z.object({ userId: z.number(), limit: z.number().default(50) }))
+      .query(async ({ input }) => {
+        return db.getSeguidores(input.userId, input.limit);
+      }),
+
+    getSeguindo: publicProcedure
+      .input(z.object({ userId: z.number(), limit: z.number().default(50) }))
+      .query(async ({ input }) => {
+        return db.getSeguindo(input.userId, input.limit);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

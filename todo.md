@@ -2774,3 +2774,43 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Frontend: implementar botão seguir/deixar de seguir
 - [ ] Frontend: exibir lista de seguidores/seguindo
 - [ ] Criar testes para perfil público
+
+
+## Perfis Públicos de Atletas
+- [x] Backend: criar query para buscar dados completos do perfil (conquistas, stats)
+- [x] Backend: criar query para histórico de conquistas ordenado por data
+- [x] Backend: criar query para evolução de PRs (dados para gráfico)
+- [x] Backend: criar procedures de seguir/deixar de seguir
+- [x] Backend: criar query para buscar seguidores e seguindo
+- [x] Backend: notificar usuário quando alguém o segue
+- [ ] Frontend: criar página /perfil/:userId
+- [ ] Frontend: criar cabeçalho de perfil com avatar, nome, stats e botão seguir
+- [ ] Frontend: criar timeline de conquistas
+- [ ] Frontend: criar gráfico de evolução de PRs com Chart.js
+- [ ] Frontend: criar seção de estatísticas detalhadas
+- [ ] Frontend: criar modal de lista de seguidores/seguindo
+- [ ] Frontend: adicionar links para perfis no feed e rankings
+- [ ] Criar testes para sistema de perfis públicos
+
+## Sistema de Gamificação com Níveis
+- [x] Backend: criar tabela de pontuação de usuários
+- [x] Backend: definir regras de pontos (check-in: 10, WOD: 20, PR: 50, badge: 100)
+- [x] Backend: criar função para calcular nível baseado em pontos
+- [x] Backend: criar trigger para adicionar pontos automaticamente
+- [x] Backend: criar query para ranking por nível
+- [x] Backend: notificar usuário ao subir de nível
+- [ ] Frontend: criar badge visual de nível (Bronze, Prata, Ouro, Platina)
+- [ ] Frontend: exibir nível no perfil, feed e rankings
+- [ ] Frontend: criar página de ranking por níveis
+- [ ] Frontend: criar animação de subida de nível
+- [ ] Criar testes para sistema de níveis
+
+## Títulos Especiais e Recompensas
+- [x] Backend: criar tabela de títulos especiais
+- [x] Backend: definir critérios para títulos (ex: "Rei do WOD" = 100 WODs)
+- [x] Backend: criar função para verificar e conceder títulos
+- [x] Backend: criar query para buscar títulos do usuário
+- [ ] Frontend: exibir título principal no perfil
+- [ ] Frontend: criar modal de todos os títulos conquistados
+- [ ] Frontend: adicionar ícone de título no feed
+- [ ] Criar testes para sistema de títulos

@@ -1270,3 +1270,98 @@ export const seguidoresRelations = relations(seguidores, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+
+// ==================== SISTEMA DE GAMIFICAÇÃO COM NÍVEIS ====================
+/**
+ * Pontuação de Usuários (Sistema de Níveis)
+ * Bronze: 0-999 pts | Prata: 1000-2499 pts | Ouro: 2500-4999 pts | Platina: 5000+ pts
+ */
+export const pontuacaoUsuarios = mysqlTable("pontuacao_usuarios", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  pontosCheckin: int("pontos_checkin").default(0).notNull(), // 10 pts por check-in
+  pontosWod: int("pontos_wod").default(0).notNull(), // 20 pts por WOD completo
+  pontosPR: int("pontos_pr").default(0).notNull(), // 50 pts por PR quebrado
+  pontosBadge: int("pontos_badge").default(0).notNull(), // 100 pts por badge conquistado
+  pontosTotal: int("pontos_total").default(0).notNull(), // Soma de todos os pontos
+  nivel: mysqlEnum("nivel", ["bronze", "prata", "ouro", "platina"]).default("bronze").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PontuacaoUsuario = typeof pontuacaoUsuarios.$inferSelect;
+export type InsertPontuacaoUsuario = typeof pontuacaoUsuarios.$inferInsert;
+
+export const pontuacaoUsuariosRelations = relations(pontuacaoUsuarios, ({ one }) => ({
+  user: one(users, {
+    fields: [pontuacaoUsuarios.userId],
+    references: [users.id],
+  }),
+}));
+
+/**
+ * Histórico de Pontos (Registro de cada ação que gerou pontos)
+ */
+export const historicoPontos = mysqlTable("historico_pontos", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tipo: mysqlEnum("tipo", ["checkin", "wod", "pr", "badge"]).notNull(),
+  pontos: int("pontos").notNull(),
+  descricao: varchar("descricao", { length: 255 }).notNull(),
+  metadata: text("metadata"), // JSON com dados específicos (wodId, prId, badgeId, etc)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type HistoricoPonto = typeof historicoPontos.$inferSelect;
+export type InsertHistoricoPonto = typeof historicoPontos.$inferInsert;
+
+export const historicoPontosRelations = relations(historicoPontos, ({ one }) => ({
+  user: one(users, {
+    fields: [historicoPontos.userId],
+    references: [users.id],
+  }),
+}));
+
+/**
+ * Títulos Especiais (Conquistas baseadas em critérios específicos)
+ */
+export const titulosEspeciais = mysqlTable("titulos_especiais", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 100 }).notNull(),
+  descricao: text("descricao").notNull(),
+  icone: varchar("icone", { length: 10 }), // Emoji do título
+  criterio: text("criterio").notNull(), // Descrição do critério
+  tipo: mysqlEnum("tipo", ["wods", "prs", "frequencia", "social", "streak"]).notNull(),
+  valorObjetivo: int("valor_objetivo").notNull(), // Ex: 100 WODs, 50 PRs, 30 dias streak
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TituloEspecial = typeof titulosEspeciais.$inferSelect;
+export type InsertTituloEspecial = typeof titulosEspeciais.$inferInsert;
+
+/**
+ * Títulos Conquistados pelos Usuários
+ */
+export const userTitulos = mysqlTable("user_titulos", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tituloId: int("titulo_id").notNull().references(() => titulosEspeciais.id, { onDelete: "cascade" }),
+  dataConquista: timestamp("data_conquista").defaultNow().notNull(),
+  principal: boolean("principal").default(false).notNull(), // Se é o título exibido no perfil
+});
+
+export type UserTitulo = typeof userTitulos.$inferSelect;
+export type InsertUserTitulo = typeof userTitulos.$inferInsert;
+
+export const userTitulosRelations = relations(userTitulos, ({ one }) => ({
+  user: one(users, {
+    fields: [userTitulos.userId],
+    references: [users.id],
+  }),
+  titulo: one(titulosEspeciais, {
+    fields: [userTitulos.tituloId],
+    references: [titulosEspeciais.id],
+  }),
+}));
