@@ -5013,6 +5013,32 @@ export const appRouter = router({
       }),
   }),
 
+  // ==================== RELATÓRIOS GLOBAIS ====================
+  relatorios: router({
+    getDadosGraficos: protectedProcedure
+      .input(z.object({ periodo: z.number().default(30) }))
+      .query(async ({ ctx, input }) => {
+        // Apenas admin_liga pode acessar
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem acessar relatórios' });
+        }
+
+        const [atletasAtivos, wodsRealizados, receitaMensal, taxaRetencao] = await Promise.all([
+          db.getDadosAtletasAtivos(input.periodo),
+          db.getDadosWODsRealizados(input.periodo),
+          db.getDadosReceitaMensal(12), // Sempre 12 meses para receita
+          db.getDadosTaxaRetencao(12), // Sempre 12 meses para retenção
+        ]);
+
+        return {
+          atletasAtivos,
+          wodsRealizados,
+          receitaMensal,
+          taxaRetencao,
+        };
+      }),
+  }),
+
   // ==================== CONFIGURAÇÕES DA LIGA ====================
   configuracoes: router({
     get: protectedProcedure

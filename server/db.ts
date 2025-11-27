@@ -13691,3 +13691,162 @@ export async function updateConfiguracoesLiga(
     return false;
   }
 }
+
+
+// ==================== RELATÓRIOS GLOBAIS - DADOS PARA GRÁFICOS ====================
+
+/**
+ * Buscar dados de atletas ativos por dia (últimos N dias)
+ */
+export async function getDadosAtletasAtivos(dias: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    // Buscar check-ins agrupados por dia
+    const result = await db
+      .select({
+        data: sql<string>`DATE(${checkins.dataHora})`,
+        atletasAtivos: sql<number>`COUNT(DISTINCT ${checkins.userId})`,
+      })
+      .from(checkins)
+      .where(sql`${checkins.dataHora} >= ${dataInicio}`)
+      .groupBy(sql`DATE(${checkins.dataHora})`)
+      .orderBy(sql`DATE(${checkins.dataHora})`);
+
+    return result.map(item => ({
+      data: item.data,
+      atletasAtivos: Number(item.atletasAtivos),
+    }));
+  } catch (error) {
+    console.error("[Relatórios] Erro ao buscar dados de atletas ativos:", error);
+    return [];
+  }
+}
+
+/**
+ * Buscar dados de WODs realizados por semana (últimos N dias)
+ */
+export async function getDadosWODsRealizados(dias: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    // Buscar WODs agrupados por semana
+    const result = await db
+      .select({
+        semana: sql<string>`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U')`,
+        wodsRealizados: sql<number>`COUNT(*)`,
+      })
+      .from(resultadosTreinos)
+      .where(sql`${resultadosTreinos.dataRegistro} >= ${dataInicio}`)
+      .groupBy(sql`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U')`)
+      .orderBy(sql`DATE_FORMAT(${resultadosTreinos.dataRegistro}, '%Y-%U')`);
+
+    return result.map(item => ({
+      semana: item.semana,
+      wodsRealizados: Number(item.wodsRealizados),
+    }));
+  } catch (error) {
+    console.error("[Relatórios] Erro ao buscar dados de WODs realizados:", error);
+    return [];
+  }
+}
+
+/**
+ * Buscar dados de receita mensal (simulado - últimos 12 meses)
+ * TODO: Conectar com sistema de pagamentos real
+ */
+export async function getDadosReceitaMensal(meses: number = 12) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Dados simulados baseados em número de usuários ativos
+    const result = [];
+    const hoje = new Date();
+
+    for (let i = meses - 1; i >= 0; i--) {
+      const mes = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const mesStr = mes.toISOString().slice(0, 7); // YYYY-MM
+
+      // Simular receita baseada em usuários ativos no mês
+      const usuariosAtivos = await db
+        .select({ count: sql<number>`COUNT(DISTINCT ${checkins.userId})` })
+        .from(checkins)
+        .where(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m') = ${mesStr}`);
+
+      const count = Number(usuariosAtivos[0]?.count || 0);
+      const receitaSimulada = count * 150; // R$ 150 por usuário ativo
+
+      result.push({
+        mes: mesStr,
+        receita: receitaSimulada,
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Relatórios] Erro ao buscar dados de receita mensal:", error);
+    return [];
+  }
+}
+
+/**
+ * Buscar dados de taxa de retenção mensal (últimos 12 meses)
+ */
+export async function getDadosTaxaRetencao(meses: number = 12) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = [];
+    const hoje = new Date();
+
+    for (let i = meses - 1; i >= 0; i--) {
+      const mes = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - i - 1, 1);
+      const mesStr = mes.toISOString().slice(0, 7);
+      const mesAnteriorStr = mesAnterior.toISOString().slice(0, 7);
+
+      // Usuários ativos no mês anterior
+      const usuariosMesAnterior = await db
+        .select({ userId: checkins.userId })
+        .from(checkins)
+        .where(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m') = ${mesAnteriorStr}`)
+        .groupBy(checkins.userId);
+
+      // Usuários ativos no mês atual que também estavam no mês anterior
+      const usuariosRetidos = await db
+        .select({ userId: checkins.userId })
+        .from(checkins)
+        .where(sql`DATE_FORMAT(${checkins.dataHora}, '%Y-%m') = ${mesStr}`)
+        .groupBy(checkins.userId);
+
+      const totalMesAnterior = usuariosMesAnterior.length;
+      const totalRetidos = usuariosRetidos.filter(u => 
+        usuariosMesAnterior.some(ua => ua.userId === u.userId)
+      ).length;
+
+      const taxaRetencao = totalMesAnterior > 0 
+        ? Math.round((totalRetidos / totalMesAnterior) * 100) 
+        : 0;
+
+      result.push({
+        mes: mesStr,
+        taxaRetencao,
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Relatórios] Erro ao buscar dados de taxa de retenção:", error);
+    return [];
+  }
+}

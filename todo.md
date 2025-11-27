@@ -2941,3 +2941,20 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Integrar frontend com useQuery e useMutation
 - [x] Adicionar estados de loading e erro
 - [x] Testar salvamento e carregamento de configurações
+
+
+## Gráficos Interativos em Relatórios Globais
+- [x] Instalar biblioteca chart.js e react-chartjs-2
+- [x] Criar funções no db.ts para dados temporais (últimos 30/60/90 dias)
+- [x] Implementar getDadosAtletasAtivos (evolução diária)
+- [x] Implementar getDadosReceitaMensal (evolução mensal)
+- [x] Implementar getDadosWODsRealizados (evolução semanal)
+- [x] Implementar getDadosTaxaRetencao (evolução mensal)
+- [x] Criar procedures tRPC relatorios.getDadosGraficos
+- [x] Adicionar gráfico de linha para Atletas Ativos
+- [x] Adicionar gráfico de barras para Receita Mensal
+- [x] Adicionar gráfico de área para WODs Realizados
+- [x] Adicionar gráfico de linha para Taxa de Retenção
+- [x] Implementar filtro de período (30/60/90 dias)
+- [x] Adicionar cores e estilos profissionais nos gráficos
+- [x] Testar responsividade dos gráficos
