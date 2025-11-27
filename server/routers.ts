@@ -154,6 +154,32 @@ export const appRouter = router({
       .query(async () => {
         return db.getBoxesMetrics();
       }),
+
+    getBySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        return db.getBoxBySlug(input.slug);
+      }),
+
+    saveInviteTemplate: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number(),
+        mensagemConvite: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Verificar se o usuário é dono deste box
+        const box = await db.getBoxById(input.boxId);
+        if (!box) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Box não encontrado" });
+        }
+        
+        // Verificar permissão (box_master deve estar vinculado ao box)
+        if (ctx.user.role === "box_master" && ctx.user.boxId !== input.boxId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para editar este box" });
+        }
+        
+        return db.updateBoxInviteTemplate(input.boxId, input.mensagemConvite);
+      }),
   }),
 
   // ===== WODs =====

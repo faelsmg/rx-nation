@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,22 +9,62 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Share2, Copy, MessageCircle, Send } from "lucide-react";
+import { Share2, Copy, MessageCircle, Send, RotateCcw, Save } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 interface ShareBoxButtonProps {
   boxSlug: string;
   boxName: string;
+  boxId: number;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg" | "icon";
 }
 
-export function ShareBoxButton({ boxSlug, boxName, variant = "default", size = "default" }: ShareBoxButtonProps) {
+export function ShareBoxButton({ boxSlug, boxName, boxId, variant = "default", size = "default" }: ShareBoxButtonProps) {
   const [open, setOpen] = useState(false);
+  const [customMessage, setCustomMessage] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   
   const joinLink = `${window.location.origin}/join/${boxSlug}`;
   
-  const shareMessage = `🏋️ Junte-se ao ${boxName}!\n\nFaça parte da nossa comunidade CrossFit e alcance seus objetivos!\n\n👉 ${joinLink}`;
+  const defaultMessage = `🏋️ Junte-se ao ${boxName}!\n\nFaça parte da nossa comunidade CrossFit e alcance seus objetivos!\n\n👉 ${joinLink}`;
+
+  // Buscar template salvo
+  const { data: box } = trpc.boxes.getById.useQuery({ id: boxId }, { enabled: open });
+  
+  // Mutation para salvar template
+  const saveTemplateMutation = trpc.boxes.saveInviteTemplate.useMutation({
+    onSuccess: () => {
+      toast.success("Template salvo com sucesso!");
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast.error("Erro ao salvar template");
+    }
+  });
+
+  // Carregar template salvo ou usar padrão
+  useEffect(() => {
+    if (box?.mensagemConvite) {
+      setCustomMessage(box.mensagemConvite);
+    } else {
+      setCustomMessage(defaultMessage);
+    }
+  }, [box, defaultMessage]);
+
+  const handleSaveTemplate = () => {
+    saveTemplateMutation.mutate({
+      boxId,
+      mensagemConvite: customMessage
+    });
+  };
+
+  const handleResetTemplate = () => {
+    setCustomMessage(defaultMessage);
+    toast.info("Template resetado para padrão");
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(joinLink);
@@ -32,7 +72,7 @@ export function ShareBoxButton({ boxSlug, boxName, variant = "default", size = "
   };
 
   const handleShareWhatsApp = () => {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(customMessage)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -76,6 +116,60 @@ export function ShareBoxButton({ boxSlug, boxName, variant = "default", size = "
             </div>
           </div>
 
+          {/* Mensagem editável */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Mensagem de Convite</label>
+              <div className="flex gap-1">
+                {isEditing && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetTemplate}
+                      disabled={saveTemplateMutation.isPending}
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Resetar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSaveTemplate}
+                      disabled={saveTemplateMutation.isPending}
+                    >
+                      <Save className="w-3 h-3 mr-1" />
+                      Salvar
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? "Cancelar" : "Editar"}
+                </Button>
+              </div>
+            </div>
+            
+            {isEditing ? (
+              <Textarea
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
+                className="min-h-[120px] font-mono text-sm"
+                placeholder="Digite sua mensagem personalizada..."
+              />
+            ) : (
+              <div className="bg-muted p-3 rounded-lg text-sm whitespace-pre-wrap">
+                {customMessage}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              💡 Dica: Use {"{link}"} no texto e ele será substituído automaticamente pelo link
+            </p>
+          </div>
+
           {/* Botões de compartilhamento */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Compartilhar via</label>
@@ -96,14 +190,6 @@ export function ShareBoxButton({ boxSlug, boxName, variant = "default", size = "
                 <Send className="w-4 h-4 mr-2" />
                 Telegram
               </Button>
-            </div>
-          </div>
-
-          {/* Preview da mensagem */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Mensagem</label>
-            <div className="bg-muted p-3 rounded-lg text-sm whitespace-pre-wrap">
-              {shareMessage}
             </div>
           </div>
         </div>

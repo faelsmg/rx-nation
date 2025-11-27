@@ -271,6 +271,25 @@ export async function getBoxesByType(tipo: "proprio" | "parceiro") {
   return db.select().from(boxes).where(and(eq(boxes.tipo, tipo), eq(boxes.ativo, true)));
 }
 
+export async function getBoxBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(boxes).where(eq(boxes.slug, slug)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateBoxInviteTemplate(boxId: number, mensagemConvite: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  await db.update(boxes)
+    .set({ mensagemConvite, updatedAt: new Date() })
+    .where(eq(boxes.id, boxId));
+  
+  return getBoxById(boxId);
+}
+
 // ===== WODs =====
 
 export async function createWod(data: InsertWod) {

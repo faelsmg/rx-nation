@@ -79,6 +79,7 @@ export default function Dashboard() {
             <ShareBoxButton
               boxSlug={boxes.find(b => b.id === user.boxId)?.slug || ""}
               boxName={boxes.find(b => b.id === user.boxId)?.nome || ""}
+              boxId={user.boxId}
             />
           )}
         </div>

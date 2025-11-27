@@ -3183,3 +3183,45 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Testar fluxo completo de compartilhamento
 - [ ] Testar página de boas-vindas
 - [ ] Testar notificações de novos atletas
+
+## Novas Funcionalidades de Onboarding Avançado
+
+- [ ] Template de mensagem personalizável para compartilhamento
+  - [ ] Adicionar campo mensagemConvite na tabela boxes
+  - [ ] Criar procedure para salvar/carregar template
+  - [ ] Adicionar textarea editável no ShareBoxButton
+  - [ ] Implementar preview da mensagem antes de compartilhar
+  - [ ] Adicionar botão de resetar para mensagem padrão
+  - [ ] Testar salvamento e carregamento do template
+
+- [ ] Email de boas-vindas automático
+  - [ ] Configurar nodemailer com SMTP
+  - [ ] Criar template HTML de email de boas-vindas
+  - [ ] Adicionar função sendWelcomeEmail no backend
+  - [ ] Enviar email após cadastro no callback OAuth
+  - [ ] Incluir resumo das 5 funcionalidades principais
+  - [ ] Adicionar link para completar perfil
+  - [ ] Adicionar link para começar tour
+  - [ ] Testar envio de email em desenvolvimento
+  - [ ] Validar template HTML em diferentes clientes de email
+
+## Status de Implementação - Onboarding Avançado
+
+### Template de Mensagem Personalizável ✅
+- [x] Adicionar campo mensagemConvite na tabela boxes
+- [x] Criar procedure para salvar/carregar template (boxes.saveInviteTemplate)
+- [x] Adicionar textarea editável no ShareBoxButton
+- [x] Implementar preview da mensagem antes de compartilhar
+- [x] Adicionar botão de resetar para mensagem padrão
+- [x] Adicionar botão de salvar template
+
+### Email de Boas-vindas Automático ✅
+- [x] Configurar nodemailer com SMTP
+- [x] Criar template HTML de email de boas-vindas
+- [x] Adicionar função sendWelcomeEmail no backend
+- [x] Enviar email após cadastro no callback OAuth
+- [x] Incluir resumo das 5 funcionalidades principais
+- [x] Adicionar link para completar perfil
+- [x] Adicionar link para começar tour
+- [ ] Testar envio de email em desenvolvimento
+- [ ] Validar template HTML em diferentes clientes de email

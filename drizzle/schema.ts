@@ -33,6 +33,7 @@ export const boxes = mysqlTable("boxes", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 100 }).unique(), // URL amigável para link compartilhável (ex: impacto-sjcampos)
+  mensagemConvite: text("mensagemConvite"), // Template personalizado de mensagem de convite
   tipo: mysqlEnum("tipo", ["proprio", "parceiro"]).default("proprio").notNull(), // próprio (Impacto) ou parceiro/franqueado
   franqueadoId: int("franqueadoId"), // ID do usuário franqueado responsável
   endereco: text("endereco"),

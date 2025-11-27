@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { sendWelcomeEmail } from "./email";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -67,6 +68,26 @@ export function registerOAuthRoutes(app: Express) {
         } catch (error) {
           console.error("[OAuth] Erro ao notificar Box Master:", error);
           // Não bloquear login por erro de notificação
+        }
+
+        // Enviar email de boas-vindas para novo atleta
+        if (userInfo.email) {
+          try {
+            const box = await db.getBoxById(targetBoxId);
+            const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get('host')}`;
+            
+            await sendWelcomeEmail({
+              userName: userInfo.name || "Atleta",
+              userEmail: userInfo.email,
+              boxName: box?.nome || "Box",
+              profileUrl: `${baseUrl}/perfil`,
+              welcomeUrl: `${baseUrl}/welcome`,
+            });
+            console.log("[OAuth] Email de boas-vindas enviado para:", userInfo.email);
+          } catch (error) {
+            console.error("[OAuth] Erro ao enviar email de boas-vindas:", error);
+            // Não bloquear login por erro de email
+          }
         }
       }
 
