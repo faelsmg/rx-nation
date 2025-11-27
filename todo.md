@@ -3090,3 +3090,11 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Validar funcionalidades completasheckpoint Final
 - [ ] Salvar checkpoint com descrição completa
 - [ ] Reportar ao usuário com resumo
+
+
+## 🐛 Correção de Rotas Quebradas (Rafael Souza - 27/11/2024)
+- [x] Investigar erro na rota /configuracoes (funcionando corretamente)
+- [x] Investigar erro na rota /relatorios-globais (funcionando corretamente)
+- [x] Investigar erro na rota /perfil (erro 500 em perfil.getCompleto)
+- [x] Corrigir procedure perfil.getCompleto (queries SQL separadas usando Drizzle ORM)
+- [x] Testar todas as rotas corrigidas

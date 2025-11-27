@@ -12344,25 +12344,29 @@ export async function getPerfilCompleto(userId: number) {
   const user = await getUserById(userId);
   if (!user) throw new Error("Usuário não encontrado");
 
-  // Estatísticas gerais
-  const pontosTotais = await getTotalPontosByUser(userId);
-  const badges = await getUserBadges(userId);
-  const streak = await getOrCreateStreak(userId);
+  // Estatísticas gerais (com tratamento para admin_liga)
+  const pontosTotais = await getTotalPontosByUser(userId).catch(() => 0);
+  const badges = await getUserBadges(userId).catch(() => []);
+  const streak = await getOrCreateStreak(userId).catch(() => ({ streakAtual: 0, melhorStreak: 0 }));
   
-  // Contadores
-  const [statsResult] = await db.execute(sql`
-    SELECT 
-      COUNT(DISTINCT c.id) as total_checkins,
-      COUNT(DISTINCT rt.id) as total_wods,
-      COUNT(DISTINCT p.id) as total_prs
-    FROM users u
-    LEFT JOIN checkins c ON u.id = c.user_id
-    LEFT JOIN resultados_treinos rt ON u.id = rt.user_id
-    LEFT JOIN prs p ON u.id = p.user_id
-    WHERE u.id = ${userId}
-  `);
+  // Contadores (usando Drizzle ORM para garantir nomes corretos)
+  const checkinsCount = await db.select({ count: sql<number>`count(*)` })
+    .from(checkins)
+    .where(eq(checkins.userId, userId));
+  
+  const wodsCount = await db.select({ count: sql<number>`count(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.userId, userId));
+  
+  const prsCount = await db.select({ count: sql<number>`count(*)` })
+    .from(prs)
+    .where(eq(prs.userId, userId));
 
-  const stats = (statsResult as any)[0];
+  const stats = {
+    total_checkins: checkinsCount[0]?.count || 0,
+    total_wods: wodsCount[0]?.count || 0,
+    total_prs: prsCount[0]?.count || 0,
+  };
 
   return {
     user: {
