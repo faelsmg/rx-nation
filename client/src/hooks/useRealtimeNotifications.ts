@@ -142,6 +142,51 @@ export function useRealtimeNotifications() {
       });
     });
 
+    // Escutar notificações de level up
+    socket.on("notification:levelup", (data: RealtimeNotification) => {
+      console.log("[WebSocket] Level up notification:", data);
+      setNotifications((prev) => [data, ...prev]);
+      
+      toast.success(data.titulo, {
+        description: data.mensagem,
+        action: data.link ? {
+          label: "Ver Perfil",
+          onClick: () => window.location.href = data.link!,
+        } : undefined,
+        duration: 5000,
+      });
+    });
+
+    // Escutar notificações de novo seguidor
+    socket.on("notification:follower", (data: RealtimeNotification) => {
+      console.log("[WebSocket] Follower notification:", data);
+      setNotifications((prev) => [data, ...prev]);
+      
+      toast.info(data.titulo, {
+        description: data.mensagem,
+        action: data.link ? {
+          label: "Ver Perfil",
+          onClick: () => window.location.href = data.link!,
+        } : undefined,
+        duration: 4000,
+      });
+    });
+
+    // Escutar notificações de amigo no leaderboard
+    socket.on("notification:leaderboard", (data: RealtimeNotification) => {
+      console.log("[WebSocket] Leaderboard notification:", data);
+      setNotifications((prev) => [data, ...prev]);
+      
+      toast.info(data.titulo, {
+        description: data.mensagem,
+        action: data.link ? {
+          label: "Ver Perfil",
+          onClick: () => window.location.href = data.link!,
+        } : undefined,
+        duration: 4000,
+      });
+    });
+
     // Cleanup ao desmontar
     return () => {
       console.log("[WebSocket] Cleaning up connection");

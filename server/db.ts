@@ -104,6 +104,8 @@ import {
   InsertUserTitulo,
   configuracoesLiga,
   InsertConfiguracaoLiga,
+  seguidores,
+  InsertSeguidor,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1656,6 +1658,8 @@ export async function getUserNotificationPreferences(userId: number) {
     await db.insert(notificationPreferences).values({
       userId,
       wods: true,
+      prs: true,
+      campeonatos: true,
       comunicados: true,
       lembretes: true,
       badges: true,
@@ -1664,6 +1668,8 @@ export async function getUserNotificationPreferences(userId: number) {
     return {
       userId,
       wods: true,
+      prs: true,
+      campeonatos: true,
       comunicados: true,
       lembretes: true,
       badges: true,
@@ -12974,16 +12980,15 @@ export async function getPerfilPublico(userId: number) {
     .limit(1);
 
   // Contar seguidores e seguindo
-  // TODO: Implementar tabela seguidores no schema
-  // const seguidoresCount = await db
-  //   .select({ count: sql<number>`COUNT(*)` })
-  //   .from(seguidores)
-  //   .where(eq(seguidores.seguidoId, userId));
+  const seguidoresCount = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(seguidores)
+    .where(eq(seguidores.seguidoId, userId));
 
-  // const seguindoCount = await db
-  //   .select({ count: sql<number>`COUNT(*)` })
-  //   .from(seguidores)
-  //   .where(eq(seguidores.seguidorId, userId));
+  const seguindoCount = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(seguidores)
+    .where(eq(seguidores.seguidorId, userId));
 
   return {
     ...usuario[0],
@@ -12993,8 +12998,8 @@ export async function getPerfilPublico(userId: number) {
       totalBadges: totalBadges[0]?.count || 0,
       streakAtual: streakAtual[0]?.streakAtual || 0,
       melhorStreak: streakAtual[0]?.melhorStreak || 0,
-      seguidores: 0, // TODO: Implementar quando tabela seguidores existir
-      seguindo: 0, // TODO: Implementar quando tabela seguidores existir
+      seguidores: seguidoresCount[0]?.count || 0,
+      seguindo: seguindoCount[0]?.count || 0
     },
   };
 }
@@ -13038,8 +13043,7 @@ export async function getEvolucaoPRsGrafico(userId: number, movimento?: string) 
     .select({
       id: prs.id,
       movimento: prs.movimento,
-      valor: prs.valor,
-      unidade: prs.unidade,
+      carga: prs.carga,
       data: prs.data,
     })
     .from(prs)
@@ -13059,27 +13063,26 @@ export async function seguirAtleta(seguidorId: number, seguidoId: number) {
   // Não pode seguir a si mesmo
   if (seguidorId === seguidoId) return false;
 
-  // TODO: Implementar quando tabela seguidores existir
-  // // Verificar se já segue
-  // const jaSegue = await db
-  //   .select()
-  //   .from(seguidores)
-  //   .where(and(
-  //     eq(seguidores.seguidorId, seguidorId),
-  //     eq(seguidores.seguidoId, seguidoId)
-  //   ))
-  //   .limit(1);
+  // Verificar se já segue
+  const jaSegue = await db
+    .select()
+    .from(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      eq(seguidores.seguidoId, seguidoId)
+    ))
+    .limit(1);
 
-  // if (jaSegue.length > 0) return false;
+  if (jaSegue.length > 0) return false;
 
-  // // Criar relacionamento
-  // await db.insert(seguidores).values({
-  //   seguidorId,
-  //   seguidoId,
-  // });
+  // Criar relacionamento
+  await db.insert(seguidores).values({
+    seguidorId,
+    seguidoId,
+  });
 
   // Notificar usuário seguido
-  const seguidor = await db.select({ name: users.name }).from(users).where(eq(users.id, seguidorId)).limit(1);
+  const seguidor = await db.select({ name: users.name, avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, seguidorId)).limit(1);
   await createNotification({
     userId: seguidoId,
     tipo: "geral" as any,
@@ -13087,6 +13090,18 @@ export async function seguirAtleta(seguidorId: number, seguidoId: number) {
     mensagem: `${seguidor[0]?.name || "Alguém"} começou a te seguir!`,
     link: `/perfil/${seguidorId}`,
   });
+
+  // Notificação em tempo real via WebSocket
+  try {
+    const { notifyNewFollower } = await import("./_core/socket");
+    notifyNewFollower(seguidoId, {
+      nome: seguidor[0]?.name || "Alguém",
+      avatarUrl: seguidor[0]?.avatarUrl,
+      seguidorId,
+    });
+  } catch (error) {
+    console.error("[Seguidores] Erro ao enviar notificação de novo seguidor:", error);
+  }
 
   return true;
 }
@@ -13098,13 +13113,12 @@ export async function deixarDeSeguirAtleta(seguidorId: number, seguidoId: number
   const db = await getDb();
   if (!db) return false;
 
-  // TODO: Implementar quando tabela seguidores existir
-  // await db
-  //   .delete(seguidores)
-  //   .where(and(
-  //     eq(seguidores.seguidorId, seguidorId),
-  //     eq(seguidores.seguidoId, seguidoId)
-  //   ));
+  await db
+    .delete(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      eq(seguidores.seguidoId, seguidoId)
+    ));
 
   return true;
 }
@@ -13116,18 +13130,16 @@ export async function verificarSeguindo(seguidorId: number, seguidoId: number) {
   const db = await getDb();
   if (!db) return false;
 
-  // TODO: Implementar quando tabela seguidores existir
-  // const resultado = await db
-  //   .select()
-  //   .from(seguidores)
-  //   .where(and(
-  //     eq(seguidores.seguidorId, seguidorId),
-  //     eq(seguidores.seguidoId, seguidoId)
-  //   ))
-  //   .limit(1);
+  const resultado = await db
+    .select()
+    .from(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      eq(seguidores.seguidoId, seguidoId)
+    ))
+    .limit(1);
 
-  // return resultado.length > 0;
-  return false; // Temporário até implementar tabela
+  return resultado.length > 0;
 }
 
 /**
@@ -13138,21 +13150,20 @@ export async function getSeguidores(userId: number, limit: number = 50) {
   if (!db) return [];
 
   const lista = await db
-    // TODO: Implementar quando tabela seguidores existir
-    // .select({
-    //   id: users.id,
-    //   name: users.name,
-    //   avatarUrl: users.avatarUrl,
-    //   categoria: users.categoria,
-    //   createdAt: seguidores.createdAt,
-    // })
-    // .from(seguidores)
-    // .leftJoin(users, eq(seguidores.seguidorId, users.id))
-    // .where(eq(seguidores.seguidoId, userId))
-    // .orderBy(desc(seguidores.createdAt))
-    // .limit(limit);
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      categoria: users.categoria,
+      createdAt: seguidores.createdAt,
+    })
+    .from(seguidores)
+    .leftJoin(users, eq(seguidores.seguidorId, users.id))
+    .where(eq(seguidores.seguidoId, userId))
+    .orderBy(desc(seguidores.createdAt))
+    .limit(limit);
 
-  return []; // Temporário até implementar tabela
+  return lista;
 }
 
 /**
@@ -13163,21 +13174,20 @@ export async function getSeguindo(userId: number, limit: number = 50) {
   if (!db) return [];
 
   const lista = await db
-    // TODO: Implementar quando tabela seguidores existir
-    // .select({
-    //   id: users.id,
-    //   name: users.name,
-    //   avatarUrl: users.avatarUrl,
-    //   categoria: users.categoria,
-    //   createdAt: seguidores.createdAt,
-    // })
-    // .from(seguidores)
-    // .leftJoin(users, eq(seguidores.seguidoId, users.id))
-    // .where(eq(seguidores.seguidorId, userId))
-    // .orderBy(desc(seguidores.createdAt))
-    // .limit(limit);
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      categoria: users.categoria,
+      createdAt: seguidores.createdAt,
+    })
+    .from(seguidores)
+    .leftJoin(users, eq(seguidores.seguidoId, users.id))
+    .where(eq(seguidores.seguidorId, userId))
+    .orderBy(desc(seguidores.createdAt))
+    .limit(limit);
 
-  return []; // Temporário até implementar tabela
+  return lista;
 }
 
 
@@ -13304,6 +13314,17 @@ export async function adicionarPontos(
         mensagem: `Você alcançou ${novosPontosTotal} pontos e subiu para o nível ${novoNivel.toUpperCase()}!`,
         link: "/perfil",
       });
+
+      // Notificação em tempo real via WebSocket
+      try {
+        const { notifyLevelUp } = await import("./_core/socket");
+        notifyLevelUp(userId, {
+          nivelAtual: novoNivel.toUpperCase(),
+          pontosAtuais: novosPontosTotal,
+        });
+      } catch (error) {
+        console.error("[Gamificação] Erro ao enviar notificação de level up:", error);
+      }
     }
 
     return true;

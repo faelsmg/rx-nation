@@ -256,3 +256,55 @@ export function notifyComment(userId: number, comment: {
     timestamp: new Date(),
   });
 }
+
+/**
+ * Notificar usuário sobre level up
+ */
+export function notifyLevelUp(userId: number, levelData: {
+  nivelAtual: string;
+  pontosAtuais: number;
+}) {
+  emitToUser(userId, "notification:levelup", {
+    tipo: "levelup",
+    titulo: "🎉 Level Up!",
+    mensagem: `Parabéns! Você alcançou o nível ${levelData.nivelAtual} com ${levelData.pontosAtuais} pontos!`,
+    link: "/perfil",
+    timestamp: new Date(),
+  });
+}
+
+/**
+ * Notificar usuário sobre novo seguidor
+ */
+export function notifyNewFollower(userId: number, follower: {
+  nome: string;
+  avatarUrl?: string | null;
+  seguidorId: number;
+}) {
+  emitToUser(userId, "notification:follower", {
+    tipo: "follower",
+    titulo: "Novo Seguidor! 👋",
+    mensagem: `${follower.nome} começou a te seguir!`,
+    link: `/perfil/${follower.seguidorId}`,
+    avatarUrl: follower.avatarUrl,
+    timestamp: new Date(),
+  });
+}
+
+/**
+ * Notificar usuário sobre amigo no leaderboard
+ */
+export function notifyFriendLeaderboard(userId: number, friend: {
+  nome: string;
+  posicao: number;
+  pontos: number;
+  friendId: number;
+}) {
+  emitToUser(userId, "notification:leaderboard", {
+    tipo: "leaderboard",
+    titulo: "🏆 Amigo no Leaderboard!",
+    mensagem: `${friend.nome} alcançou a posição #${friend.posicao} com ${friend.pontos} pontos!`,
+    link: `/perfil/${friend.friendId}`,
+    timestamp: new Date(),
+  });
+}

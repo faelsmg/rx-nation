@@ -2971,3 +2971,38 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Otimizar query getDadosTaxaRetencao com alias explícito
 - [x] Executar compilação TypeScript e verificar erros restantes
 - [x] Testar queries SQL no banco de dados
+
+
+## Sistema de Seguidores
+- [x] Criar schema da tabela seguidores no drizzle/schema.ts
+- [x] Aplicar migration (pnpm db:push)
+- [x] Descomentar função getPerfilPublico no db.ts
+- [x] Descomentar função seguirAtleta no db.ts
+- [x] Descomentar função deixarDeSeguirAtleta no db.ts
+- [x] Descomentar função verificarSeguindo no db.ts
+- [x] Descomentar função getSeguidores no db.ts
+- [x] Descomentar função getSeguindo no db.ts
+- [x] Descomentar função verificarConquistaTitulo no db.ts (não existia)
+- [ ] Criar procedures tRPC para seguir/deixar de seguir
+- [ ] Criar notificações automáticas ao seguir
+- [ ] Testar fluxo completo de seguir/deixar de seguir
+
+## Correção de Erros TypeScript em Preferencias.tsx
+- [x] Analisar schema de preferencias_notificacoes
+- [x] Verificar se campo campeonatos existe no banco
+- [x] Ajustar tipos TypeScript em Preferencias.tsx
+- [x] Remover referências a campos inexistentes ou adicionar ao schema
+- [x] Compilar TypeScript e verificar erros eliminados
+- [x] Corrigir campos valor/unidade para carga em getEvolucaoPRsGrafico
+
+## Notificações Push em Tempo Real via WebSocket
+- [x] Criar evento Socket.IO para notificações push
+- [x] Implementar listener no backend para emitir notificações
+- [x] Criar hook useRealtimeNotifications no frontend
+- [x] Integrar notificações de level up com WebSocket
+- [x] Integrar notificações de novos seguidores com WebSocket
+- [x] Integrar notificações de amigos no leaderboard com WebSocket (preparado)
+- [x] Integrar notificações de badges com WebSocket (já existia)
+- [ ] Testar notificações em tempo real no navegador
+- [x] Adicionar indicador visual de notificações não lidas (já existe)
+- [ ] Criar sistema de som para notificações importantes (opcional)
