@@ -5012,6 +5012,39 @@ export const appRouter = router({
         return db.getLeaderboardNiveis(input.boxId, input.categoria, input.limit);
       }),
   }),
+
+  // ==================== CONFIGURAÇÕES DA LIGA ====================
+  configuracoes: router({
+    get: protectedProcedure
+      .query(async ({ ctx }) => {
+        // Apenas admin_liga pode acessar
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem acessar configurações' });
+        }
+        return db.getConfiguracoesLiga();
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        nomeLiga: z.string().optional(),
+        descricao: z.string().optional(),
+        emailContato: z.string().email().optional(),
+        modoManutencao: z.boolean().optional(),
+        notificacoesEmail: z.boolean().optional(),
+        notificacoesPush: z.boolean().optional(),
+        tempoSessaoMinutos: z.number().optional(),
+        require2FA: z.boolean().optional(),
+        apiKeyWebhooks: z.string().optional(),
+        webhookUrl: z.string().url().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Apenas admin_liga pode atualizar
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem atualizar configurações' });
+        }
+        return db.updateConfiguracoesLiga(input, ctx.user.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

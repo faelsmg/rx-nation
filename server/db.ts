@@ -102,6 +102,8 @@ import {
   InsertTituloEspecial,
   userTitulos,
   InsertUserTitulo,
+  configuracoesLiga,
+  InsertConfiguracaoLiga,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -13599,5 +13601,93 @@ export async function getLeaderboardNiveis(
   } catch (error) {
     console.error("[Leaderboard] Erro ao buscar leaderboard de níveis:", error);
     return [];
+  }
+}
+
+
+// ==================== CONFIGURAÇÕES DA LIGA ====================
+
+/**
+ * Buscar configurações da liga
+ * Retorna sempre a primeira linha (configuração única)
+ */
+export async function getConfiguracoesLiga() {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const configs = await db
+      .select()
+      .from(configuracoesLiga)
+      .limit(1);
+
+    // Se não existir, criar configuração padrão
+    if (configs.length === 0) {
+      await db.insert(configuracoesLiga).values({
+        nomeLiga: "RX Nation",
+        descricao: "A maior liga de CrossFit do Brasil",
+        emailContato: "contato@rxnation.com.br",
+        modoManutencao: false,
+        notificacoesEmail: true,
+        notificacoesPush: true,
+        tempoSessaoMinutos: 60,
+        require2FA: false,
+      });
+
+      // Buscar novamente após criar
+      const newConfigs = await db
+        .select()
+        .from(configuracoesLiga)
+        .limit(1);
+
+      return newConfigs[0] || null;
+    }
+
+    return configs[0];
+  } catch (error) {
+    console.error("[Configurações] Erro ao buscar configurações:", error);
+    return null;
+  }
+}
+
+/**
+ * Atualizar configurações da liga
+ */
+export async function updateConfiguracoesLiga(
+  data: Partial<InsertConfiguracaoLiga>,
+  updatedBy: number
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Verificar se já existe configuração
+    const existing = await db
+      .select()
+      .from(configuracoesLiga)
+      .limit(1);
+
+    if (existing.length === 0) {
+      // Criar nova configuração
+      await db.insert(configuracoesLiga).values({
+        ...data,
+        updatedBy,
+      });
+    } else {
+      // Atualizar configuração existente
+      await db
+        .update(configuracoesLiga)
+        .set({
+          ...data,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(configuracoesLiga.id, existing[0].id));
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Configurações] Erro ao atualizar configurações:", error);
+    return false;
   }
 }

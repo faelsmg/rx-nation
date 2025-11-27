@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Bell, Shield, Database, Mail } from "lucide-react";
+import { Settings, Bell, Shield, Database, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 
 /**
  * Página de Configurações da Liga (Admin Liga)
@@ -16,13 +17,87 @@ import { useState } from "react";
  */
 export default function Configuracoes() {
   const { user } = useAuth();
+  const { data: configs, isLoading, refetch } = trpc.configuracoes.get.useQuery();
+  const updateMutation = trpc.configuracoes.update.useMutation({
+    onSuccess: () => {
+      toast.success("Configurações salvas com sucesso!");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao salvar: ${error.message}`);
+    },
+  });
+
+  // Estados locais para os campos
+  const [nomeLiga, setNomeLiga] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [emailContato, setEmailContato] = useState("");
+  const [modoManutencao, setModoManutencao] = useState(false);
   const [notificacoesEmail, setNotificacoesEmail] = useState(true);
   const [notificacoesPush, setNotificacoesPush] = useState(true);
-  const [manutencaoMode, setManutencaoMode] = useState(false);
+  const [tempoSessao, setTempoSessao] = useState(60);
+  const [require2FA, setRequire2FA] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
 
-  const handleSalvar = () => {
-    toast.success("Configurações salvas com sucesso!");
+  // Carregar dados quando configs estiver disponível
+  useEffect(() => {
+    if (configs) {
+      setNomeLiga(configs.nomeLiga || "");
+      setDescricao(configs.descricao || "");
+      setEmailContato(configs.emailContato || "");
+      setModoManutencao(configs.modoManutencao || false);
+      setNotificacoesEmail(configs.notificacoesEmail ?? true);
+      setNotificacoesPush(configs.notificacoesPush ?? true);
+      setTempoSessao(configs.tempoSessaoMinutos || 60);
+      setRequire2FA(configs.require2FA || false);
+      setApiKey(configs.apiKeyWebhooks || "");
+      setWebhookUrl(configs.webhookUrl || "");
+    }
+  }, [configs]);
+
+  const handleSalvarGeral = () => {
+    updateMutation.mutate({
+      nomeLiga,
+      descricao,
+      emailContato,
+      modoManutencao,
+    });
   };
+
+  const handleSalvarNotificacoes = () => {
+    updateMutation.mutate({
+      notificacoesEmail,
+      notificacoesPush,
+    });
+  };
+
+  const handleSalvarSeguranca = () => {
+    updateMutation.mutate({
+      tempoSessaoMinutos: tempoSessao,
+      require2FA,
+    });
+  };
+
+  const handleSalvarIntegracoes = () => {
+    updateMutation.mutate({
+      apiKeyWebhooks: apiKey,
+      webhookUrl,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 lg:p-8 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando configurações...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -60,7 +135,8 @@ export default function Configuracoes() {
                   <Label htmlFor="nome-liga">Nome da Liga</Label>
                   <Input
                     id="nome-liga"
-                    defaultValue="RX Nation"
+                    value={nomeLiga}
+                    onChange={(e) => setNomeLiga(e.target.value)}
                     placeholder="Nome da liga"
                   />
                 </div>
@@ -69,7 +145,8 @@ export default function Configuracoes() {
                   <Label htmlFor="descricao">Descrição</Label>
                   <Input
                     id="descricao"
-                    defaultValue="A maior liga de CrossFit do Brasil"
+                    value={descricao}
+                    onChange={(e) => setDescricao(e.target.value)}
                     placeholder="Descrição da liga"
                   />
                 </div>
@@ -79,7 +156,8 @@ export default function Configuracoes() {
                   <Input
                     id="email-contato"
                     type="email"
-                    defaultValue="contato@rxnation.com.br"
+                    value={emailContato}
+                    onChange={(e) => setEmailContato(e.target.value)}
                     placeholder="email@exemplo.com"
                   />
                 </div>
@@ -92,12 +170,17 @@ export default function Configuracoes() {
                     </p>
                   </div>
                   <Switch
-                    checked={manutencaoMode}
-                    onCheckedChange={setManutencaoMode}
+                    checked={modoManutencao}
+                    onCheckedChange={setModoManutencao}
                   />
                 </div>
 
-                <Button onClick={handleSalvar} className="w-full">
+                <Button 
+                  onClick={handleSalvarGeral} 
+                  className="w-full"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Salvar Alterações
                 </Button>
               </CardContent>
@@ -143,7 +226,12 @@ export default function Configuracoes() {
                   />
                 </div>
 
-                <Button onClick={handleSalvar} className="w-full">
+                <Button 
+                  onClick={handleSalvarNotificacoes} 
+                  className="w-full"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Salvar Configurações
                 </Button>
               </CardContent>
@@ -168,7 +256,8 @@ export default function Configuracoes() {
                   <Input
                     id="tempo-sessao"
                     type="number"
-                    defaultValue="60"
+                    value={tempoSessao}
+                    onChange={(e) => setTempoSessao(Number(e.target.value))}
                     placeholder="60"
                   />
                 </div>
@@ -180,10 +269,18 @@ export default function Configuracoes() {
                       Requer 2FA para admins
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={require2FA}
+                    onCheckedChange={setRequire2FA}
+                  />
                 </div>
 
-                <Button onClick={handleSalvar} className="w-full">
+                <Button 
+                  onClick={handleSalvarSeguranca} 
+                  className="w-full"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Salvar Configurações
                 </Button>
               </CardContent>
@@ -208,7 +305,8 @@ export default function Configuracoes() {
                   <Input
                     id="api-key"
                     type="password"
-                    defaultValue="••••••••••••••••"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
                     placeholder="Sua API Key"
                   />
                 </div>
@@ -218,11 +316,18 @@ export default function Configuracoes() {
                   <Input
                     id="webhook-url"
                     type="url"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
                     placeholder="https://exemplo.com/webhook"
                   />
                 </div>
 
-                <Button onClick={handleSalvar} className="w-full">
+                <Button 
+                  onClick={handleSalvarIntegracoes} 
+                  className="w-full"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Salvar Integrações
                 </Button>
               </CardContent>

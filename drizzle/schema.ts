@@ -1365,3 +1365,35 @@ export const userTitulosRelations = relations(userTitulos, ({ one }) => ({
     references: [titulosEspeciais.id],
   }),
 }));
+
+
+// ==================== CONFIGURAÇÕES DA LIGA ====================
+/**
+ * Configurações Globais da Liga
+ * Armazena configurações administrativas da RX Nation
+ */
+export const configuracoesLiga = mysqlTable("configuracoes_liga", {
+  id: int("id").autoincrement().primaryKey(),
+  nomeLiga: varchar("nome_liga", { length: 100 }).default("RX Nation").notNull(),
+  descricao: text("descricao"),
+  emailContato: varchar("email_contato", { length: 320 }),
+  modoManutencao: boolean("modo_manutencao").default(false).notNull(),
+  notificacoesEmail: boolean("notificacoes_email").default(true).notNull(),
+  notificacoesPush: boolean("notificacoes_push").default(true).notNull(),
+  tempoSessaoMinutos: int("tempo_sessao_minutos").default(60).notNull(),
+  require2FA: boolean("require_2fa").default(false).notNull(),
+  apiKeyWebhooks: varchar("api_key_webhooks", { length: 255 }),
+  webhookUrl: varchar("webhook_url", { length: 500 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updated_by").references(() => users.id), // Quem fez a última alteração
+});
+
+export type ConfiguracaoLiga = typeof configuracoesLiga.$inferSelect;
+export type InsertConfiguracaoLiga = typeof configuracoesLiga.$inferInsert;
+
+export const configuracoesLigaRelations = relations(configuracoesLiga, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [configuracoesLiga.updatedBy],
+    references: [users.id],
+  }),
+}));

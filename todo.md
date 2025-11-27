@@ -2929,3 +2929,15 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Verificar rotas registradas no App.tsx
 - [x] Corrigir imports e exports
 - [x] Testar todas as rotas corrigidas
+
+
+## Backend de Configurações da Liga
+- [x] Criar tabela configuracoes_liga no schema.ts
+- [x] Adicionar campos: nome_liga, descricao, email_contato, modo_manutencao, notificacoes_email, notificacoes_push, tempo_sessao_minutos, api_key_webhooks, webhook_url
+- [x] Criar função getConfiguracoes no db.ts
+- [x] Criar função updateConfiguracoes no db.ts
+- [x] Criar procedure tRPC configuracoes.get (protegido admin_liga)
+- [x] Criar procedure tRPC configuracoes.update (protegido admin_liga)
+- [x] Integrar frontend com useQuery e useMutation
+- [x] Adicionar estados de loading e erro
+- [x] Testar salvamento e carregamento de configurações
