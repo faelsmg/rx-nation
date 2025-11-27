@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useNotificationListener } from "@/hooks/useNotificationListener";
+import { NotificacoesRealTime } from "@/components/NotificacoesRealTime";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -367,6 +368,7 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+            <NotificacoesRealTime />
           </div>
         )}
         <main className="flex-1 p-4">{children}</main>

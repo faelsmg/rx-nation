@@ -1950,14 +1950,31 @@ export async function getFeedByBox(boxId: number, limit: number = 50) {
   return atividades;
 }
 
-export async function curtirAtividade(atividadeId: number) {
+export async function curtirAtividade(atividadeId: number, userId: number) {
   const db = await getDb();
   if (!db) return false;
 
+  // Buscar autor da atividade
+  const atividade = await db.select().from(feedAtividades).where(eq(feedAtividades.id, atividadeId)).limit(1);
+  
+  if (!atividade[0]) return false;
+
+  // Incrementar curtidas
   await db
     .update(feedAtividades)
     .set({ curtidas: sql`${feedAtividades.curtidas} + 1` })
     .where(eq(feedAtividades.id, atividadeId));
+
+  // Notificar autor (se não for ele mesmo)
+  if (atividade[0].userId !== userId) {
+    await createNotification({
+      userId: atividade[0].userId,
+      tipo: "curtida" as any,
+      titulo: "Nova curtida",
+      mensagem: "Alguém curtiu sua conquista!",
+      link: "/feed",
+    });
+  }
 
   return true;
 }
@@ -2102,10 +2119,16 @@ export async function getComentariosByAtividade(atividadeId: number) {
       createdAt: comentariosFeed.createdAt,
       userId: comentariosFeed.userId,
       userName: users.name,
+      userAvatar: users.avatarUrl,
+      oculto: comentariosFeed.oculto,
+      moderadoPor: comentariosFeed.moderadoPor,
     })
     .from(comentariosFeed)
     .leftJoin(users, eq(comentariosFeed.userId, users.id))
-    .where(eq(comentariosFeed.atividadeId, atividadeId))
+    .where(and(
+      eq(comentariosFeed.atividadeId, atividadeId),
+      eq(comentariosFeed.oculto, 0) // Apenas comentários não ocultos
+    ))
     .orderBy(comentariosFeed.createdAt);
 
   return comentarios;
@@ -11705,8 +11728,8 @@ export async function getLeaderboardEngajamento(boxId: number, mes?: number, ano
     LIMIT 50
   `;
 
-  const results = await db.execute(query);
-  return results[0] as any[];
+  const results = await db.execute(query) as any;
+  return (results[0] || []) as any[];
 }
 
 export async function getMeuRankingEngajamento(userId: number, mes?: number, ano?: number) {
@@ -12678,10 +12701,10 @@ export async function getAnalyticsAvancado(boxId: number) {
     LIMIT 10
   `);
 
-  const horariosMaisPopulares = (checkinsComHorarioResult[0] as any[])?.map((row: any) => ({
+  const horariosMaisPopulares = ((checkinsComHorarioResult as any)?.[0] as any[] || []).map((row: any) => ({
     hora: row.hora,
     total: row.total,
-  })) || [];
+  }));
 
   return {
     taxaRetencao,
@@ -12798,4 +12821,70 @@ export async function getFeedAtividadesRecentes(boxId: number, limit: number = 2
 
   const atividades = await query;
   return atividades;
+}
+
+
+/**
+ * Moderar comentário (ocultar) - Apenas admin, franqueado ou dono da postagem
+ */
+export async function moderarComentarioFeed(
+  comentarioId: number,
+  moderadorId: number,
+  moderadorRole: string,
+  autorAtividadeId?: number
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Buscar comentário
+  const comentario = await db.select().from(comentariosFeed).where(eq(comentariosFeed.id, comentarioId)).limit(1);
+  
+  if (!comentario[0]) return false;
+
+  // Verificar permissões: admin, franqueado ou dono da atividade
+  const temPermissao = 
+    moderadorRole === 'admin' || 
+    moderadorRole === 'franqueado' ||
+    (autorAtividadeId && autorAtividadeId === moderadorId);
+
+  if (!temPermissao) {
+    return false;
+  }
+
+  // Ocultar comentário
+  await db
+    .update(comentariosFeed)
+    .set({ 
+      oculto: 1,
+      moderadoPor: moderadorId
+    })
+    .where(eq(comentariosFeed.id, comentarioId));
+
+  return true;
+}
+
+/**
+ * Restaurar comentário oculto - Apenas admin ou franqueado
+ */
+export async function restaurarComentarioFeed(
+  comentarioId: number,
+  moderadorRole: string
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  // Apenas admin ou franqueado podem restaurar
+  if (moderadorRole !== 'admin' && moderadorRole !== 'franqueado') {
+    return false;
+  }
+
+  await db
+    .update(comentariosFeed)
+    .set({ 
+      oculto: 0,
+      moderadoPor: null
+    })
+    .where(eq(comentariosFeed.id, comentarioId));
+
+  return true;
 }

@@ -2735,3 +2735,42 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Frontend: adicionar timestamps relativos (há 2 horas, há 1 dia)
 - [x] Frontend: integrar feed no Dashboard
 - [ ] Criar testes para feed de atividades
+
+
+## Sistema de Comentários com Moderação
+- [x] Backend: verificar se tabela de comentários já existe
+- [x] Backend: adicionar campo moderado/oculto em comentários
+- [x] Backend: criar procedure para adicionar comentário
+- [x] Backend: criar procedure para deletar/ocultar comentário (moderação)
+- [x] Backend: implementar permissões (admin, franqueado, dono da postagem)
+- [x] Frontend: criar componente de lista de comentários
+- [x] Frontend: criar formulário de adicionar comentário
+- [x] Frontend: adicionar botões de moderação (deletar/ocultar)
+- [x] Frontend: integrar comentários no FeedAtividades
+- [ ] Criar testes para sistema de comentários
+
+## Notificações em Tempo Real (WebSockets)
+- [x] Backend: verificar se tabela de notificações já existe
+- [x] Backend: configurar WebSocket server
+- [x] Backend: criar eventos de notificação (curtida, comentário)
+- [x] Backend: criar procedure para buscar notificações do usuário
+- [x] Backend: criar procedure para marcar notificação como lida
+- [x] Frontend: configurar WebSocket client
+- [x] Frontend: criar componente de ícone de notificações com badge
+- [x] Frontend: criar dropdown de notificações
+- [x] Frontend: adicionar notificações ao Header/Sidebar
+- [ ] Testar notificações em tempo real
+
+## Perfil Público de Atleta
+- [ ] Backend: criar query para buscar histórico completo de conquistas
+- [ ] Backend: criar query para estatísticas do atleta (PRs, frequência)
+- [ ] Backend: criar tabela de seguidores (followers)
+- [ ] Backend: criar procedures para seguir/deixar de seguir
+- [ ] Backend: criar procedure para buscar seguidores/seguindo
+- [ ] Frontend: criar página /perfil/:userId
+- [ ] Frontend: criar componente de cabeçalho de perfil com avatar e stats
+- [ ] Frontend: criar timeline de conquistas
+- [ ] Frontend: criar gráficos de evolução (Chart.js)
+- [ ] Frontend: implementar botão seguir/deixar de seguir
+- [ ] Frontend: exibir lista de seguidores/seguindo
+- [ ] Criar testes para perfil público

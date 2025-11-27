@@ -2111,8 +2111,8 @@ export const appRouter = router({
 
     curtir: protectedProcedure
       .input(z.object({ atividadeId: z.number() }))
-      .mutation(async ({ input }) => {
-        return db.curtirAtividade(input.atividadeId);
+      .mutation(async ({ input, ctx }) => {
+        return db.curtirAtividade(input.atividadeId, ctx.user.id);
       }),
 
     addComentario: protectedProcedure
@@ -2135,6 +2135,26 @@ export const appRouter = router({
       .input(z.object({ comentarioId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         return db.deleteComentarioFeed(input.comentarioId, ctx.user.id);
+      }),
+
+    moderarComentario: protectedProcedure
+      .input(z.object({ 
+        comentarioId: z.number(),
+        autorAtividadeId: z.number().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.moderarComentarioFeed(
+          input.comentarioId,
+          ctx.user.id,
+          ctx.user.role,
+          input.autorAtividadeId
+        );
+      }),
+
+    restaurarComentario: protectedProcedure
+      .input(z.object({ comentarioId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.restaurarComentarioFeed(input.comentarioId, ctx.user.role);
       }),
 
     // Novas procedures

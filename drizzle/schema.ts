@@ -542,7 +542,7 @@ export const planilhasTreinoRelations = relations(planilhasTreino, ({ one }) => 
 export const notificacoes = mysqlTable("notificacoes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "nivel", "desafio", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida", "mentoria"]).notNull(),
+  tipo: mysqlEnum("tipo", ["wod", "comunicado", "aula", "badge", "geral", "conquista", "campeonato", "nivel", "desafio", "assinatura_vence_7dias", "assinatura_vence_3dias", "assinatura_vencida", "mentoria", "curtida", "comentario"]).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   mensagem: text("mensagem").notNull(),
   lida: boolean("lida").default(false).notNull(),
@@ -693,6 +693,8 @@ export const comentariosFeed = mysqlTable("comentarios_feed", {
   atividadeId: int("atividade_id").notNull().references(() => feedAtividades.id, { onDelete: "cascade" }),
   userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   comentario: text("comentario").notNull(),
+  oculto: int("oculto").default(0).notNull(), // 0 = visível, 1 = oculto por moderação
+  moderadoPor: int("moderado_por"), // ID do usuário que moderou
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -1239,6 +1241,32 @@ export type InsertStreak = typeof streaks.$inferInsert;
 export const streaksRelations = relations(streaks, ({ one }) => ({
   user: one(users, {
     fields: [streaks.userId],
+    references: [users.id],
+  }),
+}));
+
+
+// ==================== SISTEMA DE SEGUIDORES ====================
+/**
+ * Seguidores (Sistema de Follow/Unfollow entre atletas)
+ */
+export const seguidores = mysqlTable("seguidores", {
+  id: int("id").autoincrement().primaryKey(),
+  seguidorId: int("seguidor_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Quem segue
+  seguidoId: int("seguido_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Quem é seguido
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Seguidor = typeof seguidores.$inferSelect;
+export type InsertSeguidor = typeof seguidores.$inferInsert;
+
+export const seguidoresRelations = relations(seguidores, ({ one }) => ({
+  seguidor: one(users, {
+    fields: [seguidores.seguidorId],
+    references: [users.id],
+  }),
+  seguido: one(users, {
+    fields: [seguidores.seguidoId],
     references: [users.id],
   }),
 }));

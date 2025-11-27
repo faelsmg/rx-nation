@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar } from "@/components/Avatar";
+import { ComentariosFeed } from "@/components/ComentariosFeed";
 import { Trophy, Dumbbell, Award, TrendingUp, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -175,6 +176,12 @@ export function FeedAtividades() {
                       <span>{atividade.curtidas || 0}</span>
                     </button>
                   </div>
+
+                  {/* Comentários */}
+                  <ComentariosFeed 
+                    atividadeId={atividade.id}
+                    autorAtividadeId={atividade.userId}
+                  />
                 </div>
               </div>
             ))}
