@@ -22,6 +22,7 @@ import { trpc } from "@/lib/trpc";
 import { Search, UserPlus, Shield, TrendingUp, Calendar, Dumbbell } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Avatar } from "@/components/Avatar";
 
 export default function GestaoAlunos() {
   const { user } = useAuth();
@@ -212,7 +213,7 @@ export default function GestaoAlunos() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
+                    <TableHead>Atleta</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Faixa Etária</TableHead>
@@ -227,8 +228,16 @@ export default function GestaoAlunos() {
                   {alunosFiltrados && alunosFiltrados.length > 0 ? (
                     alunosFiltrados.map((aluno: any) => (
                       <TableRow key={aluno.id}>
-                        <TableCell className="font-medium">
-                          {aluno.name || "Sem nome"}
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src={aluno.avatar_url}
+                              alt={aluno.name || "Atleta"}
+                              fallback={aluno.name}
+                              size="sm"
+                            />
+                            <span className="font-medium">{aluno.name || "Sem nome"}</span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {aluno.email}

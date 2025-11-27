@@ -1609,6 +1609,11 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getUserStatsForBadges(input.userId);
       }),
+
+    criarBadgesStreak: adminProcedure
+      .mutation(async () => {
+        return db.criarBadgesStreak();
+      }),
   }),
 
   // ===== SISTEMA DE STREAKS =====

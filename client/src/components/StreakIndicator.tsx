@@ -10,8 +10,8 @@ export function StreakIndicator() {
   const streakAtual = streakDetalhes.streakAtual || 0;
   const melhorStreak = streakDetalhes.melhorStreak || 0;
 
-  // Próximo marco de streak
-  const proximoMarco = streakAtual < 7 ? 7 : streakAtual < 30 ? 30 : streakAtual < 100 ? 100 : null;
+  // Próximo marco de streak (7, 30, 60, 90 dias)
+  const proximoMarco = streakAtual < 7 ? 7 : streakAtual < 30 ? 30 : streakAtual < 60 ? 60 : streakAtual < 90 ? 90 : null;
   const progressoMarco = proximoMarco ? (streakAtual / proximoMarco) * 100 : 100;
 
   return (
@@ -74,13 +74,17 @@ export function StreakIndicator() {
             <p className="text-sm text-muted-foreground">
               Incrível! Você está no caminho certo para os 30 dias! 🔥
             </p>
-          ) : streakAtual < 100 ? (
+          ) : streakAtual < 60 ? (
             <p className="text-sm text-muted-foreground">
               Impressionante! Você é um exemplo de consistência! ⚡
             </p>
+          ) : streakAtual < 90 ? (
+            <p className="text-sm text-muted-foreground">
+              INCRÍVEL! Você é uma máquina imparável! ⚡
+            </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              LENDÁRIO! Você é um guerreiro da consistência! 👑
+              LENDÁRIO! Você é uma lenda viva da consistência! 👑
             </p>
           )}
         </div>

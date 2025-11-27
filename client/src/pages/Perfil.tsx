@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import GraficoEvolucaoPRs from "@/components/GraficoEvolucaoPRs";
+import { Avatar } from "@/components/Avatar";
 
 export default function Perfil() {
   const { user } = useAuth();
@@ -70,9 +71,13 @@ export default function Perfil() {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-4xl font-bold text-white">
-                  {userData.name?.charAt(0).toUpperCase()}
-                </div>
+                <Avatar
+                  src={userData.avatar_url}
+                  alt={userData.name || "Atleta"}
+                  fallback={userData.name}
+                  size="xl"
+                  className="w-24 h-24"
+                />
                 <div className="absolute -bottom-2 -right-2 bg-background border-2 border-primary rounded-full px-3 py-1 text-sm font-bold">
                   {nivel.icone} {nivel.nome}
                 </div>

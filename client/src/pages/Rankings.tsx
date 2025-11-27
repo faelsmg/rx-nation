@@ -12,6 +12,7 @@ import { Trophy, Medal, Award } from "lucide-react";
 import { useState } from "react";
 import { MOVIMENTOS_PR, CATEGORIAS, FAIXAS_ETARIAS } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { Avatar } from "@/components/Avatar";
 
 export default function Rankings() {
   const { user } = useAuth();
@@ -157,6 +158,12 @@ export default function Rankings() {
                             </span>
                           )}
                         </div>
+                        <Avatar
+                          src={entry.user.avatar_url}
+                          alt={entry.user.name || "Atleta"}
+                          fallback={entry.user.name}
+                          size="md"
+                        />
                         <div>
                           <p className={`font-semibold ${isCurrentUser ? "text-primary" : ""}`}>
                             {entry.user.name || "Atleta"}

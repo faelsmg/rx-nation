@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, desc, asc, count, sum, or, isNull } from "drizzle-orm";
+import { eq, and, gte, lte, lt, sql, desc, asc, count, sum, or, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
@@ -203,6 +203,7 @@ export async function updateUserProfile(userId: number, data: {
   boxId?: number | null;
   categoria?: "iniciante" | "intermediario" | "avancado" | "elite" | null;
   faixaEtaria?: string | null;
+  avatarUrl?: string;
 }) {
   const db = await getDb();
   if (!db) return undefined;
@@ -11705,7 +11706,7 @@ export async function getLeaderboardEngajamento(boxId: number, mes?: number, ano
   `;
 
   const results = await db.execute(query);
-  return results.rows;
+  return results[0] as any[];
 }
 
 export async function getMeuRankingEngajamento(userId: number, mes?: number, ano?: number) {
@@ -11937,24 +11938,25 @@ async function verificarBadgesStreak(userId: number, streakAtual: number): Promi
   const db = await getDb();
   if (!db) return;
 
-  const badgesStreak = [
-    { criterio: "streak_7_dias", dias: 7 },
-    { criterio: "streak_30_dias", dias: 30 },
-    { criterio: "streak_100_dias", dias: 100 },
-  ];
+  // Buscar badges de streak (categoria frequencia com valorObjetivo)
+  const badgesStreak = await db.select()
+    .from(badges)
+    .where(and(
+      eq(badges.categoria, "frequencia"),
+      sql`${badges.valorObjetivo} IS NOT NULL`
+    ));
 
-  for (const { criterio, dias } of badgesStreak) {
+  for (const badge of badgesStreak) {
+    const dias = badge.valorObjetivo || 0;
+    
+    // Verificar se atingiu o marco
     if (streakAtual === dias) {
-      // Buscar badge
-      const badge = await db.select().from(badges).where(eq(badges.criterio, criterio)).limit(1);
-      if (badge.length === 0) continue;
-
       // Verificar se já tem
       const jaTemBadge = await db.select()
         .from(userBadges)
         .where(and(
           eq(userBadges.userId, userId),
-          eq(userBadges.badgeId, badge[0]!.id)
+          eq(userBadges.badgeId, badge.id)
         ))
         .limit(1);
 
@@ -11962,7 +11964,7 @@ async function verificarBadgesStreak(userId: number, streakAtual: number): Promi
         // Conceder badge
         await db.insert(userBadges).values({
           userId,
-          badgeId: badge[0]!.id,
+          badgeId: badge.id,
         });
 
         // Criar notificação
@@ -11970,7 +11972,7 @@ async function verificarBadgesStreak(userId: number, streakAtual: number): Promi
           userId,
           tipo: "badge",
           titulo: "🎉 Novo Badge Desbloqueado!",
-          mensagem: `Parabéns! Você conquistou o badge "${badge[0]!.nome}" por ${dias} dias consecutivos de treino! 🔥`,
+          mensagem: `Parabéns! Você conquistou o badge "${badge.nome}" por ${dias} dias consecutivos de treino! 🔥`,
           link: "/conquistas",
         });
       }
@@ -12024,13 +12026,17 @@ export async function getMetasByUser(userId: number, status?: "ativa" | "complet
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  let query = db.select().from(metas).where(eq(metas.userId, userId));
-  
   if (status) {
-    query = query.where(and(eq(metas.userId, userId), eq(metas.status, status)));
+    return db.select()
+      .from(metas)
+      .where(and(eq(metas.userId, userId), eq(metas.status, status)))
+      .orderBy(desc(metas.createdAt));
   }
 
-  return query.orderBy(desc(metas.createdAt));
+  return db.select()
+    .from(metas)
+    .where(eq(metas.userId, userId))
+    .orderBy(desc(metas.createdAt));
 }
 
 /**
@@ -12684,5 +12690,80 @@ export async function getAnalyticsAvancado(boxId: number) {
     horariosMaisPopulares,
     totalAlunosAtivos: alunosMesAtual,
     totalAlunosMesAnterior: alunosMesAnterior,
+  };
+}
+
+
+// ==================== CRIAR BADGES DE STREAK ====================
+
+/**
+ * Criar badges de streak (7, 30, 60, 90 dias) no banco de dados
+ */
+export async function criarBadgesStreak() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const badgesStreak = [
+    {
+      nome: "Streak de Fogo 🔥",
+      descricao: "Complete 7 dias consecutivos de treino",
+      icone: "🔥",
+      criterio: "Treinar por 7 dias seguidos sem falhar",
+      nivel: "bronze" as const,
+      categoria: "frequencia" as const,
+      valorObjetivo: 7,
+    },
+    {
+      nome: "Guerreiro Consistente 💪",
+      descricao: "Complete 30 dias consecutivos de treino",
+      icone: "💪",
+      criterio: "Treinar por 30 dias seguidos sem falhar",
+      nivel: "prata" as const,
+      categoria: "frequencia" as const,
+      valorObjetivo: 30,
+    },
+    {
+      nome: "Máquina Imparável ⚡",
+      descricao: "Complete 60 dias consecutivos de treino",
+      icone: "⚡",
+      criterio: "Treinar por 60 dias seguidos sem falhar",
+      nivel: "ouro" as const,
+      categoria: "frequencia" as const,
+      valorObjetivo: 60,
+    },
+    {
+      nome: "Lenda Viva 👑",
+      descricao: "Complete 90 dias consecutivos de treino",
+      icone: "👑",
+      criterio: "Treinar por 90 dias seguidos sem falhar",
+      nivel: "platina" as const,
+      categoria: "frequencia" as const,
+      valorObjetivo: 90,
+    },
+  ];
+
+  const created = [];
+  for (const badge of badgesStreak) {
+    // Verificar se já existe
+    const existing = await db.select()
+      .from(badges)
+      .where(and(
+        eq(badges.nome, badge.nome),
+        eq(badges.categoria, "frequencia")
+      ))
+      .limit(1);
+
+    if (existing.length === 0) {
+      await db.insert(badges).values(badge);
+      created.push(badge.nome);
+    }
+  }
+
+  return {
+    success: true,
+    created,
+    message: created.length > 0 
+      ? `${created.length} badges de streak criados com sucesso!`
+      : "Badges de streak já existem no banco de dados",
   };
 }

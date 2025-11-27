@@ -2702,6 +2702,25 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Backend: procedure para upload de foto (S3)
 - [x] Frontend: componente de upload na página /perfil/editar
 - [x] Adicionar campo avatarUrl na tabela users
-- [ ] Exibir foto no Dashboard
-- [ ] Exibir foto no ranking
-- [ ] Exibir foto na página de perfil
+- [x] Exibir foto no Dashboard
+- [x] Exibir foto no ranking
+- [x] Exibir foto na página de perfil
+
+
+## Sistema de Avatar e Exibição de Foto de Perfil
+- [x] Criar componente Avatar reutilizável com fallback para iniciais
+- [x] Integrar Avatar no Dashboard (cabeçalho e cards)
+- [x] Integrar Avatar na página de Ranking
+- [x] Integrar Avatar na página de Perfil
+- [x] Integrar Avatar na Gestão de Alunos
+- [x] Integrar Avatar no Sidebar/Header
+- [x] Garantir que avatar_url seja retornado em todas as queries relevantes
+
+## Sistema de Recompensas por Streak
+- [x] Criar badges de streak (7, 30, 60, 90 dias) no banco de dados
+- [x] Implementar função para calcular streak atual do atleta
+- [x] Implementar verificação automática de streak após check-in
+- [x] Adicionar notificações push ao atingir milestones de streak
+- [x] Criar componente visual de streak no perfil com progresso
+- [x] Adicionar indicador de streak no Dashboard
+- [ ] Criar testes para sistema de streak

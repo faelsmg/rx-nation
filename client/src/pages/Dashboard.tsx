@@ -16,6 +16,8 @@ import { WidgetProximoBadge } from "@/components/WidgetProximoBadge";
 import { StreakHeatmap } from "@/components/StreakHeatmap";
 import { DesafiosPersonalizadosIA } from "@/components/DesafiosPersonalizadosIA";
 import CalendarioSemanal from "@/components/CalendarioSemanal";
+import { Avatar } from "@/components/Avatar";
+import { StreakBadgesProgress } from "@/components/StreakBadgesProgress";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -40,13 +42,21 @@ export default function Dashboard() {
     <AppLayout>
       {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
       <div className="p-6 lg:p-8 space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">
-            Bem-vindo, <span className="text-primary">{user?.name?.split(" ")[0]}</span>!
-          </h1>
-          <p className="text-muted-foreground">
-            Confira seu progresso e continue treinando forte.
-          </p>
+        <div className="flex items-center gap-4">
+          <Avatar
+            src={user?.avatar_url}
+            alt={user?.name || "Atleta"}
+            fallback={user?.name}
+            size="xl"
+          />
+          <div>
+            <h1 className="text-4xl font-bold mb-2">
+              Bem-vindo, <span className="text-primary">{user?.name?.split(" ")[0]}</span>!
+            </h1>
+            <p className="text-muted-foreground">
+              Confira seu progresso e continue treinando forte.
+            </p>
+          </div>
         </div>
 
         {/* Streak Indicator, Nível e Desafios */}
@@ -66,6 +76,9 @@ export default function Dashboard() {
             
             {/* Heatmap de Streaks */}
             <StreakHeatmap />
+            
+            {/* Badges de Streak */}
+            <StreakBadgesProgress />
             
             {/* Desafios Personalizados com IA */}
             <DesafiosPersonalizadosIA />
