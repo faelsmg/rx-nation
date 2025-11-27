@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar } from "@/components/Avatar";
 import { Share2, Download } from "lucide-react";
 import { APP_LOGO } from "@/const";
+import { toast } from "sonner";
 
 type Nivel = "bronze" | "prata" | "ouro" | "platina";
 
@@ -35,6 +36,10 @@ export function SharePositionCard({
   userId,
 }: SharePositionCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [isSharing, setIsSharing] = useState(false);
+
+  // Verificar suporte à Web Share API
+  const canShare = typeof navigator !== "undefined" && navigator.share && navigator.canShare;
 
   // Configurações de cores por nível
   const niveisConfig = {
@@ -73,9 +78,9 @@ export function SharePositionCard({
   // Gerar URL do perfil público
   const profileUrl = `${window.location.origin}/atleta/${userId}`;
 
-  // Função para gerar e baixar a imagem
-  const handleDownload = async () => {
-    if (!cardRef.current) return;
+  // Função para gerar canvas
+  const generateCanvas = async () => {
+    if (!cardRef.current) return null;
 
     try {
       const canvas = await html2canvas(cardRef.current, {
@@ -84,14 +89,81 @@ export function SharePositionCard({
         logging: false,
         useCORS: true,
       });
-
-      const link = document.createElement("a");
-      link.download = `rx-nation-posicao-${posicao}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      return canvas;
     } catch (error) {
       console.error("Erro ao gerar imagem:", error);
+      toast.error("Erro ao gerar imagem. Tente novamente.");
+      return null;
     }
+  };
+
+  // Função para compartilhar via Web Share API
+  const handleShare = async () => {
+    setIsSharing(true);
+
+    try {
+      const canvas = await generateCanvas();
+      if (!canvas) {
+        setIsSharing(false);
+        return;
+      }
+
+      // Converter canvas para Blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast.error("Erro ao processar imagem.");
+          setIsSharing(false);
+          return;
+        }
+
+        const file = new File([blob], `rx-nation-posicao-${posicao}.png`, {
+          type: "image/png",
+        });
+
+        // Verificar se pode compartilhar arquivo
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `RX Nation - Posição #${posicao}`,
+              text: `Estou na posição #${posicao} no Leaderboard da RX Nation! 🏆 ${pontosTotal} pontos no nível ${config.nome}. Confira meu perfil:`,
+            });
+            toast.success("Compartilhado com sucesso! 🎉");
+          } catch (error: any) {
+            // Usuário cancelou o compartilhamento
+            if (error.name !== "AbortError") {
+              console.error("Erro ao compartilhar:", error);
+              toast.error("Erro ao compartilhar. Tente baixar a imagem.");
+            }
+          }
+        } else {
+          // Fallback: baixar imagem
+          toast.info("Compartilhamento não suportado. Baixando imagem...");
+          const link = document.createElement("a");
+          link.download = `rx-nation-posicao-${posicao}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        }
+
+        setIsSharing(false);
+      }, "image/png");
+    } catch (error) {
+      console.error("Erro ao compartilhar:", error);
+      toast.error("Erro ao compartilhar. Tente novamente.");
+      setIsSharing(false);
+    }
+  };
+
+  // Função para baixar a imagem
+  const handleDownload = async () => {
+    const canvas = await generateCanvas();
+    if (!canvas) return;
+
+    const link = document.createElement("a");
+    link.download = `rx-nation-posicao-${posicao}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    toast.success("Imagem baixada com sucesso!");
   };
 
   return (
@@ -200,16 +272,24 @@ export function SharePositionCard({
             </div>
           </div>
 
-          {/* Botão de Download */}
-          <div className="flex justify-end">
-            <Button onClick={handleDownload} className="gap-2">
+          {/* Botões de Ação */}
+          <div className="flex gap-3 justify-end">
+            {canShare && (
+              <Button onClick={handleShare} disabled={isSharing} className="gap-2 flex-1 sm:flex-none">
+                <Share2 className="w-4 h-4" />
+                {isSharing ? "Compartilhando..." : "Compartilhar"}
+              </Button>
+            )}
+            <Button onClick={handleDownload} variant="outline" className="gap-2">
               <Download className="w-4 h-4" />
-              Baixar Imagem
+              Baixar
             </Button>
           </div>
 
           <p className="text-sm text-muted-foreground text-center">
-            Compartilhe sua posição no Instagram, Facebook ou WhatsApp! 📱
+            {canShare
+              ? "Compartilhe diretamente no Instagram, WhatsApp ou Facebook! 📱"
+              : "Baixe a imagem e compartilhe nas redes sociais! 📱"}
           </p>
         </div>
       </DialogContent>

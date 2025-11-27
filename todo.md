@@ -2892,3 +2892,15 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar botão "Compartilhar Posição" no card "Sua Posição"
 - [x] Adicionar botão em cada item do leaderboard (opcional)
 - [x] Testar geração e download do card
+
+
+## Web Share API - Compartilhamento Direto
+- [x] Implementar função de compartilhamento com Web Share API
+- [x] Converter canvas para Blob antes de compartilhar
+- [x] Adicionar detecção de suporte à Web Share API
+- [x] Criar fallback para navegadores sem suporte (download)
+- [x] Adicionar botão "Compartilhar" com ícone de share nativo
+- [x] Manter botão "Baixar" como opção alternativa
+- [x] Testar em dispositivos móveis (Android/iOS)
+- [x] Testar compartilhamento para Instagram, WhatsApp, Facebook
+- [x] Adicionar toast de sucesso/erro ao compartilhar
