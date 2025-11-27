@@ -12199,3 +12199,167 @@ export async function getCheckinsHistory(userId: number, meses: number = 3) {
     ))
     .orderBy(desc(checkins.dataHora));
 }
+
+
+// ==================== PERFIL DO ATLETA ====================
+
+/**
+ * Obter estatísticas completas do perfil do atleta
+ */
+export async function getPerfilCompleto(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar dados do usuário
+  const user = await getUserById(userId);
+  if (!user) throw new Error("Usuário não encontrado");
+
+  // Estatísticas gerais
+  const pontosTotais = await getTotalPontosByUser(userId);
+  const badges = await getUserBadges(userId);
+  const streak = await getOrCreateStreak(userId);
+  
+  // Contadores
+  const [statsResult] = await db.execute(sql`
+    SELECT 
+      COUNT(DISTINCT c.id) as total_checkins,
+      COUNT(DISTINCT rt.id) as total_wods,
+      COUNT(DISTINCT p.id) as total_prs
+    FROM users u
+    LEFT JOIN checkins c ON u.id = c.user_id
+    LEFT JOIN resultados_treinos rt ON u.id = rt.user_id
+    LEFT JOIN prs p ON u.id = p.user_id
+    WHERE u.id = ${userId}
+  `);
+
+  const stats = (statsResult as any)[0];
+
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      categoria: user.categoria,
+      faixaEtaria: user.faixaEtaria,
+      role: user.role,
+      boxId: user.boxId,
+    },
+    estatisticas: {
+      pontosTotais,
+      totalBadges: badges.length,
+      streakAtual: streak.streakAtual,
+      melhorStreak: streak.melhorStreak,
+      totalCheckins: stats.total_checkins,
+      totalWods: stats.total_wods,
+      totalPRs: stats.total_prs,
+    },
+    badges,
+    streak,
+  };
+}
+
+/**
+ * Obter histórico recente de treinos do atleta
+ */
+export async function getHistoricoTreinosRecentes(userId: number, limite: number = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.execute(sql`
+    SELECT 
+      rt.id,
+      rt.wod_id as wodId,
+      w.titulo as wodTitulo,
+      w.tipo as wodTipo,
+      rt.tempo,
+      rt.rounds,
+      rt.reps,
+      rt.carga,
+      rt.rx,
+      rt.data_treino as dataTreino,
+      rt.notas
+    FROM resultados_treinos rt
+    INNER JOIN wods w ON rt.wod_id = w.id
+    WHERE rt.user_id = ${userId}
+    ORDER BY rt.data_treino DESC
+    LIMIT ${limite}
+  `);
+
+  return (result as any) || [];
+}
+
+/**
+ * Obter evolução de PRs do atleta
+ */
+export async function getEvolucaoPRs(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.execute(sql`
+    SELECT 
+      movimento,
+      carga,
+      data,
+      notas
+    FROM prs
+    WHERE user_id = ${userId}
+    ORDER BY movimento, data ASC
+  `);
+
+  // Agrupar por movimento
+  const prsAgrupados: Record<string, any[]> = {};
+  
+  for (const pr of (result as any) || []) {
+    if (!prsAgrupados[pr.movimento]) {
+      prsAgrupados[pr.movimento] = [];
+    }
+    prsAgrupados[pr.movimento].push({
+      carga: pr.carga,
+      data: pr.data,
+      notas: pr.notas,
+    });
+  }
+
+  return prsAgrupados;
+}
+
+/**
+ * Obter resumo de conquistas do atleta
+ */
+export async function getResumoConquistas(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Badges conquistados recentemente (últimos 30 dias)
+  const [badgesRecentes] = await db.execute(sql`
+    SELECT 
+      b.id,
+      b.nome,
+      b.descricao,
+      b.icone,
+      b.nivel,
+      ub.data_conquista as dataConquista
+    FROM users_badges ub
+    INNER JOIN badges b ON ub.badge_id = b.id
+    WHERE ub.user_id = ${userId}
+      AND ub.data_conquista >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ORDER BY ub.data_conquista DESC
+    LIMIT 5
+  `);
+
+  // Metas ativas
+  const metasAtivas = await getMetasByUser(userId, 'ativa');
+
+  // Desafios da semana
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const semana = getNumeroSemana(hoje);
+  const semanaAno = `${ano}-W${semana.toString().padStart(2, '0')}`;
+  const progressoDesafios = await getProgressoDesafiosUsuario(userId, semanaAno);
+
+  return {
+    badgesRecentes: (badgesRecentes as any) || [],
+    metasAtivas: metasAtivas || [],
+    desafiosSemana: progressoDesafios || [],
+  };
+}

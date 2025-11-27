@@ -2596,3 +2596,22 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar checklist de funcionalidades para testar
 - [x] Preparar formulário de feedback
 - [x] Criar FAQ com dúvidas comuns
+
+
+## Página de Perfil do Atleta
+
+### Backend
+- [x] Criar procedure para estatísticas gerais do atleta
+- [x] Criar procedure para histórico de treinos recentes
+- [x] Criar procedure para evolução de PRs
+- [x] Criar procedure para conquistas e badges do atleta
+
+### Frontend
+- [x] Criar componente de cabeçalho do perfil (foto, nome, categoria)
+- [x] Criar seção de estatísticas gerais (cards)
+- [x] Criar seção de PRs com tabela e gráficos
+- [x] Criar seção de histórico de treinos
+- [x] Criar seção de badges e conquistas
+- [x] Adicionar gráficos de evolução (Chart.js)
+- [ ] Implementar edição de perfil (foto, categoria, faixa etária)
+- [ ] Criar rota /perfil no App.tsx

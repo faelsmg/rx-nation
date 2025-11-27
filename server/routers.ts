@@ -4759,6 +4759,30 @@ export const appRouter = router({
 
   // ===== SISTEMA DE METAS PESSOAIS (DUPLICADO - REMOVIDO) =====
   // Já existe um router 'metas' na linha 2038
+
+  // ===== PERFIL DO ATLETA =====
+  perfil: router({
+    getCompleto: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPerfilCompleto(ctx.user.id);
+      }),
+
+    getHistoricoTreinos: protectedProcedure
+      .input(z.object({ limite: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getHistoricoTreinosRecentes(ctx.user.id, input.limite || 10);
+      }),
+
+    getEvolucaoPRs: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getEvolucaoPRs(ctx.user.id);
+      }),
+
+    getResumoConquistas: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getResumoConquistas(ctx.user.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
