@@ -4974,6 +4974,12 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getSeguindo(input.userId, input.limit);
       }),
+
+    verificarSeguindoMultiplos: protectedProcedure
+      .input(z.object({ seguidosIds: z.array(z.number()) }))
+      .query(async ({ input, ctx }) => {
+        return db.verificarSeguindoMultiplos(ctx.user.id, input.seguidosIds);
+      }),
   }),
 
   // ==================== GAMIFICAÇÃO ====================
@@ -5014,6 +5020,16 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         return db.getLeaderboardNiveis(input.boxId, input.categoria, input.limit);
+      }),
+
+    getLeaderboardAmigos: protectedProcedure
+      .input(z.object({ 
+        boxId: z.number().optional(), 
+        categoria: z.string().optional(),
+        limit: z.number().default(100)
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getLeaderboardAmigos(ctx.user.id, input.boxId, input.categoria, input.limit);
       }),
   }),
 
@@ -5073,6 +5089,24 @@ export const appRouter = router({
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem atualizar configurações' });
         }
         return db.updateConfiguracoesLiga(input, ctx.user.id);
+      }),
+  }),
+
+  // ==================== FEED DE SEGUIDOS ====================
+  feedSeguidos: router({
+    getAtividades: protectedProcedure
+      .input(z.object({
+        tipo: z.enum(['wod', 'pr', 'badge']).optional(),
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getFeedAtividadesSeguidos(
+          ctx.user.id,
+          input.tipo,
+          input.limit,
+          input.offset
+        );
       }),
   }),
 });

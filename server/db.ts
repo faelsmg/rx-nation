@@ -13143,6 +13143,33 @@ export async function verificarSeguindo(seguidorId: number, seguidoId: number) {
 }
 
 /**
+ * Verificar se um usuário segue múltiplos atletas de uma vez
+ * Retorna um mapa { userId: boolean }
+ */
+export async function verificarSeguindoMultiplos(seguidorId: number, seguidosIds: number[]) {
+  const db = await getDb();
+  if (!db || seguidosIds.length === 0) return {};
+
+  const resultados = await db
+    .select({
+      seguidoId: seguidores.seguidoId,
+    })
+    .from(seguidores)
+    .where(and(
+      eq(seguidores.seguidorId, seguidorId),
+      sql`${seguidores.seguidoId} IN (${sql.join(seguidosIds.map(id => sql`${id}`), sql`, `)})`
+    ));
+
+  // Criar mapa de seguindo
+  const mapa: Record<number, boolean> = {};
+  seguidosIds.forEach(id => {
+    mapa[id] = resultados.some(r => r.seguidoId === id);
+  });
+
+  return mapa;
+}
+
+/**
  * Buscar lista de seguidores
  */
 export async function getSeguidores(userId: number, limit: number = 50) {
@@ -13188,6 +13215,118 @@ export async function getSeguindo(userId: number, limit: number = 50) {
     .limit(limit);
 
   return lista;
+}
+
+/**
+ * Buscar feed de atividades dos atletas seguidos
+ * Retorna WODs completados, PRs registrados e badges conquistados
+ */
+export async function getFeedAtividadesSeguidos(
+  userId: number,
+  tipo?: 'wod' | 'pr' | 'badge',
+  limit: number = 20,
+  offset: number = 0
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Buscar IDs dos atletas seguidos
+  const seguidos = await db
+    .select({ seguidoId: seguidores.seguidoId })
+    .from(seguidores)
+    .where(eq(seguidores.seguidorId, userId));
+
+  const seguidosIds = seguidos.map(s => s.seguidoId);
+
+  if (seguidosIds.length === 0) return [];
+
+  const atividades: any[] = [];
+
+  // Buscar WODs completados (se tipo não especificado ou tipo = 'wod')
+  if (!tipo || tipo === 'wod') {
+    const wodsCompletados = await db
+      .select({
+        tipo: sql<string>`'wod'`,
+        userId: resultadosTreinos.userId,
+        userName: users.name,
+        userAvatar: users.avatarUrl,
+        wodId: resultadosTreinos.wodId,
+        wodTitulo: wods.titulo,
+        wodTipo: wods.tipo,
+        tempo: resultadosTreinos.tempo,
+        reps: resultadosTreinos.reps,
+        carga: resultadosTreinos.carga,
+        rxOuScale: resultadosTreinos.rxOuScale,
+        createdAt: resultadosTreinos.createdAt,
+      })
+      .from(resultadosTreinos)
+      .leftJoin(users, eq(resultadosTreinos.userId, users.id))
+      .leftJoin(wods, eq(resultadosTreinos.wodId, wods.id))
+      .where(sql`${resultadosTreinos.userId} IN (${sql.join(seguidosIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(desc(resultadosTreinos.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    atividades.push(...wodsCompletados);
+  }
+
+  // Buscar PRs registrados (se tipo não especificado ou tipo = 'pr')
+  if (!tipo || tipo === 'pr') {
+    const prsRegistrados = await db
+      .select({
+        tipo: sql<string>`'pr'`,
+        userId: prs.userId,
+        userName: users.name,
+        userAvatar: users.avatarUrl,
+        prId: prs.id,
+        movimento: prs.movimento,
+        carga: prs.carga,
+        createdAt: prs.createdAt,
+      })
+      .from(prs)
+      .leftJoin(users, eq(prs.userId, users.id))
+      .where(sql`${prs.userId} IN (${sql.join(seguidosIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(desc(prs.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    atividades.push(...prsRegistrados);
+  }
+
+  // Buscar badges conquistados (se tipo não especificado ou tipo = 'badge')
+  if (!tipo || tipo === 'badge') {
+    const badgesConquistados = await db
+      .select({
+        tipo: sql<string>`'badge'`,
+        userId: userBadges.userId,
+        userName: users.name,
+        userAvatar: users.avatarUrl,
+        badgeId: badges.id,
+        badgeNome: badges.nome,
+        badgeIcone: badges.icone,
+        badgeDescricao: badges.descricao,
+        createdAt: userBadges.createdAt,
+      })
+      .from(userBadges)
+      .leftJoin(users, eq(userBadges.userId, users.id))
+      .leftJoin(badges, eq(userBadges.badgeId, badges.id))
+      .where(sql`${userBadges.userId} IN (${sql.join(seguidosIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(desc(userBadges.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    atividades.push(...badgesConquistados);
+  }
+
+  // Ordenar todas as atividades por data (mais recentes primeiro)
+  atividades.sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateB - dateA;
+  });
+
+  // Limitar resultado final
+  return atividades.slice(0, limit);
 }
 
 
@@ -13629,6 +13768,94 @@ export async function getLeaderboardNiveis(
     });
   } catch (error) {
     console.error("[Leaderboard] Erro ao buscar leaderboard de níveis:", error);
+    return [];
+  }
+}
+
+/**
+ * Buscar leaderboard filtrado apenas para amigos (atletas seguidos)
+ */
+export async function getLeaderboardAmigos(
+  userId: number,
+  boxId?: number,
+  categoria?: string,
+  limit: number = 100
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Buscar IDs dos atletas seguidos
+    const seguidos = await db
+      .select({ seguidoId: seguidores.seguidoId })
+      .from(seguidores)
+      .where(eq(seguidores.seguidorId, userId));
+
+    const seguidosIds = seguidos.map(s => s.seguidoId);
+
+    // Se não segue ninguém, retornar vazio
+    if (seguidosIds.length === 0) return [];
+
+    // Construir condições de filtro
+    const conditions = [
+      sql`${users.id} IN (${sql.join(seguidosIds.map(id => sql`${id}`), sql`, `)})`
+    ];
+
+    if (boxId) {
+      conditions.push(eq(users.boxId, boxId));
+    }
+    if (categoria) {
+      conditions.push(sql`${users.categoria} = ${categoria}`);
+    }
+
+    // Query com joins e agregação de pontos
+    const leaderboard = await db
+      .select({
+        userId: users.id,
+        userName: users.name,
+        userAvatar: users.avatarUrl,
+        userCategoria: users.categoria,
+        boxId: users.boxId,
+        boxNome: boxes.nome,
+        pontosCheckin: pontuacaoUsuarios.pontosCheckin,
+        pontosWod: pontuacaoUsuarios.pontosWod,
+        pontosPR: pontuacaoUsuarios.pontosPR,
+        pontosBadge: pontuacaoUsuarios.pontosBadge,
+      })
+      .from(users)
+      .leftJoin(boxes, eq(users.boxId, boxes.id))
+      .leftJoin(pontuacaoUsuarios, eq(users.id, pontuacaoUsuarios.userId))
+      .where(and(...conditions))
+      .orderBy(
+        sql`(COALESCE(${pontuacaoUsuarios.pontosCheckin}, 0) + 
+             COALESCE(${pontuacaoUsuarios.pontosWod}, 0) + 
+             COALESCE(${pontuacaoUsuarios.pontosPR}, 0) + 
+             COALESCE(${pontuacaoUsuarios.pontosBadge}, 0)) DESC`
+      )
+      .limit(limit);
+
+    // Calcular pontos totais e nível para cada atleta
+    return leaderboard.map((item, index) => {
+      const pontosTotal = 
+        (item.pontosCheckin || 0) + 
+        (item.pontosWod || 0) + 
+        (item.pontosPR || 0) + 
+        (item.pontosBadge || 0);
+
+      return {
+        posicao: index + 1,
+        userId: item.userId,
+        userName: item.userName || "Atleta",
+        userAvatar: item.userAvatar,
+        userCategoria: item.userCategoria || "iniciante",
+        boxId: item.boxId,
+        boxNome: item.boxNome || "Sem box",
+        pontosTotal,
+        nivel: calcularNivel(pontosTotal),
+      };
+    });
+  } catch (error) {
+    console.error("[Leaderboard] Erro ao buscar leaderboard de amigos:", error);
     return [];
   }
 }

@@ -29,6 +29,8 @@ import Notificacoes from "./pages/Notificacoes";
 import PerfilPublico from "./pages/PerfilPublico";
 import Metas from "./pages/Metas";
 import Feed from "./pages/Feed";
+import FeedSeguidos from "./pages/FeedSeguidos";
+import SeguidoresSeguindo from "./pages/SeguidoresSeguindo";
 
 import Desafios from "./pages/Desafios";
 import DesafioDetalhes from "./pages/DesafioDetalhes";
@@ -97,6 +99,8 @@ function Router() {
       <Route path={"/ranking-global"} component={RankingGlobal} />
        <Route path="/perfil" component={Perfil} />
       <Route path="/perfil/editar" component={EditarPerfil} />
+      <Route path="/feed-seguidos" component={FeedSeguidos} />
+      <Route path="/seguidores/:userId" component={SeguidoresSeguindo} />
        <Route path="/gestao-box" component={GestaoBox} />
       <Route path="/gestao-alunos" component={GestaoAlunos} />
       <Route path={"/admin"} component={AdminLiga} />

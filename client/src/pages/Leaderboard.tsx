@@ -7,23 +7,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar } from "@/components/Avatar";
 import { BadgeNivel } from "@/components/BadgeNivel";
 import { SharePositionCard } from "@/components/SharePositionCard";
-import { Trophy, TrendingUp } from "lucide-react";
+import { Trophy, TrendingUp, Users } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Leaderboard() {
   const { user } = useAuth();
   const [boxId, setBoxId] = useState<number | undefined>(user?.boxId ?? undefined);
   const [categoria, setCategoria] = useState<string | undefined>(undefined);
+  const [apenasAmigos, setApenasAmigos] = useState(false);
 
+  // Query condicional: usa getLeaderboardAmigos se toggle ativado
   const { data: leaderboard, isLoading } = trpc.gamificacao.getLeaderboard.useQuery({
     boxId,
     categoria,
     limit: 100,
+  }, {
+    enabled: !apenasAmigos, // Desabilita quando toggle ativado
   });
+
+  const { data: leaderboardAmigos, isLoading: isLoadingAmigos } = trpc.gamificacao.getLeaderboardAmigos.useQuery({
+    boxId,
+    categoria,
+    limit: 100,
+  }, {
+    enabled: apenasAmigos, // Habilita apenas quando toggle ativado
+  });
+
+  // Usar leaderboard correto baseado no toggle
+  const leaderboardAtual = apenasAmigos ? leaderboardAmigos : leaderboard;
+  const isLoadingAtual = apenasAmigos ? isLoadingAmigos : isLoading;
 
   const { data: boxes } = trpc.boxes.list.useQuery();
 
   // Encontrar posição do usuário logado
-  const userPosition = leaderboard?.find((item) => item.userId === user?.id);
+  const userPosition = leaderboardAtual?.find((item) => item.userId === user?.id);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -75,6 +93,19 @@ export default function Leaderboard() {
               <SelectItem value="elite">Elite</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Toggle Apenas Amigos */}
+          <div className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-card">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <Label htmlFor="apenas-amigos" className="cursor-pointer">
+              Apenas Amigos
+            </Label>
+            <Switch
+              id="apenas-amigos"
+              checked={apenasAmigos}
+              onCheckedChange={setApenasAmigos}
+            />
+          </div>
         </div>
       </div>
 
@@ -129,15 +160,15 @@ export default function Leaderboard() {
           <CardTitle>Top 100 Atletas</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoadingAtual ? (
             <div className="space-y-4">
               {[...Array(10)].map((_, i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
-          ) : leaderboard && leaderboard.length > 0 ? (
+          ) : leaderboardAtual && leaderboardAtual.length > 0 ? (
             <div className="space-y-3">
-              {leaderboard.map((item) => {
+              {leaderboardAtual.map((item) => {
                 const isUser = item.userId === user?.id;
                 const isTop3 = item.posicao <= 3;
 

@@ -84,6 +84,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
         { icon: Award, label: "Badges", path: "/badges" },
         { icon: Target, label: "Metas", path: "/metas" },
+        { icon: Users, label: "Feed de Amigos", path: "/feed-seguidos" },
         { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
         { icon: Activity, label: "Insights IA", path: "/insights-ia" },
         { icon: MessageCircle, label: "Mensagens", path: "/mensagens" },
