@@ -21,6 +21,8 @@ import Perfil from "./pages/Perfil";
 import EditarPerfil from "./pages/EditarPerfil";
 import GestaoAlunos from "./pages/GestaoAlunos";
 import GestaoBox from "./pages/GestaoBox";
+import GestaoConvites from "./pages/GestaoConvites";
+import JoinBox from "./pages/JoinBox";
 import AdminLiga from "./pages/AdminLiga";
 import Agenda from "./pages/Agenda";
 import Franqueado from "./pages/Franqueado";
@@ -84,6 +86,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path="/join/:slug" component={JoinBox} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/wod"} component={WodDoDia} />
       <Route path={"/historico"} component={Historico} />
@@ -103,6 +106,7 @@ function Router() {
       <Route path="/seguidores/:userId" component={SeguidoresSeguindo} />
        <Route path="/gestao-box" component={GestaoBox} />
       <Route path="/gestao-alunos" component={GestaoAlunos} />
+      <Route path="/gestao-convites" component={GestaoConvites} />
       <Route path={"/admin"} component={AdminLiga} />
       <Route path={"/agenda"} component={Agenda} />
       <Route path={"/franqueado"} component={Franqueado} />

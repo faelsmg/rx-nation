@@ -31,6 +31,7 @@ export type InsertUser = typeof users.$inferInsert;
 export const boxes = mysqlTable("boxes", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).unique(), // URL amigável para link compartilhável (ex: impacto-sjcampos)
   tipo: mysqlEnum("tipo", ["proprio", "parceiro"]).default("proprio").notNull(), // próprio (Impacto) ou parceiro/franqueado
   franqueadoId: int("franqueadoId"), // ID do usuário franqueado responsável
   endereco: text("endereco"),
@@ -1458,6 +1459,43 @@ export type InsertConfiguracaoLiga = typeof configuracoesLiga.$inferInsert;
 export const configuracoesLigaRelations = relations(configuracoesLiga, ({ one }) => ({
   updatedByUser: one(users, {
     fields: [configuracoesLiga.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+
+// ==================== SISTEMA DE ONBOARDING ====================
+/**
+ * Convites para Atletas
+ * Sistema de convite por email para vincular atletas a boxes
+ */
+export const convites = mysqlTable("convites", {
+  id: int("id").autoincrement().primaryKey(),
+  boxId: int("boxId").notNull().references(() => boxes.id, { onDelete: "cascade" }),
+  email: varchar("email", { length: 320 }).notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(), // Token único para validação
+  status: mysqlEnum("status", ["pendente", "aceito", "expirado", "cancelado"]).default("pendente").notNull(),
+  convidadoPor: int("convidado_por").notNull().references(() => users.id), // Box Master que enviou
+  aceitoPor: int("aceito_por").references(() => users.id), // Usuário que aceitou (após cadastro)
+  expiresAt: timestamp("expires_at").notNull(), // Data de expiração (7 dias)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  aceitoAt: timestamp("aceito_at"), // Data que foi aceito
+});
+
+export type Convite = typeof convites.$inferSelect;
+export type InsertConvite = typeof convites.$inferInsert;
+
+export const convitesRelations = relations(convites, ({ one }) => ({
+  box: one(boxes, {
+    fields: [convites.boxId],
+    references: [boxes.id],
+  }),
+  convidador: one(users, {
+    fields: [convites.convidadoPor],
+    references: [users.id],
+  }),
+  aceitador: one(users, {
+    fields: [convites.aceitoPor],
     references: [users.id],
   }),
 }));

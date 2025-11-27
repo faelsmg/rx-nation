@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, nome, endereco, cidade FROM boxes ORDER BY id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute SELECT id, nome, endereco, cidade FROM boxes ORDER BY id",
+  "rows": [
+    {
+      "id": "660001",
+      "nome": "Impacto Crossfit SJCampos",
+      "endereco": "Rua Doutor Orlando Feirabend filho, 230 - São José dos Campos",
+      "cidade": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\tendereco\tcidade\n660001\tImpacto Crossfit SJCampos\tRua Doutor Orlando Feirabend filho, 230 - São José dos Campos\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 215
+}

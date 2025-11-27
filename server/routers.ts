@@ -5275,6 +5275,82 @@ export const appRouter = router({
         return db.rejeitarDenuncia(input.denunciaId, ctx.user.id);
       }),
   }),
+
+  // ===== SISTEMA DE ONBOARDING =====
+  convites: router({
+    // Criar convite (apenas Box Master)
+    criar: boxMasterProcedure
+      .input(z.object({
+        email: z.string().email(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você precisa estar vinculado a um box' });
+        }
+        return db.criarConvite({
+          boxId: ctx.user.boxId,
+          email: input.email,
+          convidadoPor: ctx.user.id,
+        });
+      }),
+
+    // Listar convites do box
+    listar: boxMasterProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você precisa estar vinculado a um box' });
+        }
+        return db.listarConvitesBox(ctx.user.boxId);
+      }),
+
+    // Cancelar convite
+    cancelar: boxMasterProcedure
+      .input(z.object({
+        conviteId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você precisa estar vinculado a um box' });
+        }
+        return db.cancelarConvite(input.conviteId, ctx.user.boxId);
+      }),
+
+    // Validar token de convite (público)
+    validar: publicProcedure
+      .input(z.object({
+        token: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return db.validarConvite(input.token);
+      }),
+
+    // Aceitar convite (após cadastro)
+    aceitar: protectedProcedure
+      .input(z.object({
+        token: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.aceitarConvite(input.token, ctx.user.id);
+      }),
+
+    // Obter slug do box
+    getSlug: boxMasterProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você precisa estar vinculado a um box' });
+        }
+        return db.criarSlugBox(ctx.user.boxId);
+      }),
+
+    // Buscar box por slug (público)
+    buscarPorSlug: publicProcedure
+      .input(z.object({
+        slug: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return db.buscarBoxPorSlug(input.slug);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

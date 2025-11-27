@@ -351,6 +351,13 @@
       "when": 1764266811047,
       "tag": "0049_brief_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1764271460838,
+      "tag": "0050_fair_nitro",
+      "breakpoints": true
     }
   ]
 }

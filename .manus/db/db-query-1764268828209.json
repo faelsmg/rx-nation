@@ -1,0 +1,87 @@
+{
+  "query": "SELECT id, name, email, role, categoria FROM users WHERE boxId = 660001 ORDER BY role DESC, name",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user njLUTjzwczDK38t.a52c1e22817e --database WZEKsstKXPtdSNXaJtxfch --execute SELECT id, name, email, role, categoria FROM users WHERE boxId = 660001 ORDER BY role DESC, name",
+  "rows": [
+    {
+      "id": "3120513",
+      "name": "Rafael Souza",
+      "email": "rafael@impacto.com",
+      "role": "box_master",
+      "categoria": "avancado"
+    },
+    {
+      "id": "3120517",
+      "name": "Ana Oliveira",
+      "email": "ana@teste.com",
+      "role": "atleta",
+      "categoria": "elite"
+    },
+    {
+      "id": "3120524",
+      "name": "Beatriz Cardoso",
+      "email": "beatriz@teste.com",
+      "role": "atleta",
+      "categoria": "iniciante"
+    },
+    {
+      "id": "3120521",
+      "name": "Carlos Alves",
+      "email": "carlos@teste.com",
+      "role": "atleta",
+      "categoria": "avancado"
+    },
+    {
+      "id": "3120522",
+      "name": "Fernanda Rocha",
+      "email": "fernanda@teste.com",
+      "role": "atleta",
+      "categoria": "intermediario"
+    },
+    {
+      "id": "3120514",
+      "name": "João Silva",
+      "email": "joao@teste.com",
+      "role": "atleta",
+      "categoria": "iniciante"
+    },
+    {
+      "id": "3120520",
+      "name": "Juliana Lima",
+      "email": "juliana@teste.com",
+      "role": "atleta",
+      "categoria": "intermediario"
+    },
+    {
+      "id": "3120519",
+      "name": "Lucas Ferreira",
+      "email": "lucas@teste.com",
+      "role": "atleta",
+      "categoria": "iniciante"
+    },
+    {
+      "id": "3120515",
+      "name": "Maria Santos",
+      "email": "maria@teste.com",
+      "role": "atleta",
+      "categoria": "intermediario"
+    },
+    {
+      "id": "3120516",
+      "name": "Pedro Costa",
+      "email": "pedro@teste.com",
+      "role": "atleta",
+      "categoria": "avancado"
+    },
+    {
+      "id": "3120523",
+      "name": "Ricardo Mendes",
+      "email": "ricardo@teste.com",
+      "role": "atleta",
+      "categoria": "elite"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tcategoria\n3120513\tRafael Souza\trafael@impacto.com\tbox_master\tavancado\n3120517\tAna Oliveira\tana@teste.com\tatleta\telite\n3120524\tBeatriz Cardoso\tbeatriz@teste.com\tatleta\tiniciante\n3120521\tCarlos Alves\tcarlos@teste.com\tatleta\tavancado\n3120522\tFernanda Rocha\tfernanda@teste.com\tatleta\tintermediario\n3120514\tJoão Silva\tjoao@teste.com\tatleta\tiniciante\n3120520\tJuliana Lima\tjuliana@teste.com\tatleta\tintermediario\n3120519\tLucas Ferreira\tlucas@teste.com\tatleta\tiniciante\n3120515\tMaria Santos\tmaria@teste.com\tatleta\tintermediario\n3120516\tPedro Costa\tpedro@teste.com\tatleta\tavancado\n3120523\tRicardo Mendes\tricardo@teste.com\tatleta\telite\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

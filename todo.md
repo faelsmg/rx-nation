@@ -3140,3 +3140,19 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar índices compostos em feed_atividades (boxId + createdAt, userId + createdAt)
 - [x] Implementar paginação cursor-based no feed social (procedure getAtividades)
 - [x] Aplicar migrações de índices no banco de dados (migration 0049)
+
+## Sistema de Onboarding e Gestão de Atletas - ✅ CONCLUÍDO
+- [x] Criar schema de convites no banco (token, email, boxId, status, expiresAt)
+- [x] Criar schema de links compartilháveis por box (slug único)
+- [x] Adicionar campo 'slug' na tabela boxes
+- [x] Criar procedure para gerar convite por email
+- [x] Criar procedure para validar token de convite
+- [x] Criar procedure para cadastro via convite
+- [x] Criar procedure para cadastro via link do box
+- [x] Criar interface "Convidar Aluno" para Box Master
+- [x] Criar interface "Link do Box" para compartilhamento
+- [x] Criar página pública /join/:slug (cadastro via link)
+- [ ] Criar página pública /invite/:token (cadastro via convite) - OPCIONAL
+- [ ] Implementar envio de email de convite - FUTURO
+- [x] Criar testes para fluxo de convite
+- [x] Criar testes para fluxo de link compartilhável

@@ -84,6 +84,8 @@ import {
   InsertDenunciaComentario,
   comentariosWod,
   InsertComentarioWod,
+  convites,
+  InsertConvite,
   reacoesComentarios,
   InsertReacaoComentario,
   mencoesComentarios,
@@ -14531,4 +14533,264 @@ export async function rejeitarDenuncia(denunciaId: number, adminId: number) {
     .where(eq(denunciasComentarios.id, denunciaId));
 
   return { success: true };
+}
+
+
+// ==================== SISTEMA DE ONBOARDING ====================
+
+/**
+ * Gerar slug único para box a partir do nome
+ */
+function generateSlug(nome: string): string {
+  return nome
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+    .trim()
+    .replace(/\s+/g, '-') // Substitui espaços por hífens
+    .replace(/-+/g, '-'); // Remove hífens duplicados
+}
+
+/**
+ * Criar ou atualizar slug do box
+ */
+export async function criarSlugBox(boxId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [box] = await db.select().from(boxes).where(eq(boxes.id, boxId)).limit(1);
+  if (!box) throw new Error("Box não encontrado");
+
+  // Se já tem slug, retorna
+  if (box.slug) return box.slug;
+
+  // Gerar slug base
+  let slug = generateSlug(box.nome);
+  let tentativa = 0;
+  let slugFinal = slug;
+
+  // Verificar se slug já existe e adicionar número se necessário
+  while (true) {
+    const [existente] = await db
+      .select()
+      .from(boxes)
+      .where(eq(boxes.slug, slugFinal))
+      .limit(1);
+
+    if (!existente) break;
+
+    tentativa++;
+    slugFinal = `${slug}-${tentativa}`;
+  }
+
+  // Atualizar box com slug
+  await db.update(boxes).set({ slug: slugFinal }).where(eq(boxes.id, boxId));
+
+  return slugFinal;
+}
+
+/**
+ * Criar convite para atleta
+ */
+export async function criarConvite(params: {
+  boxId: number;
+  email: string;
+  convidadoPor: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { boxId, email, convidadoPor } = params;
+
+  // Verificar se já existe convite pendente para este email neste box
+  const [conviteExistente] = await db
+    .select()
+    .from(convites)
+    .where(
+      and(
+        eq(convites.boxId, boxId),
+        eq(convites.email, email),
+        eq(convites.status, "pendente")
+      )
+    )
+    .limit(1);
+
+  if (conviteExistente) {
+    throw new Error("Já existe um convite pendente para este email");
+  }
+
+  // Verificar se usuário já está cadastrado e vinculado a este box
+  const [usuarioExistente] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.email, email), eq(users.boxId, boxId)))
+    .limit(1);
+
+  if (usuarioExistente) {
+    throw new Error("Este usuário já está vinculado a este box");
+  }
+
+  // Gerar token único
+  const token = crypto.randomUUID().replace(/-/g, '');
+
+  // Data de expiração: 7 dias
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  // Criar convite
+  const [convite] = await db
+    .insert(convites)
+    .values({
+      boxId,
+      email,
+      token,
+      convidadoPor,
+      expiresAt,
+      status: "pendente",
+    })
+    .$returningId();
+
+  return {
+    id: convite.id,
+    token,
+    email,
+    expiresAt,
+  };
+}
+
+/**
+ * Validar token de convite
+ */
+export async function validarConvite(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [convite] = await db
+    .select({
+      id: convites.id,
+      boxId: convites.boxId,
+      boxNome: boxes.nome,
+      email: convites.email,
+      status: convites.status,
+      expiresAt: convites.expiresAt,
+    })
+    .from(convites)
+    .leftJoin(boxes, eq(convites.boxId, boxes.id))
+    .where(eq(convites.token, token))
+    .limit(1);
+
+  if (!convite) return null;
+
+  // Verificar se expirou
+  if (new Date() > new Date(convite.expiresAt)) {
+    // Marcar como expirado
+    await db
+      .update(convites)
+      .set({ status: "expirado" })
+      .where(eq(convites.id, convite.id));
+    return null;
+  }
+
+  // Verificar se já foi aceito
+  if (convite.status !== "pendente") {
+    return null;
+  }
+
+  return convite;
+}
+
+/**
+ * Aceitar convite e vincular usuário ao box
+ */
+export async function aceitarConvite(token: string, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Validar convite
+  const convite = await validarConvite(token);
+  if (!convite) {
+    throw new Error("Convite inválido ou expirado");
+  }
+
+  // Atualizar usuário com boxId
+  await db
+    .update(users)
+    .set({ boxId: convite.boxId })
+    .where(eq(users.id, userId));
+
+  // Marcar convite como aceito
+  await db
+    .update(convites)
+    .set({
+      status: "aceito",
+      aceitoPor: userId,
+      aceitoAt: new Date(),
+    })
+    .where(eq(convites.id, convite.id));
+
+  return { success: true, boxId: convite.boxId };
+}
+
+/**
+ * Listar convites do box
+ */
+export async function listarConvitesBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const convitesList = await db
+    .select({
+      id: convites.id,
+      email: convites.email,
+      status: convites.status,
+      createdAt: convites.createdAt,
+      expiresAt: convites.expiresAt,
+      aceitoAt: convites.aceitoAt,
+      convidadorNome: users.name,
+    })
+    .from(convites)
+    .leftJoin(users, eq(convites.convidadoPor, users.id))
+    .where(eq(convites.boxId, boxId))
+    .orderBy(desc(convites.createdAt));
+
+  return convitesList;
+}
+
+/**
+ * Cancelar convite
+ */
+export async function cancelarConvite(conviteId: number, boxId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(convites)
+    .set({ status: "cancelado" })
+    .where(and(eq(convites.id, conviteId), eq(convites.boxId, boxId)));
+
+  return { success: true };
+}
+
+/**
+ * Buscar box por slug
+ */
+export async function buscarBoxPorSlug(slug: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [box] = await db
+    .select({
+      id: boxes.id,
+      nome: boxes.nome,
+      slug: boxes.slug,
+      cidade: boxes.cidade,
+      estado: boxes.estado,
+      ativo: boxes.ativo,
+    })
+    .from(boxes)
+    .where(eq(boxes.slug, slug))
+    .limit(1);
+
+  return box || null;
 }
