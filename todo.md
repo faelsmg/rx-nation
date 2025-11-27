@@ -2920,3 +2920,12 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Integrar detecção ao registrar WOD, PR e Badge
 - [x] Adicionar provider global para modal de Level Up
 - [x] Testar animação em todas as transições de nível
+
+
+## Correção de Rotas Quebradas
+- [x] Verificar se página Configuracoes.tsx existe
+- [x] Verificar se página RelatoriosGlobais.tsx existe
+- [x] Verificar se página Perfil.tsx existe
+- [x] Verificar rotas registradas no App.tsx
+- [x] Corrigir imports e exports
+- [x] Testar todas as rotas corrigidas

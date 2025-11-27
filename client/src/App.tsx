@@ -75,6 +75,8 @@ import MeuProgresso from "./pages/MeuProgresso";
 import Mentoria from "./pages/Mentoria";
 import Marketplace from "./pages/Marketplace";
 import Leaderboard from "./pages/Leaderboard";
+import Configuracoes from "./pages/Configuracoes";
+import RelatoriosGlobais from "./pages/RelatoriosGlobais";
 
 function Router() {
   return (
@@ -149,6 +151,8 @@ function Router() {
       <Route path="/gestao-estoque" component={GestaoEstoque} />
       <Route path="/pdv" component={PDV} />
       <Route path="/financeiro-geral" component={DashboardFinanceiroGeral} />
+      <Route path="/configuracoes" component={Configuracoes} />
+      <Route path="/relatorios-globais" component={RelatoriosGlobais} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
