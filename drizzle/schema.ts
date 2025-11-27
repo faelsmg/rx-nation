@@ -1451,6 +1451,14 @@ export const configuracoesLiga = mysqlTable("configuracoes_liga", {
   require2FA: boolean("require_2fa").default(false).notNull(),
   apiKeyWebhooks: varchar("api_key_webhooks", { length: 255 }),
   webhookUrl: varchar("webhook_url", { length: 500 }),
+  // Configurações SMTP
+  smtpHost: varchar("smtp_host", { length: 255 }),
+  smtpPort: int("smtp_port").default(587),
+  smtpSecure: boolean("smtp_secure").default(false), // true para porta 465
+  smtpUser: varchar("smtp_user", { length: 255 }),
+  smtpPass: text("smtp_pass"), // Armazenado de forma segura (considerar encriptação)
+  smtpFrom: varchar("smtp_from", { length: 320 }).default('"RX Nation" <noreply@rxnation.com>'),
+  smtpProvider: mysqlEnum("smtp_provider", ["gmail", "sendgrid", "aws_ses", "custom"]).default("custom"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updated_by").references(() => users.id), // Quem fez a última alteração
 });
@@ -1499,5 +1507,52 @@ export const convitesRelations = relations(convites, ({ one }) => ({
   aceitador: one(users, {
     fields: [convites.aceitoPor],
     references: [users.id],
+  }),
+}));
+
+
+// ==================== ANALYTICS DE ONBOARDING ====================
+/**
+ * Eventos de Onboarding
+ * Tracking de eventos para analytics de conversão
+ */
+export const eventosOnboarding = mysqlTable("eventos_onboarding", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  boxId: int("boxId").references(() => boxes.id, { onDelete: "set null" }),
+  tipoEvento: mysqlEnum("tipo_evento", [
+    "cadastro_iniciado",
+    "cadastro_completo",
+    "email_boas_vindas_enviado",
+    "email_boas_vindas_aberto",
+    "clique_completar_perfil",
+    "clique_iniciar_tour",
+    "tour_iniciado",
+    "tour_completo",
+    "onboarding_completo",
+    "primeiro_wod_registrado",
+    "primeiro_checkin"
+  ]).notNull(),
+  metadata: text("metadata"), // JSON com dados adicionais do evento
+  userAgent: text("user_agent"), // Para tracking de dispositivo
+  ipAddress: varchar("ip_address", { length: 45 }), // IPv4 ou IPv6
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("idx_eventos_onboarding_userId").on(table.userId),
+  tipoEventoIdx: index("idx_eventos_onboarding_tipoEvento").on(table.tipoEvento),
+  createdAtIdx: index("idx_eventos_onboarding_createdAt").on(table.createdAt),
+}));
+
+export type EventoOnboarding = typeof eventosOnboarding.$inferSelect;
+export type InsertEventoOnboarding = typeof eventosOnboarding.$inferInsert;
+
+export const eventosOnboardingRelations = relations(eventosOnboarding, ({ one }) => ({
+  user: one(users, {
+    fields: [eventosOnboarding.userId],
+    references: [users.id],
+  }),
+  box: one(boxes, {
+    fields: [eventosOnboarding.boxId],
+    references: [boxes.id],
   }),
 }));

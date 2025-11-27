@@ -2061,6 +2061,34 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getRetencaoAlunos(input.boxId);
       }),
+
+    // Métricas de conversão de onboarding
+    getMetricasOnboarding: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dataInicio: z.date().optional(),
+        dataFim: z.date().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getMetricasConversaoOnboarding(input.boxId, input.dataInicio, input.dataFim);
+      }),
+
+    // Funil de conversão por dia
+    getFunilPorDia: boxMasterProcedure
+      .input(z.object({
+        boxId: z.number().optional(),
+        dias: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getFunilConversaoPorDia(input.boxId, input.dias);
+      }),
+
+    // Eventos de onboarding de um usuário
+    getEventosUsuario: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getEventosOnboardingByUser(input.userId);
+      }),
   }),
 
   // ===== LEMBRETES E AUTOMAÇÕES =====

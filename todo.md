@@ -3225,3 +3225,63 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar link para começar tour
 - [ ] Testar envio de email em desenvolvimento
 - [ ] Validar template HTML em diferentes clientes de email
+
+## Funcionalidades Avançadas de Produção
+
+### 1. Configuração SMTP em Produção
+- [ ] Adicionar variáveis SMTP no schema de env
+- [ ] Criar interface de configuração SMTP no painel admin
+- [ ] Implementar validação de credenciais SMTP
+- [ ] Adicionar suporte para Gmail, SendGrid, AWS SES
+- [ ] Criar página de teste de envio de email
+- [ ] Documentar processo de configuração
+
+### 2. Analytics de Conversão de Onboarding
+- [ ] Criar tabela de eventos de onboarding no schema
+- [ ] Registrar evento de email enviado
+- [ ] Registrar evento de email aberto (tracking pixel)
+- [ ] Registrar evento de clique em CTA
+- [ ] Registrar evento de conclusão de onboarding
+- [ ] Criar dashboard de métricas de conversão
+- [ ] Implementar funil de conversão visual
+- [ ] Adicionar filtros por período e box
+
+### 3. Notificações WhatsApp Business
+- [ ] Pesquisar APIs disponíveis (Twilio, WhatsApp Cloud API)
+- [ ] Criar módulo de integração WhatsApp
+- [ ] Implementar envio de mensagem via API
+- [ ] Criar templates de mensagens (treinos, comunicados)
+- [ ] Adicionar opt-in de WhatsApp no perfil do atleta
+- [ ] Implementar agendamento de lembretes
+- [ ] Criar interface de gestão de notificações WhatsApp
+- [ ] Adicionar logs de envio e status de entrega
+
+## Status de Implementação - Funcionalidades Avançadas
+
+### 1. Configuração SMTP em Produção ✅
+- [x] Adicionar variáveis SMTP no schema de env
+- [x] Campos no banco: smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFrom, smtpProvider
+- [ ] Criar interface de configuração SMTP no painel admin (UI pendente)
+- [ ] Implementar validação de credenciais SMTP
+- [ ] Criar página de teste de envio de email
+
+### 2. Analytics de Conversão de Onboarding ✅
+- [x] Criar tabela eventos_onboarding no schema
+- [x] Registrar evento de cadastro_completo no OAuth
+- [x] Registrar evento de email_boas_vindas_enviado
+- [x] Criar funções no db.ts (registrarEventoOnboarding, getMetricasConversaoOnboarding, getFunilConversaoPorDia)
+- [x] Criar procedures tRPC (getMetricasOnboarding, getFunilPorDia, getEventosUsuario)
+- [x] Criar dashboard de métricas de conversão (/analytics-onboarding)
+- [x] Implementar funil de conversão visual
+- [x] Adicionar dicas de otimização baseadas nas métricas
+- [ ] Implementar tracking pixel para email_aberto
+- [ ] Registrar eventos de clique em CTAs
+- [ ] Adicionar filtros por período
+
+### 3. Notificações WhatsApp Business ⏳
+- [ ] Pesquisar e escolher API (Twilio vs WhatsApp Cloud API)
+- [ ] Criar módulo de integração WhatsApp
+- [ ] Implementar envio de mensagem via API
+- [ ] Criar templates de mensagens
+- [ ] Adicionar opt-in no perfil
+- [ ] Interface de gestão de notificações

@@ -113,6 +113,8 @@ import {
   InsertConfiguracaoLiga,
   seguidores,
   InsertSeguidor,
+  eventosOnboarding,
+  InsertEventoOnboarding,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -14853,4 +14855,122 @@ export async function notificarNovoAtleta(boxId: number, nomeAtleta: string): Pr
     console.error("[Database] Failed to notify box master:", error);
     throw error;
   }
+}
+
+// ===== ANALYTICS DE ONBOARDING =====
+
+export async function registrarEventoOnboarding(data: InsertEventoOnboarding) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  try {
+    const result = await db.insert(eventosOnboarding).values(data);
+    console.log(`[Analytics] Evento registrado: ${data.tipoEvento} para user ${data.userId}`);
+    return result;
+  } catch (error) {
+    console.error("[Analytics] Erro ao registrar evento:", error);
+    return undefined;
+  }
+}
+
+export async function getEventosOnboardingByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(eventosOnboarding)
+    .where(eq(eventosOnboarding.userId, userId))
+    .orderBy(desc(eventosOnboarding.createdAt));
+}
+
+export async function getMetricasConversaoOnboarding(boxId?: number, dataInicio?: Date, dataFim?: Date) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const conditions = [];
+  
+  if (boxId) {
+    conditions.push(eq(eventosOnboarding.boxId, boxId));
+  }
+  
+  if (dataInicio) {
+    conditions.push(sql`${eventosOnboarding.createdAt} >= ${dataInicio}`);
+  }
+  
+  if (dataFim) {
+    conditions.push(sql`${eventosOnboarding.createdAt} <= ${dataFim}`);
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Contar eventos por tipo
+  const eventos = await db
+    .select({
+      tipoEvento: eventosOnboarding.tipoEvento,
+      count: sql<number>`count(*)`,
+    })
+    .from(eventosOnboarding)
+    .where(whereClause)
+    .groupBy(eventosOnboarding.tipoEvento);
+
+  // Calcular métricas
+  const metricas: Record<string, number> = {};
+  eventos.forEach(e => {
+    metricas[e.tipoEvento] = Number(e.count);
+  });
+
+  // Calcular taxas de conversão
+  const cadastrosCompletos = metricas.cadastro_completo || 0;
+  const emailsEnviados = metricas.email_boas_vindas_enviado || 0;
+  const emailsAbertos = metricas.email_boas_vindas_aberto || 0;
+  const toursCompletos = metricas.tour_completo || 0;
+  const onboardingsCompletos = metricas.onboarding_completo || 0;
+
+  return {
+    cadastrosCompletos,
+    emailsEnviados,
+    emailsAbertos,
+    toursCompletos,
+    onboardingsCompletos,
+    taxaAberturaEmail: emailsEnviados > 0 ? (emailsAbertos / emailsEnviados) * 100 : 0,
+    taxaCompletarTour: cadastrosCompletos > 0 ? (toursCompletos / cadastrosCompletos) * 100 : 0,
+    taxaOnboardingCompleto: cadastrosCompletos > 0 ? (onboardingsCompletos / cadastrosCompletos) * 100 : 0,
+    funil: {
+      cadastro: cadastrosCompletos,
+      emailEnviado: emailsEnviados,
+      emailAberto: emailsAbertos,
+      tourCompleto: toursCompletos,
+      onboardingCompleto: onboardingsCompletos,
+    },
+  };
+}
+
+export async function getFunilConversaoPorDia(boxId?: number, dias: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const dataInicio = new Date();
+  dataInicio.setDate(dataInicio.getDate() - dias);
+
+  const conditions = [
+    sql`${eventosOnboarding.createdAt} >= ${dataInicio}`,
+  ];
+  
+  if (boxId) {
+    conditions.push(eq(eventosOnboarding.boxId, boxId));
+  }
+
+  const eventos = await db
+    .select({
+      data: sql<string>`DATE(${eventosOnboarding.createdAt})`.as('data'),
+      tipoEvento: eventosOnboarding.tipoEvento,
+      count: sql<number>`count(*)`.as('count'),
+    })
+    .from(eventosOnboarding)
+    .where(and(...conditions))
+    .groupBy(sql`DATE(${eventosOnboarding.createdAt})`, eventosOnboarding.tipoEvento)
+    .orderBy(sql`data`);
+
+  return eventos;
 }

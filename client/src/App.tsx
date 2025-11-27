@@ -83,6 +83,7 @@ import Marketplace from "./pages/Marketplace";
 import Leaderboard from "./pages/Leaderboard";
 import Configuracoes from "./pages/Configuracoes";
 import RelatoriosGlobais from "./pages/RelatoriosGlobais";
+import AnalyticsOnboarding from "./pages/AnalyticsOnboarding";
 
 function Router() {
   return (
@@ -109,6 +110,7 @@ function Router() {
       <Route path="/feed-seguidos" component={FeedSeguidos} />
       <Route path="/seguidores/:userId" component={SeguidoresSeguindo} />
        <Route path="/gestao-box" component={GestaoBox} />
+      <Route path="/analytics-onboarding" component={AnalyticsOnboarding} />
       <Route path="/gestao-alunos" component={GestaoAlunos} />
       <Route path="/gestao-convites" component={GestaoConvites} />
       <Route path={"/admin"} component={AdminLiga} />

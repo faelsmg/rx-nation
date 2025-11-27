@@ -61,6 +61,25 @@ export function registerOAuthRoutes(app: Express) {
         role: isBoxMaster ? "box_master" : undefined,
       });
 
+      // Buscar usuário recém-criado para pegar o ID
+      const user = await db.getUserByOpenId(userInfo.openId);
+      const userId = user?.id;
+
+      // Registrar evento de cadastro completo (analytics)
+      if (isFirstLogin && userId) {
+        try {
+          await db.registrarEventoOnboarding({
+            userId,
+            boxId: targetBoxId,
+            tipoEvento: "cadastro_completo",
+            userAgent: req.headers['user-agent'] || null,
+            ipAddress: req.ip || null,
+          });
+        } catch (error) {
+          console.error("[Analytics] Erro ao registrar evento de cadastro:", error);
+        }
+      }
+
       // Enviar notificação para Box Master se novo atleta se cadastrou
       if (isFirstLogin && targetBoxId && !isBoxMaster) {
         try {
@@ -84,6 +103,18 @@ export function registerOAuthRoutes(app: Express) {
               welcomeUrl: `${baseUrl}/welcome`,
             });
             console.log("[OAuth] Email de boas-vindas enviado para:", userInfo.email);
+
+            // Registrar evento de email enviado (analytics)
+            if (userId) {
+              await db.registrarEventoOnboarding({
+                userId,
+                boxId: targetBoxId,
+                tipoEvento: "email_boas_vindas_enviado",
+                metadata: JSON.stringify({ email: userInfo.email }),
+                userAgent: req.headers['user-agent'] || null,
+                ipAddress: req.ip || null,
+              });
+            }
           } catch (error) {
             console.error("[OAuth] Erro ao enviar email de boas-vindas:", error);
             // Não bloquear login por erro de email
