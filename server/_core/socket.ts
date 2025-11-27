@@ -308,3 +308,96 @@ export function notifyFriendLeaderboard(userId: number, friend: {
     timestamp: new Date(),
   });
 }
+
+// ==================== EVENTOS SOCIAIS (FEED) ====================
+
+/**
+ * Notificar seguidores sobre nova atividade no feed
+ */
+export function notifyFriendActivity(seguidoresIds: number[], activity: {
+  autorId: number;
+  autorNome: string;
+  autorAvatar?: string | null;
+  tipo: 'wod' | 'pr' | 'badge';
+  titulo: string;
+  descricao?: string;
+}) {
+  if (!io) return;
+
+  const tipoEmoji = {
+    wod: '🏋️',
+    pr: '🏆',
+    badge: '🏅',
+  };
+
+  const tipoTexto = {
+    wod: 'completou um WOD',
+    pr: 'registrou um novo PR',
+    badge: 'conquistou um badge',
+  };
+
+  seguidoresIds.forEach(seguidorId => {
+    // Não notificar o próprio autor
+    if (seguidorId === activity.autorId) return;
+
+    emitToUser(seguidorId, "notification:friend_activity", {
+      tipo: "friend_activity",
+      titulo: `${tipoEmoji[activity.tipo]} ${activity.autorNome}`,
+      mensagem: `${tipoTexto[activity.tipo]}: ${activity.titulo}`,
+      link: "/feed-seguidos",
+      avatarUrl: activity.autorAvatar,
+      timestamp: new Date(),
+    });
+  });
+}
+
+/**
+ * Notificar autor sobre curtida em sua atividade
+ */
+export function notifyLike(autorId: number, like: {
+  usuarioNome: string;
+  usuarioAvatar?: string | null;
+  atividadeTipo: 'wod' | 'pr' | 'badge';
+  atividadeTitulo: string;
+}) {
+  const tipoTexto = {
+    wod: 'seu WOD',
+    pr: 'seu PR',
+    badge: 'seu badge',
+  };
+
+  emitToUser(autorId, "notification:like", {
+    tipo: "like",
+    titulo: "❤️ Nova Curtida!",
+    mensagem: `${like.usuarioNome} curtiu ${tipoTexto[like.atividadeTipo]}: ${like.atividadeTitulo}`,
+    link: "/feed-seguidos",
+    avatarUrl: like.usuarioAvatar,
+    timestamp: new Date(),
+  });
+}
+
+/**
+ * Notificar autor sobre comentário em sua atividade
+ */
+export function notifyCommentOnActivity(autorId: number, comment: {
+  usuarioNome: string;
+  usuarioAvatar?: string | null;
+  atividadeTipo: 'wod' | 'pr' | 'badge';
+  atividadeTitulo: string;
+  comentarioTexto: string;
+}) {
+  const tipoTexto = {
+    wod: 'seu WOD',
+    pr: 'seu PR',
+    badge: 'seu badge',
+  };
+
+  emitToUser(autorId, "notification:comment_activity", {
+    tipo: "comment_activity",
+    titulo: "💬 Novo Comentário!",
+    mensagem: `${comment.usuarioNome} comentou em ${tipoTexto[comment.atividadeTipo]}: "${comment.comentarioTexto.substring(0, 50)}${comment.comentarioTexto.length > 50 ? '...' : ''}"`,
+    link: "/feed-seguidos",
+    avatarUrl: comment.usuarioAvatar,
+    timestamp: new Date(),
+  });
+}

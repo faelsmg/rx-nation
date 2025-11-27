@@ -5118,7 +5118,23 @@ export const appRouter = router({
         comentario: z.string().min(1).max(1000),
       }))
       .mutation(async ({ ctx, input }) => {
-        return db.criarComentario(ctx.user.id, input.atividadeId, input.comentario);
+        const result = await db.criarComentario(ctx.user.id, input.atividadeId, input.comentario);
+
+        // Buscar dados da atividade para notificação
+        const atividade = await db.getFeedAtividadeById(input.atividadeId);
+        if (atividade && atividade.userId !== ctx.user.id) {
+          // Notificar autor da atividade via WebSocket
+          const { notifyCommentOnActivity } = await import('./_core/socket');
+          notifyCommentOnActivity(atividade.userId, {
+            usuarioNome: ctx.user.name || 'Usuário',
+            usuarioAvatar: ctx.user.avatarUrl,
+            atividadeTipo: atividade.tipo as 'wod' | 'pr' | 'badge',
+            atividadeTitulo: atividade.titulo,
+            comentarioTexto: input.comentario,
+          });
+        }
+
+        return result;
       }),
 
     listar: publicProcedure
@@ -5145,7 +5161,22 @@ export const appRouter = router({
         atividadeId: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
-        return db.curtirAtividade(ctx.user.id, input.atividadeId);
+        const result = await db.curtirAtividade(input.atividadeId, ctx.user.id);
+
+        // Buscar dados da atividade para notificação
+        const atividade = await db.getFeedAtividadeById(input.atividadeId);
+        if (result && atividade && atividade.userId !== ctx.user.id) {
+          // Notificar autor da atividade via WebSocket
+          const { notifyLike } = await import('./_core/socket');
+          notifyLike(atividade.userId, {
+            usuarioNome: ctx.user.name || 'Usuário',
+            usuarioAvatar: ctx.user.avatarUrl,
+            atividadeTipo: atividade.tipo as 'wod' | 'pr' | 'badge',
+            atividadeTitulo: atividade.titulo,
+          });
+        }
+
+        return result;
       }),
 
     descurtir: protectedProcedure
@@ -5170,6 +5201,57 @@ export const appRouter = router({
       }))
       .query(async ({ ctx, input }) => {
         return db.verificarCurtidasMultiplas(ctx.user.id, input.atividadesIds);
+      }),
+  }),
+
+  // ==================== MODERAÇÃO DE CONTEÚDO ====================
+  moderacao: router({
+    denunciarComentario: protectedProcedure
+      .input(z.object({
+        comentarioId: z.number(),
+        motivo: z.enum(['spam', 'ofensivo', 'assedio', 'conteudo_inadequado', 'outro']),
+        descricao: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.denunciarComentario(
+          ctx.user.id,
+          input.comentarioId,
+          input.motivo,
+          input.descricao
+        );
+      }),
+
+    listarDenunciasPendentes: protectedProcedure
+      .query(async ({ ctx }) => {
+        // Apenas admin_liga pode listar denúncias
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem acessar' });
+        }
+        return db.listarDenunciasPendentes();
+      }),
+
+    ocultarComentario: protectedProcedure
+      .input(z.object({
+        comentarioId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Apenas admin_liga pode ocultar comentários
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem ocultar comentários' });
+        }
+        return db.ocultarComentario(input.comentarioId, ctx.user.id);
+      }),
+
+    rejeitarDenuncia: protectedProcedure
+      .input(z.object({
+        denunciaId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Apenas admin_liga pode rejeitar denúncias
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem rejeitar denúncias' });
+        }
+        return db.rejeitarDenuncia(input.denunciaId, ctx.user.id);
       }),
   }),
 });

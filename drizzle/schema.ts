@@ -737,6 +737,36 @@ export const curtidasFeedRelations = relations(curtidasFeed, ({ one }) => ({
   }),
 }));
 
+/**
+ * Denúncias de comentários inadequados
+ * Sistema de moderação de conteúdo
+ */
+export const denunciasComentarios = mysqlTable("denuncias_comentarios", {
+  id: int("id").autoincrement().primaryKey(),
+  comentarioId: int("comentario_id").notNull().references(() => comentariosFeed.id, { onDelete: "cascade" }),
+  denuncianteId: int("denunciante_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  motivo: mysqlEnum("motivo", ["spam", "ofensivo", "assedio", "conteudo_inadequado", "outro"]).notNull(),
+  descricao: text("descricao"),
+  status: mysqlEnum("status", ["pendente", "analisada", "rejeitada"]).default("pendente").notNull(),
+  analisadaPor: int("analisada_por"), // ID do admin que analisou
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DenunciaComentario = typeof denunciasComentarios.$inferSelect;
+export type InsertDenunciaComentario = typeof denunciasComentarios.$inferInsert;
+
+export const denunciasComentariosRelations = relations(denunciasComentarios, ({ one }) => ({
+  comentario: one(comentariosFeed, {
+    fields: [denunciasComentarios.comentarioId],
+    references: [comentariosFeed.id],
+  }),
+  denunciante: one(users, {
+    fields: [denunciasComentarios.denuncianteId],
+    references: [users.id],
+  }),
+}));
+
 
 // ==================== COMENTÁRIOS DE WOD ====================
 

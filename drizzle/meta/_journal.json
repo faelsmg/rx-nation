@@ -337,6 +337,13 @@
       "when": 1764262562572,
       "tag": "0047_foamy_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1764263249603,
+      "tag": "0048_flimsy_vapor",
+      "breakpoints": true
     }
   ]
 }

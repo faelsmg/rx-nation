@@ -79,6 +79,8 @@ import {
   InsertComentarioFeed,
   curtidasFeed,
   InsertCurtidaFeed,
+  denunciasComentarios,
+  InsertDenunciaComentario,
   comentariosWod,
   InsertComentarioWod,
   reacoesComentarios,
@@ -14246,6 +14248,22 @@ export async function deletarComentario(comentarioId: number, userId: number) {
 
 
 /**
+ * Buscar atividade do feed por ID
+ */
+export async function getFeedAtividadeById(atividadeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [atividade] = await db
+    .select()
+    .from(feedAtividades)
+    .where(eq(feedAtividades.id, atividadeId))
+    .limit(1);
+
+  return atividade || null;
+}
+
+/**
  * Verificar se usuário curtiu uma atividade
  */
 export async function verificarCurtida(userId: number, atividadeId: number) {
@@ -14288,4 +14306,118 @@ export async function verificarCurtidasMultiplas(userId: number, atividadesIds: 
   });
 
   return mapa;
+}
+
+
+// ==================== MODERAÇÃO DE CONTEÚDO ====================
+
+/**
+ * Denunciar comentário inadequado
+ */
+export async function denunciarComentario(
+  denuncianteId: number,
+  comentarioId: number,
+  motivo: 'spam' | 'ofensivo' | 'assedio' | 'conteudo_inadequado' | 'outro',
+  descricao?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar se já denunciou este comentário
+  const [denunciaExistente] = await db
+    .select()
+    .from(denunciasComentarios)
+    .where(and(
+      eq(denunciasComentarios.denuncianteId, denuncianteId),
+      eq(denunciasComentarios.comentarioId, comentarioId)
+    ))
+    .limit(1);
+
+  if (denunciaExistente) {
+    throw new Error("Você já denunciou este comentário");
+  }
+
+  await db.insert(denunciasComentarios).values({
+    denuncianteId,
+    comentarioId,
+    motivo,
+    descricao,
+  });
+
+  return { success: true };
+}
+
+/**
+ * Listar denúncias pendentes (apenas admin)
+ */
+export async function listarDenunciasPendentes(limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const denuncias = await db
+    .select({
+      id: denunciasComentarios.id,
+      comentarioId: denunciasComentarios.comentarioId,
+      comentarioTexto: comentariosFeed.comentario,
+      denuncianteId: denunciasComentarios.denuncianteId,
+      denuncianteNome: users.name,
+      motivo: denunciasComentarios.motivo,
+      descricao: denunciasComentarios.descricao,
+      status: denunciasComentarios.status,
+      createdAt: denunciasComentarios.createdAt,
+    })
+    .from(denunciasComentarios)
+    .leftJoin(comentariosFeed, eq(denunciasComentarios.comentarioId, comentariosFeed.id))
+    .leftJoin(users, eq(denunciasComentarios.denuncianteId, users.id))
+    .where(eq(denunciasComentarios.status, 'pendente'))
+    .orderBy(desc(denunciasComentarios.createdAt))
+    .limit(limit);
+
+  return denuncias;
+}
+
+/**
+ * Ocultar comentário (apenas admin)
+ */
+export async function ocultarComentario(comentarioId: number, adminId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Marcar comentário como oculto
+  await db
+    .update(comentariosFeed)
+    .set({ 
+      oculto: 1,
+      moderadoPor: adminId,
+    })
+    .where(eq(comentariosFeed.id, comentarioId));
+
+  // Atualizar denúncias relacionadas como analisadas
+  await db
+    .update(denunciasComentarios)
+    .set({
+      status: 'analisada',
+      analisadaPor: adminId,
+    })
+    .where(eq(denunciasComentarios.comentarioId, comentarioId));
+
+  return { success: true };
+}
+
+/**
+ * Rejeitar denúncia (comentário não será oculto)
+ */
+export async function rejeitarDenuncia(denunciaId: number, adminId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(denunciasComentarios)
+    .set({
+      status: 'rejeitada',
+      analisadaPor: adminId,
+    })
+    .where(eq(denunciasComentarios.id, denunciaId));
+
+  return { success: true };
 }
