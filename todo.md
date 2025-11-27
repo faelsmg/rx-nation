@@ -2615,3 +2615,12 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Adicionar gráficos de evolução (Chart.js)
 - [ ] Implementar edição de perfil (foto, categoria, faixa etária)
 - [ ] Criar rota /perfil no App.tsx
+
+
+## Correção de Erros
+
+### Bug: Invalid hook call
+- [x] Investigar versões de React e React DOM
+- [x] Verificar múltiplas instâncias de React
+- [x] Limpar node_modules e reinstalar dependências
+- [x] Testar aplicação após correção
