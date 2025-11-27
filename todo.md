@@ -2724,3 +2724,14 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar componente visual de streak no perfil com progresso
 - [x] Adicionar indicador de streak no Dashboard
 - [ ] Criar testes para sistema de streak
+
+
+## Feed de Atividades na Página Inicial
+- [x] Backend: criar query para buscar atividades recentes (badges, PRs, streaks)
+- [x] Backend: adicionar procedure tRPC para feed de atividades
+- [x] Frontend: criar componente FeedAtividades com cards visuais
+- [x] Frontend: adicionar avatares nos cards de atividade
+- [x] Frontend: implementar filtros por tipo de conquista
+- [x] Frontend: adicionar timestamps relativos (há 2 horas, há 1 dia)
+- [x] Frontend: integrar feed no Dashboard
+- [ ] Criar testes para feed de atividades

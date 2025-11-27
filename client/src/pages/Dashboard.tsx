@@ -18,6 +18,7 @@ import { DesafiosPersonalizadosIA } from "@/components/DesafiosPersonalizadosIA"
 import CalendarioSemanal from "@/components/CalendarioSemanal";
 import { Avatar } from "@/components/Avatar";
 import { StreakBadgesProgress } from "@/components/StreakBadgesProgress";
+import { FeedAtividades } from "@/components/FeedAtividades";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -88,6 +89,11 @@ export default function Dashboard() {
         {/* Insights com IA */}
         {user?.role === "atleta" && (
           <InsightsIA />
+        )}
+
+        {/* Feed de Atividades */}
+        {user?.role === "atleta" && (
+          <FeedAtividades />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" data-onboarding="dashboard-stats">

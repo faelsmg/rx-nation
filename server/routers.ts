@@ -2099,6 +2099,16 @@ export const appRouter = router({
         return db.getFeedByBox(input.boxId, input.limit);
       }),
 
+    getAtividadesRecentes: protectedProcedure
+      .input(z.object({ 
+        boxId: z.number(), 
+        limit: z.number().optional().default(20),
+        tipo: z.string().optional()
+      }))
+      .query(async ({ input }) => {
+        return db.getFeedAtividadesRecentes(input.boxId, input.limit, input.tipo);
+      }),
+
     curtir: protectedProcedure
       .input(z.object({ atividadeId: z.number() }))
       .mutation(async ({ input }) => {

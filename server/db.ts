@@ -12767,3 +12767,35 @@ export async function criarBadgesStreak() {
       : "Badges de streak já existem no banco de dados",
   };
 }
+
+
+/**
+ * Buscar feed de atividades recentes com avatar dos usuários
+ */
+export async function getFeedAtividadesRecentes(boxId: number, limit: number = 20, tipo?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select({
+      id: feedAtividades.id,
+      userId: feedAtividades.userId,
+      userName: users.name,
+      userAvatar: users.avatarUrl,
+      boxId: feedAtividades.boxId,
+      tipo: feedAtividades.tipo,
+      titulo: feedAtividades.titulo,
+      descricao: feedAtividades.descricao,
+      metadata: feedAtividades.metadata,
+      curtidas: feedAtividades.curtidas,
+      createdAt: feedAtividades.createdAt,
+    })
+    .from(feedAtividades)
+    .leftJoin(users, eq(feedAtividades.userId, users.id))
+    .where(eq(feedAtividades.boxId, boxId))
+    .orderBy(desc(feedAtividades.createdAt))
+    .limit(limit);
+
+  const atividades = await query;
+  return atividades;
+}
