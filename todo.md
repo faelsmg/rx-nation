@@ -2624,3 +2624,40 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Verificar múltiplas instâncias de React
 - [x] Limpar node_modules e reinstalar dependências
 - [x] Testar aplicação após correção
+
+
+## Funcionalidades Críticas para 100% Completo
+
+### 1. Edição de Perfil do Atleta
+- [x] Criar página /perfil/editar
+- [x] Implementar upload de foto de perfil (S3)
+- [x] Permitir edição de categoria e faixa etária
+- [x] Adicionar campo de biografia
+- [x] Salvar alterações no backend
+
+### 2. Gestão de Alunos (Box Master)
+- [x] Criar página de listagem de alunos
+- [x] Mostrar status (ativo/inativo)
+- [x] Filtros por categoria e faixa etária
+- [x] Ação para promover aluno para admin
+- [x] Visualizar estatísticas por aluno
+
+### 3. Calendário Semanal de WODs
+- [ ] Criar componente de calendário semanal
+- [ ] Mostrar WODs dos próximos 7 dias
+- [ ] Indicar WODs já completados
+- [ ] Link direto para registrar resultado
+
+### 4. Inscrição em Campeonatos
+- [ ] Criar página de inscrição
+- [ ] Formulário com categoria e divisão
+- [ ] Integração com Stripe (pagamento)
+- [ ] Confirmação de inscrição
+- [ ] Listagem de inscrições do atleta
+
+### 5. Analytics Avançado (Box Master)
+- [ ] Taxa de retenção mensal
+- [ ] Alunos em risco de evasão
+- [ ] Frequência média por aluno
+- [ ] Horários mais populares
+- [ ] Gráficos de crescimento

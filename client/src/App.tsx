@@ -18,6 +18,8 @@ import GestaoInscricoes from "./pages/GestaoInscricoes";
 import DashboardCampeonatos from "./pages/DashboardCampeonatos";
 import RankingGlobal from "./pages/RankingGlobal";
 import Perfil from "./pages/Perfil";
+import EditarPerfil from "./pages/EditarPerfil";
+import GestaoAlunos from "./pages/GestaoAlunos";
 import GestaoBox from "./pages/GestaoBox";
 import AdminLiga from "./pages/AdminLiga";
 import Agenda from "./pages/Agenda";
@@ -90,8 +92,10 @@ function Router() {
       <Route path={"/admin/campeonatos"} component={CampeonatosAdmin} />
       <Route path={"/admin/dashboard-campeonatos"} component={DashboardCampeonatos} />
       <Route path={"/ranking-global"} component={RankingGlobal} />
-      <Route path={"/perfil"} component={Perfil} />
-      <Route path={"/gestao-box"} component={GestaoBox} />
+       <Route path="/perfil" component={Perfil} />
+      <Route path="/perfil/editar" component={EditarPerfil} />
+       <Route path="/gestao-box" component={GestaoBox} />
+      <Route path="/gestao-alunos" component={GestaoAlunos} />
       <Route path={"/admin"} component={AdminLiga} />
       <Route path={"/agenda"} component={Agenda} />
       <Route path={"/franqueado"} component={Franqueado} />

@@ -12363,3 +12363,159 @@ export async function getResumoConquistas(userId: number) {
     desafiosSemana: progressoDesafios || [],
   };
 }
+
+
+// ===== GESTÃO DE ALUNOS (BOX MASTER) =====
+
+export async function getAlunosDoBox(boxId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const alunos = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      categoria: users.categoria,
+      faixaEtaria: users.faixaEtaria,
+      role: users.role,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(eq(users.boxId, boxId));
+
+  // Buscar estatísticas de cada aluno
+  const alunosComStats = await Promise.all(
+    alunos.map(async (aluno) => {
+      // Total de check-ins
+      const checkinsResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(checkins)
+        .where(eq(checkins.userId, aluno.id));
+      const totalCheckins = checkinsResult[0]?.count || 0;
+
+      // Total de WODs
+      const wodsResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(resultadosTreinos)
+        .where(eq(resultadosTreinos.userId, aluno.id));
+      const totalWods = wodsResult[0]?.count || 0;
+
+      // Último check-in
+      const ultimoCheckinResult = await db
+        .select({ data: checkins.dataHora })
+        .from(checkins)
+        .where(eq(checkins.userId, aluno.id))
+        .orderBy(desc(checkins.dataHora))
+        .limit(1);
+      const ultimoCheckin = ultimoCheckinResult[0]?.data || null;
+
+      // Calcular status (ativo se fez check-in nos últimos 7 dias)
+      const seteDiasAtras = new Date();
+      seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+      const ativo = ultimoCheckin && new Date(ultimoCheckin) >= seteDiasAtras;
+
+      return {
+        ...aluno,
+        totalCheckins,
+        totalWods,
+        ultimoCheckin,
+        ativo,
+      };
+    })
+  );
+
+  return alunosComStats;
+}
+
+export async function promoverParaAdmin(userId: number, boxId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar se o usuário pertence ao box
+  const user = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.boxId, boxId)))
+    .limit(1);
+
+  if (user.length === 0) {
+    throw new Error("Usuário não encontrado ou não pertence a este box");
+  }
+
+  // Atualizar role para box_master
+  await db
+    .update(users)
+    .set({ role: "box_master" })
+    .where(eq(users.id, userId));
+
+  return true;
+}
+
+export async function getEstatisticasAluno(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Total de check-ins
+  const checkinsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(checkins)
+    .where(eq(checkins.userId, userId));
+  const totalCheckins = checkinsResult[0]?.count || 0;
+
+  // Total de WODs
+  const wodsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.userId, userId));
+  const totalWods = wodsResult[0]?.count || 0;
+
+  // Total de PRs
+  const prsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prs)
+    .where(eq(prs.userId, userId));
+  const totalPRs = prsResult[0]?.count || 0;
+
+  // Pontos totais
+  const pontosResult = await db
+    .select({ pontos: pontuacoes.pontos })
+    .from(pontuacoes)
+    .where(eq(pontuacoes.userId, userId))
+    .limit(1);
+  const pontosTotais = pontosResult[0]?.pontos || 0;
+
+  // Streak atual
+  const streakResult = await db
+    .select({ streak: streaks.streakAtual })
+    .from(streaks)
+    .where(eq(streaks.userId, userId))
+    .limit(1);
+  const streakAtual = streakResult[0]?.streak || 0;
+
+  // Check-ins dos últimos 30 dias
+  const trintaDiasAtras = new Date();
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+  const checkinsRecentesResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(checkins)
+    .where(
+      and(
+        eq(checkins.userId, userId),
+        gte(checkins.dataHora, trintaDiasAtras)
+      )
+    );
+  const checkinsUltimos30Dias = checkinsRecentesResult[0]?.count || 0;
+
+  return {
+    totalCheckins,
+    totalWods,
+    totalPRs,
+    pontosTotais,
+    streakAtual,
+    checkinsUltimos30Dias,
+    frequenciaMedia: (checkinsUltimos30Dias / 30) * 100,
+  };
+}

@@ -4760,6 +4760,44 @@ export const appRouter = router({
   // ===== SISTEMA DE METAS PESSOAIS (DUPLICADO - REMOVIDO) =====
   // Já existe um router 'metas' na linha 2038
 
+  // ===== GESTÃO DE ALUNOS (BOX MASTER) =====
+  gestaoAlunos: router({
+    listar: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não está vinculado a um box' });
+        }
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas box masters podem acessar esta funcionalidade' });
+        }
+        return db.getAlunosDoBox(ctx.user.boxId);
+      }),
+
+    promoverParaAdmin: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não está vinculado a um box' });
+        }
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas box masters podem promover usuários' });
+        }
+        return db.promoverParaAdmin(input.userId, ctx.user.boxId);
+      }),
+
+    getEstatisticas: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não está vinculado a um box' });
+        }
+        if (ctx.user.role !== 'box_master' && ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas box masters podem acessar esta funcionalidade' });
+        }
+        return db.getEstatisticasAluno(input.userId);
+      }),
+  }),
+
   // ===== PERFIL DO ATLETA =====
   perfil: router({
     getCompleto: protectedProcedure
