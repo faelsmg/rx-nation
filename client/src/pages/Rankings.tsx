@@ -13,6 +13,7 @@ import { useState } from "react";
 import { MOVIMENTOS_PR, CATEGORIAS, FAIXAS_ETARIAS } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar } from "@/components/Avatar";
+import { BadgeNivel } from "@/components/BadgeNivel";
 
 export default function Rankings() {
   const { user } = useAuth();
@@ -165,10 +166,19 @@ export default function Rankings() {
                           size="md"
                         />
                         <div>
-                          <p className={`font-semibold ${isCurrentUser ? "text-primary" : ""}`}>
-                            {entry.user.name || "Atleta"}
-                            {isCurrentUser && " (Você)"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className={`font-semibold ${isCurrentUser ? "text-primary" : ""}`}>
+                              {entry.user.name || "Atleta"}
+                              {isCurrentUser && " (Você)"}
+                            </p>
+                            {entry.user.nivel && (
+                              <BadgeNivel 
+                                nivel={entry.user.nivel} 
+                                pontosAtual={entry.user.pontos || 0}
+                                size="sm"
+                              />
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {entry.user.categoria || "N/A"} • {entry.user.faixaEtaria || "N/A"}
                           </p>

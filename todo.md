@@ -2848,3 +2848,18 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Criar toast especial ao subir de nível
 - [ ] Criar toast ao conquistar novo título
 - [ ] Testar integração em todos os fluxos
+
+
+## Rebalanceamento e Integração Final de Gamificação
+- [x] Atualizar valores de pontos no db.ts (Check-in: 10, WOD: 1, PR: 50, Badge: 100)
+- [x] Integrar pontos ao completar WOD (1 pt)
+- [x] Integrar pontos ao quebrar PR (50 pts)
+- [x] Integrar pontos ao conquistar badge (100 pts)
+- [x] Disparar verificação de títulos após cada ação de pontos
+- [x] Criar títulos especiais iniciais: "Rei do WOD" (100 WODs)
+- [x] Criar título "Mestre dos PRs" (50 PRs)
+- [x] Criar título "Frequentador Assíduo" (90 check-ins)
+- [x] Criar título "Influenciador" (100 seguidores)
+- [x] Exibir BadgeNivel no FeedAtividades
+- [x] Exibir BadgeNivel na página de Rankings
+- [x] Testar sistema completo de gamificação

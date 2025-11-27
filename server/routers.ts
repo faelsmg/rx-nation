@@ -521,13 +521,16 @@ export const appRouter = router({
           ...input,
         });
 
-        // Adicionar pontos de gamificação (+20 pontos)
-        await db.createPontuacao({
-          userId: ctx.user.id,
-          tipo: "wod_completo",
-          pontos: 20,
-          referencia: input.wodId.toString(),
-        });
+        // Adicionar pontos de gamificação (1 pt por WOD)
+        await db.adicionarPontos(
+          ctx.user.id,
+          "wod",
+          `WOD completo: ${input.wodId}`,
+          { wodId: input.wodId }
+        );
+
+        // Verificar títulos especiais
+        await db.verificarTitulosEspeciais(ctx.user.id);
 
         // Verificar e atribuir badges automáticos
         const newBadges = await db.checkAndAwardAchievementBadges(ctx.user.id);
@@ -603,14 +606,17 @@ export const appRouter = router({
           ...input,
         });
 
-        // Se for novo PR, adicionar pontos (+30 pontos)
+        // Se for novo PR, adicionar pontos (50 pts)
         if (isNewPr) {
-          await db.createPontuacao({
-            userId: ctx.user.id,
-            tipo: "novo_pr",
-            pontos: 30,
-            referencia: input.movimento,
-          });
+          await db.adicionarPontos(
+            ctx.user.id,
+            "pr",
+            `Novo PR: ${input.movimento} - ${input.carga}kg`,
+            { movimento: input.movimento, carga: input.carga }
+          );
+
+          // Verificar títulos especiais
+          await db.verificarTitulosEspeciais(ctx.user.id);
         }
 
         // Verificar e atribuir badges automáticos

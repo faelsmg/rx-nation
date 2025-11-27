@@ -1326,6 +1326,14 @@ export async function checkAndAwardAchievementBadges(userId: number) {
       if (badge && !userBadgeIds.has(badge.id)) {
         await assignBadgeToUser({ userId, badgeId: badge.id });
         awardedBadges.push(nome);
+        
+        // Adicionar pontos de gamificação (100 pts por badge)
+        await adicionarPontos(
+          userId,
+          "badge",
+          `Badge conquistado: ${nome}`,
+          { badgeId: badge.id, badgeNome: nome }
+        );
       }
     }
   }
@@ -1345,6 +1353,14 @@ export async function checkAndAwardAchievementBadges(userId: number) {
       if (badge && !userBadgeIds.has(badge.id)) {
         await assignBadgeToUser({ userId, badgeId: badge.id });
         awardedBadges.push(nome);
+        
+        // Adicionar pontos de gamificação (100 pts por badge)
+        await adicionarPontos(
+          userId,
+          "badge",
+          `Badge conquistado: ${nome}`,
+          { badgeId: badge.id, badgeNome: nome }
+        );
       }
     }
   }
@@ -1369,6 +1385,14 @@ export async function checkAndAwardAchievementBadges(userId: number) {
       if (badge && !userBadgeIds.has(badge.id)) {
         await assignBadgeToUser({ userId, badgeId: badge.id });
         awardedBadges.push(nome);
+        
+        // Adicionar pontos de gamificação (100 pts por badge)
+        await adicionarPontos(
+          userId,
+          "badge",
+          `Badge conquistado: ${nome}`,
+          { badgeId: badge.id, badgeNome: nome }
+        );
       }
     }
   }
@@ -13197,12 +13221,12 @@ export async function adicionarPontos(
   const db = await getDb();
   if (!db) return false;
 
-  // Valores de pontos por tipo
+  // Valores de pontos por tipo (rebalanceados)
   const pontosPorTipo = {
-    checkin: 10,
-    wod: 20,
-    pr: 50,
-    badge: 100,
+    checkin: 10,  // Incentiva presença diária
+    wod: 1,       // Reduzido - acontece todo dia
+    pr: 50,       // Mantido - é difícil e merece destaque
+    badge: 100,   // Mantido - conquista especial
   };
 
   const pontos = pontosPorTipo[tipo];

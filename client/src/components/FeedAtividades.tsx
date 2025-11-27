@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar } from "@/components/Avatar";
 import { ComentariosFeed } from "@/components/ComentariosFeed";
+import { BadgeNivel } from "@/components/BadgeNivel";
 import { Trophy, Dumbbell, Award, TrendingUp, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -150,6 +151,13 @@ export function FeedAtividades() {
                     <p className="font-semibold text-sm truncate">
                       {atividade.userName || "Atleta"}
                     </p>
+                    {atividade.userNivel && (
+                      <BadgeNivel 
+                        nivel={atividade.userNivel} 
+                        pontosAtual={atividade.userPontos || 0}
+                        size="sm"
+                      />
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {getTempoRelativo(atividade.createdAt)}
                     </span>
