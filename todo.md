@@ -3006,3 +3006,10 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [ ] Testar notificações em tempo real no navegador
 - [x] Adicionar indicador visual de notificações não lidas (já existe)
 - [ ] Criar sistema de som para notificações importantes (opcional)
+
+
+## Correção de Erro boxes.list no Dashboard
+- [x] Localizar chamada trpc.boxes.list no Dashboard.tsx
+- [x] Verificar se router boxes possui procedure list
+- [x] Adicionar procedure boxes.list ou corrigir chamada
+- [x] Testar Dashboard sem erros

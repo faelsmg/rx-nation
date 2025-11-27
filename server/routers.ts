@@ -102,6 +102,10 @@ export const appRouter = router({
       return db.getAllBoxes();
     }),
 
+    list: publicProcedure.query(async () => {
+      return db.getAllBoxes();
+    }),
+
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
