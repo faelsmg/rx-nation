@@ -55,6 +55,8 @@ import {
   notificationPreferences,
   InsertNotificationPreference,
   metas,
+  metasPrs,
+  InsertMetaPr,
   feedAtividades,
   mentorias,
   agendamentosMentoria,
@@ -15312,4 +15314,317 @@ export async function getMovimentosDisponiveis(boxId: number) {
     totalAtletas: Number(m.totalAtletas),
     melhorCarga: Number(m.melhorCarga),
   }));
+}
+
+
+/**
+ * ========================================
+ * SISTEMA DE METAS DE PRs
+ * ========================================
+ */
+
+/**
+ * Criar nova meta de PR
+ */
+export async function criarMetaPR(data: InsertMetaPr) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(metasPrs).values(data);
+  return result;
+}
+
+/**
+ * Listar metas ativas do usuário
+ */
+export async function getMetasPRsAtivas(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const metas = await db
+    .select()
+    .from(metasPrs)
+    .where(and(eq(metasPrs.userId, userId), eq(metasPrs.status, "ativa")))
+    .orderBy(desc(metasPrs.createdAt));
+
+  // Para cada meta, buscar o PR atual do movimento
+  const metasComProgresso = [];
+  
+  for (const meta of metas) {
+    const prAtual = await getLatestPrByUserAndMovement(userId, meta.movimento);
+    const cargaAtual = prAtual?.carga || meta.cargaAtual;
+    const progresso = Math.min(
+      Math.round(((cargaAtual - meta.cargaAtual) / (meta.cargaMeta - meta.cargaAtual)) * 100),
+      100
+    );
+
+    // Calcular dias restantes
+    let diasRestantes = null;
+    if (meta.dataPrazo) {
+      const hoje = new Date();
+      const prazo = new Date(meta.dataPrazo);
+      const diffTime = prazo.getTime() - hoje.getTime();
+      diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    metasComProgresso.push({
+      ...meta,
+      cargaAtualReal: cargaAtual,
+      progresso,
+      diasRestantes,
+      atingida: cargaAtual >= meta.cargaMeta,
+    });
+  }
+
+  return metasComProgresso;
+}
+
+/**
+ * Listar todas as metas do usuário (incluindo concluídas e canceladas)
+ */
+export async function getTodasMetasPRs(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const metas = await db
+    .select()
+    .from(metasPrs)
+    .where(eq(metasPrs.userId, userId))
+    .orderBy(desc(metasPrs.createdAt));
+
+  return metas;
+}
+
+/**
+ * Atualizar status da meta
+ */
+export async function atualizarStatusMeta(metaId: number, status: "ativa" | "concluida" | "cancelada") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const updateData: any = { status };
+  
+  if (status === "concluida") {
+    updateData.dataConclusao = new Date();
+  }
+
+  await db
+    .update(metasPrs)
+    .set(updateData)
+    .where(eq(metasPrs.id, metaId));
+
+  return { success: true };
+}
+
+/**
+ * Deletar meta
+ */
+export async function deletarMetaPR(metaId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .delete(metasPrs)
+    .where(and(eq(metasPrs.id, metaId), eq(metasPrs.userId, userId)));
+
+  return { success: true };
+}
+
+/**
+ * Verificar e atualizar metas ao registrar novo PR
+ * Chamado automaticamente quando um PR é criado
+ */
+export async function verificarMetasAoRegistrarPR(userId: number, movimento: string, novaCarga: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar metas ativas para este movimento
+  const metasAtivas = await db
+    .select()
+    .from(metasPrs)
+    .where(
+      and(
+        eq(metasPrs.userId, userId),
+        eq(metasPrs.movimento, movimento),
+        eq(metasPrs.status, "ativa")
+      )
+    );
+
+  const metasConcluidas = [];
+
+  for (const meta of metasAtivas) {
+    // Se atingiu a meta, marcar como concluída
+    if (novaCarga >= meta.cargaMeta) {
+      await atualizarStatusMeta(meta.id, "concluida");
+      metasConcluidas.push(meta);
+
+      // Criar notificação de meta atingida
+      await createNotification({
+        userId,
+        tipo: "meta",
+        titulo: `🎯 Meta Atingida: ${movimento}!`,
+        mensagem: `Parabéns! Você atingiu sua meta de ${meta.cargaMeta}kg no ${movimento}!`,
+        link: "/metas-prs",
+      });
+    }
+  }
+
+  return metasConcluidas;
+}
+
+/**
+ * Obter estatísticas de metas do usuário
+ */
+export async function getEstatisticasMetasPRs(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.execute(sql`
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN status = 'ativa' THEN 1 ELSE 0 END) as ativas,
+      SUM(CASE WHEN status = 'concluida' THEN 1 ELSE 0 END) as concluidas,
+      SUM(CASE WHEN status = 'cancelada' THEN 1 ELSE 0 END) as canceladas
+    FROM metas_prs
+    WHERE userId = ${userId}
+  `);
+
+  const stats = (result as any)[0] || {
+    total: 0,
+    ativas: 0,
+    concluidas: 0,
+    canceladas: 0,
+  };
+
+  return {
+    total: Number(stats.total),
+    ativas: Number(stats.ativas),
+    concluidas: Number(stats.concluidas),
+    canceladas: Number(stats.canceladas),
+    taxaSucesso: stats.total > 0 
+      ? Math.round((Number(stats.concluidas) / Number(stats.total)) * 100)
+      : 0,
+  };
+}
+
+
+/**
+ * ========================================
+ * NOTIFICAÇÕES DE RECORDES QUEBRADOS
+ * ========================================
+ */
+
+/**
+ * Verificar se um PR quebrou o recorde do box e notificar atletas
+ */
+export async function verificarENotificarRecordeQuebrado(
+  userId: number,
+  boxId: number | null,
+  movimento: string,
+  novaCarga: number
+) {
+  const db = await getDb();
+  if (!db || !boxId) return;
+
+  try {
+    // Buscar o recorde anterior do box para este movimento
+    const [recordeAnterior] = await db.execute(sql`
+      SELECT 
+        p.carga as carga_maxima,
+        u.name as nome_atleta_anterior
+      FROM prs p
+      INNER JOIN users u ON p.userId = u.id
+      WHERE u.boxId = ${boxId}
+        AND p.movimento = ${movimento}
+        AND p.userId != ${userId}
+      ORDER BY p.carga DESC, p.data DESC
+      LIMIT 1
+    `);
+
+    const recordeAnteriorCarga = (recordeAnterior as any)[0]?.[0]?.carga_maxima;
+    const nomeAtletaAnterior = (recordeAnterior as any)[0]?.[0]?.nome_atleta_anterior;
+
+    // Se a nova carga quebrou o recorde
+    if (recordeAnteriorCarga && novaCarga > recordeAnteriorCarga) {
+      // Buscar nome do atleta que quebrou o recorde
+      const atletaQueQuebrouRecorde = await getUserById(userId);
+      if (!atletaQueQuebrouRecorde) return;
+
+      // Buscar todos os atletas do box que praticam este movimento
+      // (exceto o atleta que quebrou o recorde)
+      const [atletasInteressados] = await db.execute(sql`
+        SELECT DISTINCT u.id, u.name
+        FROM users u
+        INNER JOIN prs p ON p.userId = u.id
+        WHERE u.boxId = ${boxId}
+          AND p.movimento = ${movimento}
+          AND u.id != ${userId}
+      `);
+
+      const atletas = (atletasInteressados as any)[0] || [];
+
+      // Criar notificação para cada atleta interessado
+      for (const atleta of atletas) {
+        await createNotification({
+          userId: atleta.id,
+          tipo: "recorde",
+          titulo: `🔥 Novo Recorde: ${movimento}!`,
+          mensagem: `${atletaQueQuebrouRecorde.name} quebrou o recorde do box com ${novaCarga}kg! Recorde anterior: ${recordeAnteriorCarga}kg (${nomeAtletaAnterior})`,
+          link: `/ranking-prs?movimento=${encodeURIComponent(movimento)}`,
+        });
+      }
+
+      // Criar notificação especial para o atleta que tinha o recorde anterior
+      if (nomeAtletaAnterior) {
+        const [atletaAnterior] = await db.execute(sql`
+          SELECT u.id
+          FROM users u
+          INNER JOIN prs p ON p.userId = u.id
+          WHERE u.boxId = ${boxId}
+            AND p.movimento = ${movimento}
+            AND p.carga = ${recordeAnteriorCarga}
+          ORDER BY p.data DESC
+          LIMIT 1
+        `);
+
+        const atletaAnteriorId = (atletaAnterior as any)[0]?.[0]?.id;
+        if (atletaAnteriorId) {
+          await createNotification({
+            userId: atletaAnteriorId,
+            tipo: "recorde",
+            titulo: `⚡ Seu recorde foi superado: ${movimento}`,
+            mensagem: `${atletaQueQuebrouRecorde.name} quebrou seu recorde de ${recordeAnteriorCarga}kg com ${novaCarga}kg! Hora de reconquistar o topo! 💪`,
+            link: `/ranking-prs?movimento=${encodeURIComponent(movimento)}`,
+          });
+        }
+      }
+
+      // Criar post no feed sobre o novo recorde
+      await db.execute(sql`
+        INSERT INTO feed_atividades (
+          userId,
+          boxId,
+          tipo,
+          conteudo,
+          metadados,
+          createdAt
+        ) VALUES (
+          ${userId},
+          ${boxId},
+          'recorde_box',
+          ${`🔥 NOVO RECORDE DO BOX! ${atletaQueQuebrouRecorde.name} atingiu ${novaCarga}kg no ${movimento}!`},
+          ${JSON.stringify({
+            movimento,
+            carga: novaCarga,
+            recordeAnterior: recordeAnteriorCarga,
+            atletaAnterior: nomeAtletaAnterior,
+          })},
+          NOW()
+        )
+      `);
+    }
+  } catch (error) {
+    console.error("[Notificação de Recorde] Erro:", error);
+    // Não lançar erro para não bloquear a criação do PR
+  }
 }

@@ -1558,3 +1558,29 @@ export const eventosOnboardingRelations = relations(eventosOnboarding, ({ one })
     references: [boxes.id],
   }),
 }));
+
+
+/**
+ * Metas de PRs
+ * Permite atletas definirem metas de carga para cada movimento
+ */
+export const metasPrs = mysqlTable("metas_prs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  movimento: varchar("movimento", { length: 100 }).notNull(), // ex: "Back Squat", "Deadlift"
+  cargaAtual: int("cargaAtual").notNull(), // Carga atual do atleta quando definiu a meta
+  cargaMeta: int("cargaMeta").notNull(), // Carga que o atleta quer atingir
+  dataInicio: timestamp("dataInicio").defaultNow().notNull(),
+  dataPrazo: timestamp("dataPrazo"), // Data limite para atingir a meta (opcional)
+  status: mysqlEnum("status", ["ativa", "concluida", "cancelada"]).default("ativa").notNull(),
+  dataConclusao: timestamp("dataConclusao"), // Quando a meta foi atingida
+  observacoes: text("observacoes"), // Notas do atleta sobre a meta
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("idx_metas_prs_userId").on(table.userId),
+  statusIdx: index("idx_metas_prs_status").on(table.status),
+}));
+
+export type MetaPr = typeof metasPrs.$inferSelect;
+export type InsertMetaPr = typeof metasPrs.$inferInsert;

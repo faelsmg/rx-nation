@@ -678,6 +678,19 @@ export const appRouter = router({
           );
         }
 
+        // Verificar metas de PRs
+        await db.verificarMetasAoRegistrarPR(ctx.user.id, input.movimento, input.carga);
+
+        // Verificar e notificar se quebrou recorde do box
+        if (isNewPr && ctx.user.boxId) {
+          await db.verificarENotificarRecordeQuebrado(
+            ctx.user.id,
+            ctx.user.boxId,
+            input.movimento,
+            input.carga
+          );
+        }
+
         return result;
       }),
 
@@ -759,6 +772,59 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getMovimentosDisponiveis(input.boxId);
       }),
+  }),
+
+  // ===== METAS DE PRs =====
+  metasPRs: router({
+    // Criar nova meta
+    criar: protectedProcedure
+      .input(z.object({
+        movimento: z.string(),
+        cargaAtual: z.number(),
+        cargaMeta: z.number(),
+        dataPrazo: z.date().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.criarMetaPR({
+          userId: ctx.user.id,
+          ...input,
+        });
+      }),
+
+    // Listar metas ativas
+    getAtivas: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMetasPRsAtivas(ctx.user.id);
+    }),
+
+    // Listar todas as metas
+    getTodas: protectedProcedure.query(async ({ ctx }) => {
+      return db.getTodasMetasPRs(ctx.user.id);
+    }),
+
+    // Atualizar status da meta
+    atualizarStatus: protectedProcedure
+      .input(z.object({
+        metaId: z.number(),
+        status: z.enum(["ativa", "concluida", "cancelada"]),
+      }))
+      .mutation(async ({ input }) => {
+        return db.atualizarStatusMeta(input.metaId, input.status);
+      }),
+
+    // Deletar meta
+    deletar: protectedProcedure
+      .input(z.object({
+        metaId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.deletarMetaPR(input.metaId, ctx.user.id);
+      }),
+
+    // Obter estatísticas
+    getEstatisticas: protectedProcedure.query(async ({ ctx }) => {
+      return db.getEstatisticasMetasPRs(ctx.user.id);
+    }),
   }),
 
   // ===== CAMPEONATOS =====

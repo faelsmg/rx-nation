@@ -50,6 +50,7 @@ import DashboardCoach from "./pages/DashboardCoach";
 import ComparacaoAtletas from "./pages/ComparacaoAtletas";
 import HistoricoPRs from "./pages/HistoricoPRs";
 import RankingPRs from "./pages/RankingPRs";
+import MetasPRs from "./pages/MetasPRs";
 import Mensagens from "./pages/Mensagens";
 import CalendarioEventos from "./pages/CalendarioEventos";
 import MeuQRCode from "./pages/MeuQRCode";
@@ -101,6 +102,7 @@ function Router() {
       <Route path={"/prs"} component={PRs} />
       <Route path={"/historico-prs"} component={HistoricoPRs} />
       <Route path={"/ranking-prs"} component={RankingPRs} />
+      <Route path={"/metas-prs"} component={MetasPRs} />
       <Route path={"/rankings"} component={Rankings} />
       <Route path={"/ranking-semanal"} component={RankingSemanal} />
       <Route path={"/badges"} component={Badges} />

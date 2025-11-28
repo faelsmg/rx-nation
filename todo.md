@@ -3410,3 +3410,64 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Link no menu lateral
 - [x] Testes de integração criados (2/3 passando)
 - [x] Correção de bug: user_id → userId em queries SQL
+
+## 🎯 Sistema de Metas de PRs - Em Desenvolvimento
+
+### Backend
+- [ ] Criar tabela metas_prs no schema (userId, movimento, cargaAtual, cargaMeta, dataInicio, dataPrazo)
+- [ ] Criar procedures para definir meta de PR
+- [ ] Criar procedures para listar metas ativas do usuário
+- [ ] Criar procedures para atualizar progresso automático ao registrar PR
+- [ ] Criar procedures para deletar/concluir meta
+- [ ] Criar query para calcular % de progresso
+
+### Frontend
+- [ ] Criar página MinhasMetas.tsx com lista de metas ativas
+- [ ] Implementar modal de criação de nova meta
+- [ ] Criar progress bars visuais com % de progresso
+- [ ] Adicionar badges de status (em progresso, concluída, atrasada)
+- [ ] Mostrar dias restantes até prazo
+- [ ] Adicionar rota /metas-prs no App.tsx
+- [ ] Link no menu lateral
+
+## 🔔 Notificações de Recordes - Em Desenvolvimento
+
+### Backend
+- [ ] Criar função para detectar quebra de recorde do box ao salvar PR
+- [ ] Criar trigger de notificação quando recorde é quebrado
+- [ ] Notificar atletas que praticam o mesmo movimento
+- [ ] Adicionar filtro de preferências (opt-in para notificações de recordes)
+
+### Frontend
+- [ ] Mostrar notificações de recordes no NotificationCenter
+- [ ] Adicionar preferência de notificações de recordes
+- [ ] Link direto para ranking do movimento na notificação
+
+### Testes
+- [ ] Criar testes para metas de PRs
+- [ ] Criar testes para notificações de recordes
+
+## ✅ Sistema de Metas e Notificações - CONCLUÍDO
+
+### Sistema de Metas de PRs
+- [x] Criar tabela metas_prs no schema
+- [x] Criar procedures para definir meta de PR
+- [x] Criar procedures para listar metas ativas do usuário
+- [x] Criar procedures para atualizar progresso automático ao registrar PR
+- [x] Criar procedures para deletar/concluir meta
+- [x] Criar query para calcular % de progresso
+- [x] Criar página MinhasMetas.tsx com lista de metas ativas
+- [x] Implementar modal de criação de nova meta
+- [x] Criar progress bars visuais com % de progresso
+- [x] Adicionar badges de status (em progresso, concluída, atrasada)
+- [x] Mostrar dias restantes até prazo
+- [x] Adicionar rota /metas-prs no App.tsx
+- [x] Link no menu lateral
+
+### Notificações de Recordes
+- [x] Criar função para detectar quebra de recorde do box ao salvar PR
+- [x] Criar trigger de notificação quando recorde é quebrado
+- [x] Notificar atletas que praticam o mesmo movimento
+- [x] Notificação especial para atleta que tinha o recorde anterior
+- [x] Post automático no feed quando recorde é quebrado
+- [x] Link direto para ranking do movimento na notificação

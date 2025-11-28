@@ -82,6 +82,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         { icon: Trophy, label: "PRs", path: "/prs" },
         { icon: LineChart, label: "Histórico de PRs", path: "/historico-prs" },
         { icon: BarChart3, label: "Ranking de PRs", path: "/ranking-prs" },
+        { icon: Target, label: "Metas de PRs", path: "/metas-prs" },
         { icon: TrendingUp, label: "Rankings", path: "/rankings" },
         { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
         { icon: Award, label: "Badges", path: "/badges" },
