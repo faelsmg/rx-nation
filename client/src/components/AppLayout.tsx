@@ -80,6 +80,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         { icon: Dumbbell, label: "WOD do Dia", path: "/wod" },
         { icon: History, label: "Histórico", path: "/historico" },
         { icon: Trophy, label: "PRs", path: "/prs" },
+        { icon: LineChart, label: "Histórico de PRs", path: "/historico-prs" },
+        { icon: BarChart3, label: "Ranking de PRs", path: "/ranking-prs" },
         { icon: TrendingUp, label: "Rankings", path: "/rankings" },
         { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
         { icon: Award, label: "Badges", path: "/badges" },

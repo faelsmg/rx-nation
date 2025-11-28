@@ -3364,3 +3364,49 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Substituir SQL raw por Drizzle ORM na função getUserStatsForBadges
 - [x] Query agora usa eq(prs.userId, userId) corretamente
 - [x] Testar compilação TypeScript
+
+## 🎯 Funcionalidades Avançadas de PRs - Em Desenvolvimento
+
+### Página de Histórico de PRs
+- [ ] Backend: Query getHistoricoPRsUsuario com evolução temporal por movimento
+- [ ] Backend: Query getComparacaoComBox (média, melhor do box, posição)
+- [ ] Backend: Procedures tRPC historicoPRs.getEvolucao e historicoPRs.getComparacao
+- [ ] Frontend: Página HistoricoPRs.tsx com filtros de movimento
+- [ ] Frontend: Gráfico Chart.js de evolução ao longo do tempo
+- [ ] Frontend: Cards de comparação com recordes do box
+- [ ] Rota /historico-prs no App.tsx
+
+### Ranking de PRs por Box
+- [ ] Backend: Query getRankingPRsPorMovimento (top 10 + posição usuário)
+- [ ] Backend: Query getMovimentosDisponiveis (lista de movimentos com PRs)
+- [ ] Backend: Procedures tRPC rankingPRs.getByMovimento e rankingPRs.getMovimentos
+- [ ] Frontend: Página RankingPRs.tsx com seletor de movimento
+- [ ] Frontend: Leaderboard visual com troféus para top 3
+- [ ] Frontend: Cards com avatar, nome, carga e data do PR
+- [ ] Frontend: Highlight da posição do usuário logado
+- [ ] Rota /ranking-prs no App.tsx
+- [ ] Link no menu lateral
+
+## ✅ Funcionalidades Avançadas de PRs - CONCLUÍDO
+
+### Página de Histórico de PRs
+- [x] Backend: Query getHistoricoPRsUsuario com evolução temporal por movimento
+- [x] Backend: Query getComparacaoPRsComBox (média, melhor do box, posição)
+- [x] Backend: Procedures tRPC historicoPRs.getEvolucao e historicoPRs.getComparacao
+- [x] Frontend: Página HistoricoPRs.tsx com filtros de movimento
+- [x] Frontend: Gráfico Chart.js de evolução ao longo do tempo
+- [x] Frontend: Cards de comparação com recordes do box
+- [x] Rota /historico-prs no App.tsx
+
+### Ranking de PRs por Box
+- [x] Backend: Query getRankingPRsPorMovimento (top 10 + posição usuário)
+- [x] Backend: Query getMovimentosDisponiveis (lista de movimentos com PRs)
+- [x] Backend: Procedures tRPC rankingPRs.getByMovimento e rankingPRs.getMovimentos
+- [x] Frontend: Página RankingPRs.tsx com seletor de movimento
+- [x] Frontend: Leaderboard visual com troféus para top 3
+- [x] Frontend: Cards com avatar, nome, carga e data do PR
+- [x] Frontend: Highlight da posição do usuário logado
+- [x] Rota /ranking-prs no App.tsx
+- [x] Link no menu lateral
+- [x] Testes de integração criados (2/3 passando)
+- [x] Correção de bug: user_id → userId em queries SQL

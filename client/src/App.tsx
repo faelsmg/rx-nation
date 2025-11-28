@@ -48,6 +48,8 @@ import AnalisePerformance from "./pages/AnalisePerformance";
 import RealtimeNotifications from "./components/RealtimeNotifications";
 import DashboardCoach from "./pages/DashboardCoach";
 import ComparacaoAtletas from "./pages/ComparacaoAtletas";
+import HistoricoPRs from "./pages/HistoricoPRs";
+import RankingPRs from "./pages/RankingPRs";
 import Mensagens from "./pages/Mensagens";
 import CalendarioEventos from "./pages/CalendarioEventos";
 import MeuQRCode from "./pages/MeuQRCode";
@@ -97,6 +99,8 @@ function Router() {
       <Route path={"/wod"} component={WodDoDia} />
       <Route path={"/historico"} component={Historico} />
       <Route path={"/prs"} component={PRs} />
+      <Route path={"/historico-prs"} component={HistoricoPRs} />
+      <Route path={"/ranking-prs"} component={RankingPRs} />
       <Route path={"/rankings"} component={Rankings} />
       <Route path={"/ranking-semanal"} component={RankingSemanal} />
       <Route path={"/badges"} component={Badges} />

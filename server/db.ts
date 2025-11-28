@@ -3217,7 +3217,7 @@ export async function atualizarProgressoConquista(
         const prsResult = await db.execute(sql`
           SELECT COUNT(*) as total
           FROM prs
-          WHERE user_id = ${userId}
+          WHERE userId = ${userId}
             AND YEARWEEK(data, 1) = YEARWEEK(CURDATE(), 1)
         `);
         progressoAtual = ((prsResult as any)[0]?.[0]?.total || 0);
@@ -3227,7 +3227,7 @@ export async function atualizarProgressoConquista(
         const checkinsResult = await db.execute(sql`
           SELECT COUNT(DISTINCT DATE(data)) as total
           FROM checkins
-          WHERE user_id = ${userId}
+          WHERE userId = ${userId}
             AND YEARWEEK(data, 1) = YEARWEEK(CURDATE(), 1)
         `);
         progressoAtual = ((checkinsResult as any)[0]?.[0]?.total || 0);
@@ -15051,4 +15051,265 @@ export async function testarConexaoSMTP(config: {
       error: error.code || "UNKNOWN_ERROR",
     };
   }
+}
+
+
+/**
+ * ========================================
+ * FUNCIONALIDADES AVANÇADAS DE PRs
+ * ========================================
+ */
+
+/**
+ * Obter histórico completo de PRs do usuário com evolução temporal por movimento
+ */
+export async function getHistoricoPRsUsuario(userId: number, movimento?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  let query = db
+    .select({
+      id: prs.id,
+      movimento: prs.movimento,
+      carga: prs.carga,
+      data: prs.data,
+      observacoes: prs.observacoes,
+      videoUrl: prs.videoUrl,
+    })
+    .from(prs)
+    .where(eq(prs.userId, userId))
+    .orderBy(desc(prs.data));
+
+  if (movimento) {
+    query = db
+      .select({
+        id: prs.id,
+        movimento: prs.movimento,
+        carga: prs.carga,
+        data: prs.data,
+        observacoes: prs.observacoes,
+        videoUrl: prs.videoUrl,
+      })
+      .from(prs)
+      .where(and(eq(prs.userId, userId), eq(prs.movimento, movimento)))
+      .orderBy(desc(prs.data));
+  }
+
+  const resultados = await query;
+
+  // Agrupar por movimento para facilitar visualização
+  const porMovimento: Record<string, typeof resultados> = {};
+  
+  for (const pr of resultados) {
+    if (!porMovimento[pr.movimento]) {
+      porMovimento[pr.movimento] = [];
+    }
+    porMovimento[pr.movimento].push(pr);
+  }
+
+  return {
+    todos: resultados,
+    porMovimento,
+  };
+}
+
+/**
+ * Comparar PRs do usuário com médias do box
+ */
+export async function getComparacaoPRsComBox(userId: number, boxId: number, movimento?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar PRs do usuário
+  const meusPRsQuery = db
+    .select({
+      movimento: prs.movimento,
+      carga: sql<number>`MAX(${prs.carga})`.as('carga_maxima'),
+    })
+    .from(prs)
+    .where(eq(prs.userId, userId))
+    .groupBy(prs.movimento);
+
+  const meusPRs = await meusPRsQuery;
+
+  if (meusPRs.length === 0) {
+    return [];
+  }
+
+  // Para cada movimento, buscar média e melhor do box
+  const comparacoes = [];
+
+  for (const meuPR of meusPRs) {
+    if (movimento && meuPR.movimento !== movimento) continue;
+
+    // Subquery para pegar max_carga por usuário
+    const subquery = db
+      .select({
+        user_id: prs.userId,
+        max_carga: sql<number>`MAX(${prs.carga})`.as('max_carga'),
+      })
+      .from(prs)
+      .innerJoin(users, eq(prs.userId, users.id))
+      .where(and(eq(users.boxId, boxId), eq(prs.movimento, meuPR.movimento)))
+      .groupBy(prs.userId)
+      .as('subquery');
+
+    // Média do box para este movimento
+    const mediaBoxResult = await db
+      .select({
+        media: sql<number>`AVG(${subquery.max_carga})`.as('media'),
+        melhor: sql<number>`MAX(${subquery.max_carga})`.as('melhor'),
+        total_atletas: sql<number>`COUNT(DISTINCT ${subquery.user_id})`.as('total_atletas'),
+      })
+      .from(subquery);
+
+    const mediaBox = mediaBoxResult[0];
+
+    // Posição no ranking do box
+    const rankingBox = await db
+      .select({
+        user_id: prs.userId,
+        max_carga: sql<number>`MAX(${prs.carga})`.as('max_carga'),
+      })
+      .from(prs)
+      .innerJoin(users, eq(prs.userId, users.id))
+      .where(and(eq(users.boxId, boxId), eq(prs.movimento, meuPR.movimento)))
+      .groupBy(prs.userId)
+      .orderBy(desc(sql`max_carga`));
+
+    const posicao = rankingBox.findIndex(r => r.user_id === userId) + 1;
+
+    comparacoes.push({
+      movimento: meuPR.movimento,
+      meuPR: meuPR.carga,
+      mediaBox: mediaBox?.media ? Math.round(Number(mediaBox.media)) : 0,
+      melhorBox: mediaBox?.melhor ? Number(mediaBox.melhor) : 0,
+      totalAtletas: mediaBox?.total_atletas ? Number(mediaBox.total_atletas) : 0,
+      posicao,
+      percentualDiferenca: mediaBox?.media 
+        ? Math.round(((meuPR.carga - Number(mediaBox.media)) / Number(mediaBox.media)) * 100)
+        : 0,
+    });
+  }
+
+  return movimento ? comparacoes[0] : comparacoes;
+}
+
+/**
+ * Obter ranking de PRs por movimento no box (top 10 + posição do usuário)
+ */
+export async function getRankingPRsPorMovimento(
+  boxId: number, 
+  movimento: string,
+  userId?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar melhor PR de cada atleta para o movimento
+  const ranking = await db
+    .select({
+      userId: users.id,
+      userName: users.name,
+      userEmail: users.email,
+      avatarUrl: users.avatarUrl,
+      categoria: users.categoria,
+      carga: sql<number>`MAX(${prs.carga})`.as('carga'),
+      data: sql<Date>`MAX(${prs.data})`.as('data'),
+    })
+    .from(prs)
+    .innerJoin(users, eq(prs.userId, users.id))
+    .where(and(
+      eq(users.boxId, boxId),
+      eq(prs.movimento, movimento)
+    ))
+    .groupBy(users.id, users.name, users.email, users.avatarUrl, users.categoria)
+    .orderBy(desc(sql`carga`))
+    .limit(10);
+
+  // Se userId fornecido, buscar posição do usuário
+  let posicaoUsuario = null;
+  if (userId) {
+    const todosRanking = await db
+      .select({
+        userId: users.id,
+        carga: sql<number>`MAX(${prs.carga})`.as('carga'),
+      })
+      .from(prs)
+      .innerJoin(users, eq(prs.userId, users.id))
+      .where(and(
+        eq(users.boxId, boxId),
+        eq(prs.movimento, movimento)
+      ))
+      .groupBy(users.id)
+      .orderBy(desc(sql`carga`));
+
+    const posicao = todosRanking.findIndex(r => r.userId === userId) + 1;
+    
+    if (posicao > 0) {
+      const meuPR = todosRanking.find(r => r.userId === userId);
+      const meusDados = await db
+        .select({
+          userName: users.name,
+          userEmail: users.email,
+          avatarUrl: users.avatarUrl,
+          categoria: users.categoria,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (meuPR && meusDados[0]) {
+        posicaoUsuario = {
+          posicao,
+          userId,
+          ...meusDados[0],
+          carga: Number(meuPR.carga),
+        };
+      }
+    }
+  }
+
+  return {
+    top10: ranking.map((r, idx) => ({
+      posicao: idx + 1,
+      userId: r.userId,
+      userName: r.userName,
+      userEmail: r.userEmail,
+      avatarUrl: r.avatarUrl,
+      categoria: r.categoria,
+      carga: Number(r.carga),
+      data: r.data,
+    })),
+    posicaoUsuario,
+    totalAtletas: ranking.length,
+  };
+}
+
+/**
+ * Obter lista de movimentos disponíveis no box (que têm PRs registrados)
+ */
+export async function getMovimentosDisponiveis(boxId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const movimentos = await db
+    .select({
+      movimento: prs.movimento,
+      totalRegistros: sql<number>`COUNT(*)`.as('total_registros'),
+      totalAtletas: sql<number>`COUNT(DISTINCT ${prs.userId})`.as('total_atletas'),
+      melhorCarga: sql<number>`MAX(${prs.carga})`.as('melhor_carga'),
+    })
+    .from(prs)
+    .innerJoin(users, eq(prs.userId, users.id))
+    .where(eq(users.boxId, boxId))
+    .groupBy(prs.movimento)
+    .orderBy(desc(sql`total_registros`));
+
+  return movimentos.map(m => ({
+    movimento: m.movimento,
+    totalRegistros: Number(m.totalRegistros),
+    totalAtletas: Number(m.totalAtletas),
+    melhorCarga: Number(m.melhorCarga),
+  }));
 }

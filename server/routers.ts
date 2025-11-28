@@ -712,6 +712,55 @@ export const appRouter = router({
       }),
   }),
 
+  // ===== HISTÓRICO E RANKING DE PRs =====
+  historicoPRs: router({
+    // Obter histórico completo de PRs do usuário
+    getEvolucao: protectedProcedure
+      .input(z.object({
+        movimento: z.string().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getHistoricoPRsUsuario(ctx.user.id, input?.movimento);
+      }),
+
+    // Comparar PRs do usuário com médias do box
+    getComparacao: protectedProcedure
+      .input(z.object({
+        movimento: z.string().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.boxId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Usuário não está vinculado a um box",
+          });
+        }
+        return db.getComparacaoPRsComBox(ctx.user.id, ctx.user.boxId, input?.movimento);
+      }),
+  }),
+
+  rankingPRs: router({
+    // Obter ranking de PRs por movimento no box
+    getByMovimento: publicProcedure
+      .input(z.object({
+        boxId: z.number(),
+        movimento: z.string(),
+        userId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.getRankingPRsPorMovimento(input.boxId, input.movimento, input.userId);
+      }),
+
+    // Obter lista de movimentos disponíveis no box
+    getMovimentos: publicProcedure
+      .input(z.object({
+        boxId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getMovimentosDisponiveis(input.boxId);
+      }),
+  }),
+
   // ===== CAMPEONATOS =====
   campeonatos: router({
     // Listar campeonatos com filtros
