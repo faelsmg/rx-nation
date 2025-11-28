@@ -7146,21 +7146,35 @@ export async function getUserStatsForBadges(userId: number) {
   const db = await getDb();
   if (!db) return { totalWods: 0, totalPRs: 0, totalCheckins: 0, totalCurtidas: 0 };
 
-  const result = await db.execute(sql`
-    SELECT
-      (SELECT COUNT(*) FROM resultados_treinos WHERE userId = ${userId}) as totalWods,
-      (SELECT COUNT(*) FROM prs WHERE userId = ${userId}) as totalPRs,
-      (SELECT COUNT(*) FROM checkins WHERE userId = ${userId}) as totalCheckins,
-      (SELECT COUNT(*) FROM comentarios_feed WHERE userId = ${userId}) as totalCurtidas
-  `);
+  // Contar WODs
+  const wodsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(resultadosTreinos)
+    .where(eq(resultadosTreinos.userId, userId));
 
-  const row = (result as any[])[0];
+  // Contar PRs
+  const prsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prs)
+    .where(eq(prs.userId, userId));
+
+  // Contar Check-ins
+  const checkinsResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(checkins)
+    .where(eq(checkins.userId, userId));
+
+  // Contar Curtidas (comentários no feed)
+  const curtidasResult = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(comentariosFeed)
+    .where(eq(comentariosFeed.userId, userId));
   
   return {
-    totalWods: Number(row?.totalWods || 0),
-    totalPRs: Number(row?.totalPRs || 0),
-    totalCheckins: Number(row?.totalCheckins || 0),
-    totalCurtidas: Number(row?.totalCurtidas || 0),
+    totalWods: Number(wodsResult[0]?.count || 0),
+    totalPRs: Number(prsResult[0]?.count || 0),
+    totalCheckins: Number(checkinsResult[0]?.count || 0),
+    totalCurtidas: Number(curtidasResult[0]?.count || 0),
   };
 }
 

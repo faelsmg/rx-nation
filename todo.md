@@ -3350,3 +3350,17 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Criar 5 templates de mensagens (lembreteWOD, comunicadoBox, novoRecordePessoal, lembreteCheckIn, conviteCampeonato)
 - [x] Implementar validação e formatação de número WhatsApp
 - [x] Aplicar migration dos campos whatsapp
+
+## 🐛 Bug Crítico - Salvamento de PR
+
+- [ ] Corrigir erro de query SQL ao salvar PR
+- [ ] Query falhando: SELECT COUNT(*) as total FROM prs WHERE user_id = ? AND YEARWEEK(data, 1) = YEARWEEK(CURDATE(), 1)
+- [ ] Investigar função que conta PRs da semana
+- [ ] Testar salvamento de PR após correção
+
+## ✅ Bug Crítico Corrigido - Salvamento de PR
+
+- [x] Corrigir erro de query SQL ao salvar PR
+- [x] Substituir SQL raw por Drizzle ORM na função getUserStatsForBadges
+- [x] Query agora usa eq(prs.userId, userId) corretamente
+- [x] Testar compilação TypeScript
