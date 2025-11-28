@@ -19,6 +19,7 @@ import CalendarioSemanal from "@/components/CalendarioSemanal";
 import { Avatar } from "@/components/Avatar";
 import { StreakBadgesProgress } from "@/components/StreakBadgesProgress";
 import { FeedAtividades } from "@/components/FeedAtividades";
+import MetasWidget from "@/components/MetasWidget";
 import { useLevelUpDetection } from "@/hooks/useLevelUpDetection";
 import { ShareBoxButton } from "@/components/ShareBoxButton";
 import { useState, useEffect } from "react";
@@ -107,6 +108,9 @@ export default function Dashboard() {
             
             {/* Desafios Personalizados com IA */}
             <DesafiosPersonalizadosIA />
+            
+            {/* Widget de Metas de PRs */}
+            <MetasWidget />
           </>
         )}
 

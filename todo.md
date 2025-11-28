@@ -3471,3 +3471,30 @@ NOTA: Notificações push web requerem Service Worker, HTTPS, permissões do nav
 - [x] Notificação especial para atleta que tinha o recorde anterior
 - [x] Post automático no feed quando recorde é quebrado
 - [x] Link direto para ranking do movimento na notificação
+
+## 📊 Dashboard de Metas - Em Desenvolvimento
+
+### Widget de Metas no Dashboard
+- [ ] Criar componente MetasWidget.tsx
+- [ ] Mini progress bars para cada meta ativa
+- [ ] Alertas visuais para metas próximas do prazo (< 7 dias)
+- [ ] Indicador de metas em risco (prazo expirado)
+- [ ] Estatísticas resumidas (total ativas, % média de progresso)
+- [ ] Link rápido para página completa de metas
+- [ ] Integrar widget no Dashboard.tsx
+- [ ] Testar responsividade e performance
+
+## ✅ Dashboard de Metas - CONCLUÍDO
+
+- [x] Criar componente MetasWidget.tsx
+- [x] Mini progress bars para cada meta ativa
+- [x] Alertas visuais para metas próximas do prazo (< 7 dias)
+- [x] Indicador de metas em risco (prazo expirado)
+- [x] Indicador de metas atingidas com celebração
+- [x] Estatísticas resumidas (total ativas, progresso médio, concluídas)
+- [x] Link rápido para página completa de metas
+- [x] Integrar widget no Dashboard.tsx
+- [x] Empty state quando não há metas
+- [x] Limite de 3 metas exibidas com botão "Ver Todas"
+- [x] Badges de urgência com animação pulse para metas críticas
+- [x] Cores dinâmicas nas progress bars
