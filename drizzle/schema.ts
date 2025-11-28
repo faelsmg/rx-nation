@@ -7,11 +7,14 @@ import { relations } from "drizzle-orm";
  */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  resetToken: varchar("resetToken", { length: 255 }),
+  resetTokenExpiry: timestamp("resetTokenExpiry"),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["atleta", "box_master", "franqueado", "admin_liga"]).default("atleta").notNull(),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  primeiroLogin: boolean("primeiroLogin").default(false),
   boxId: int("boxId"), // Box vinculado
   categoria: mysqlEnum("categoria", ["iniciante", "intermediario", "avancado", "elite"]),
   faixaEtaria: varchar("faixaEtaria", { length: 20 }), // ex: "18-29", "30-39", "40+"
@@ -39,6 +42,8 @@ export const boxes = mysqlTable("boxes", {
   tipo: mysqlEnum("tipo", ["proprio", "parceiro"]).default("proprio").notNull(), // próprio (Impacto) ou parceiro/franqueado
   franqueadoId: int("franqueadoId"), // ID do usuário franqueado responsável
   endereco: text("endereco"),
+  telefone: varchar("telefone", { length: 20 }),
+  email: varchar("email", { length: 255 }),
   cidade: varchar("cidade", { length: 100 }),
   estado: varchar("estado", { length: 2 }),
   ativo: boolean("ativo").default(true).notNull(),

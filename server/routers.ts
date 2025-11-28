@@ -4,6 +4,9 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { createUser } from "./db-auth";
+import crypto from "crypto";
+import { sendBoxWelcomeEmail } from "./_core/email";
 import { 
   getNotificacoesByUser, 
   getNotificacoesNaoLidas, 
@@ -121,9 +124,58 @@ export const appRouter = router({
         endereco: z.string().optional(),
         cidade: z.string().optional(),
         estado: z.string().optional(),
+        telefone: z.string().optional(),
+        email: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return db.createBox(input);
+        // Criar box
+        const box = await db.createBox(input);
+        
+        // Se tem email, criar usuário Box Master automaticamente
+        if (input.email && box) {
+          try {
+            const boxId = (box as any)[0]?.insertId;
+            console.log('[Box Create] Box ID:', boxId);
+            
+            if (!boxId) {
+              console.error('[Box Create] Box ID não encontrado no resultado');
+              return box;
+            }
+            
+            // Gerar senha temporária
+            const senhaTemp = `${input.nome.replace(/\s+/g, '')}@${new Date().getFullYear()}`;
+            console.log('[Box Create] Senha temporária gerada:', senhaTemp);
+            
+            // Hash da senha
+            const passwordHash = crypto.createHash('sha256').update(senhaTemp).digest('hex');
+            
+            // Criar usuário
+            console.log('[Box Create] Criando usuário para:', input.email);
+            const userId = await createUser({
+              email: input.email,
+              passwordHash,
+              name: `Administrador ${input.nome}`,
+              role: 'box_master',
+              boxId: boxId,
+              primeiroLogin: true,
+            });
+            console.log('[Box Create] Usuário criado com ID:', userId);
+            
+            // Enviar email de boas-vindas
+            console.log('[Box Create] Enviando email de boas-vindas');
+            await sendBoxWelcomeEmail({
+              to: input.email,
+              boxName: input.nome,
+              tempPassword: senhaTemp,
+            });
+            console.log('[Box Create] Email enviado com sucesso');
+          } catch (error) {
+            console.error('[Box Create] Erro ao criar usuário:', error);
+            // Não lançar erro para não impedir criação do box
+          }
+        }
+        
+        return box;
       }),
 
     getByType: publicProcedure

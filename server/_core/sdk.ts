@@ -257,47 +257,82 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
+    // Tentar obter token do cookie ou header Authorization
     const cookies = this.parseCookies(req.headers.cookie);
-    const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
-
-    if (!session) {
-      throw ForbiddenError("Invalid session cookie");
-    }
-
-    const sessionUserId = session.openId;
-    const signedInAt = new Date();
-    let user = await db.getUserByOpenId(sessionUserId);
-
-    // If user not in DB, sync from OAuth server automatically
-    if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+    let sessionToken = cookies.get(COOKIE_NAME);
+    
+    // Fallback: tentar header Authorization para compatibilidade com localStorage
+    if (!sessionToken && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        sessionToken = authHeader.substring(7);
       }
     }
 
-    if (!user) {
-      throw ForbiddenError("User not found");
+    if (!sessionToken) {
+      throw ForbiddenError("Missing session token");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    // Verificar token JWT (novo sistema)
+    try {
+      const secretKey = this.getSessionSecret();
+      const { payload } = await jwtVerify(sessionToken, secretKey, {
+        algorithms: ["HS256"],
+      });
+      
+      const { userId, email } = payload as Record<string, unknown>;
+      
+      if (!userId || typeof userId !== 'number') {
+        throw new Error("Invalid token payload");
+      }
+      
+      const user = await db.getUserById(userId as number);
+      if (!user) {
+        throw ForbiddenError("User not found");
+      }
+      
+      return user;
+    } catch (jwtError) {
+      // Se falhar JWT novo, tentar sistema antigo OAuth (para compatibilidade)
+      const session = await this.verifySession(sessionToken);
+      
+      if (!session) {
+        throw ForbiddenError("Invalid session token");
+      }
+      
+      const sessionUserId = session.openId;
+      const signedInAt = new Date();
+      let user = await db.getUserByOpenId(sessionUserId);
 
-    return user;
+      // If user not in DB, sync from OAuth server automatically
+      if (!user) {
+        try {
+          const userInfo = await this.getUserInfoWithJwt(sessionToken ?? "");
+          await db.upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(userInfo.openId);
+        } catch (error) {
+          console.error("[Auth] Failed to sync user from OAuth:", error);
+          throw ForbiddenError("Failed to sync user info");
+        }
+      }
+
+      if (!user) {
+        throw ForbiddenError("User not found");
+      }
+
+      await db.upsertUser({
+        openId: user.openId,
+        lastSignedIn: signedInAt,
+      });
+
+      return user;
+    }
   }
 }
 

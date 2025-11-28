@@ -88,11 +88,21 @@ import Configuracoes from "./pages/Configuracoes";
 import RelatoriosGlobais from "./pages/RelatoriosGlobais";
 import AnalyticsOnboarding from "./pages/AnalyticsOnboarding";
 import ConfiguracaoSMTP from "./pages/ConfiguracaoSMTP";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import AlterarSenha from "./pages/AlterarSenha";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/alterar-senha" component={AlterarSenha} />
       <Route path="/join/:slug" component={JoinBox} />
       <Route path="/setup-box/:slug" component={SetupBoxMaster} />
       <Route path="/welcome" component={Welcome} />

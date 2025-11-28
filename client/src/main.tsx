@@ -44,9 +44,20 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
+        // Adicionar token do localStorage se existir (fallback para quando cookie não funciona)
+        const token = localStorage.getItem("app_session_id");
+        const headers = {
+          ...(init?.headers || {}),
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         return globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
+          headers,
         });
       },
     }),

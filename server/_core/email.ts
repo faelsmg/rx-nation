@@ -455,3 +455,226 @@ RX Nation - Impacto Pro League
     return { success: false };
   }
 }
+
+
+/**
+ * Envia email de recuperação de senha
+ */
+export async function sendPasswordResetEmail(data: {
+  userEmail: string;
+  userName: string;
+  resetUrl: string;
+  baseUrl: string;
+}): Promise<{ success: boolean; messageId?: string }> {
+  try {
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperação de Senha - RX Nation</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0a0a0a; color: #ffffff;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background-color: #1a1a1a; border-radius: 12px; overflow: hidden;">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="margin: 0; font-size: 32px; font-weight: 700; color: #ffffff;">
+                🔐 RX NATION
+              </h1>
+              <p style="margin: 10px 0 0; font-size: 14px; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 2px;">
+                Recuperação de Senha
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Conteúdo -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px; font-size: 24px; font-weight: 600; color: #ffffff;">
+                Olá, ${data.userName}!
+              </h2>
+              
+              <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #a3a3a3;">
+                Recebemos uma solicitação para redefinir a senha da sua conta na <strong style="color: #3b82f6;">RX Nation</strong>.
+              </p>
+              
+              <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #a3a3a3;">
+                Clique no botão abaixo para criar uma nova senha:
+              </p>
+              
+              <!-- Botão CTA -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
+                      Redefinir Senha
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Alerta de segurança -->
+              <div style="background-color: #262626; border-left: 4px solid #ef4444; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                <p style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #ef4444;">
+                  ⚠️ Importante:
+                </p>
+                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #a3a3a3;">
+                  Este link expira em <strong style="color: #ffffff;">1 hora</strong>. Se você não solicitou esta recuperação, ignore este email e sua senha permanecerá inalterada.
+                </p>
+              </div>
+              
+              <!-- Link alternativo -->
+              <p style="margin: 0 0 10px; font-size: 14px; color: #737373;">
+                Se o botão não funcionar, copie e cole este link no seu navegador:
+              </p>
+              <p style="margin: 0 0 30px; font-size: 12px; color: #525252; word-break: break-all; background-color: #262626; padding: 12px; border-radius: 6px;">
+                ${data.resetUrl}
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0a0a0a; padding: 30px; text-align: center; border-top: 1px solid #262626;">
+              <p style="margin: 0 0 10px; font-size: 14px; color: #737373;">
+                RX Nation - Impacto Pro League
+              </p>
+              <p style="margin: 0; font-size: 12px; color: #525252;">
+                Este é um email automático, por favor não responda.
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"RX Nation" <noreply@rxnation.com>',
+      to: data.userEmail,
+      subject: '🔐 Recuperação de Senha - RX Nation',
+      html: htmlContent,
+      text: `Olá, ${data.userName}!\n\nRecebemos uma solicitação para redefinir a senha da sua conta na RX Nation.\n\nClique no link abaixo para criar uma nova senha:\n${data.resetUrl}\n\nEste link expira em 1 hora.\n\nSe você não solicitou esta recuperação, ignore este email.\n\nRX Nation - Impacto Pro League`,
+    });
+
+    console.log('[Email] Email de recuperação enviado:', info.messageId);
+    
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+  } catch (error) {
+    console.error('[Email] Erro ao enviar email de recuperação:', error);
+    return {
+      success: false,
+    };
+  }
+}
+
+
+/**
+ * Envia email de boas-vindas para novo Box Master
+ */
+export async function sendBoxWelcomeEmail(params: {
+  to: string;
+  boxName: string;
+  tempPassword: string;
+}) {
+  const { to, boxName, tempPassword } = params;
+  
+  const subject = `🎉 Bem-vindo ao RX Nation - ${boxName}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .credentials { background: white; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎉 Bem-vindo ao RX Nation!</h1>
+          <p>Seu box foi criado com sucesso</p>
+        </div>
+        
+        <div class="content">
+          <h2>Olá, Administrador do ${boxName}!</h2>
+          
+          <p>Seu box <strong>${boxName}</strong> foi cadastrado com sucesso na plataforma RX Nation!</p>
+          
+          <p>Criamos automaticamente uma conta de administrador para você gerenciar seu box:</p>
+          
+          <div class="credentials">
+            <h3>📧 Suas Credenciais de Acesso:</h3>
+            <p><strong>Email:</strong> ${to}</p>
+            <p><strong>Senha Temporária:</strong> <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 3px; font-size: 16px;">${tempPassword}</code></p>
+          </div>
+          
+          <div class="warning">
+            <strong>⚠️ Importante:</strong> Por segurança, você será solicitado a alterar esta senha no seu primeiro login.
+          </div>
+          
+          <p style="text-align: center;">
+            <a href="${process.env.BASE_URL || 'http://localhost:3001'}/login" class="button">
+              Fazer Login Agora
+            </a>
+          </p>
+          
+          <h3>🚀 Próximos Passos:</h3>
+          <ol>
+            <li>Faça login com suas credenciais</li>
+            <li>Altere sua senha para uma mais segura</li>
+            <li>Complete as informações do seu box</li>
+            <li>Comece a cadastrar seus atletas</li>
+            <li>Publique seus WODs</li>
+          </ol>
+          
+          <p>Se você tiver qualquer dúvida, nossa equipe está à disposição para ajudar!</p>
+          
+          <p>Bem-vindo à família RX Nation! 💪</p>
+        </div>
+        
+        <div class="footer">
+          <p>Este é um email automático. Por favor, não responda.</p>
+          <p>&copy; ${new Date().getFullYear()} RX Nation - Todos os direitos reservados</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const info = await transporter.sendMail({
+    from: process.env.SMTP_FROM || '"RX Nation" <noreply@rxnation.com>',
+    to,
+    subject,
+    html,
+    text: `Bem-vindo ao RX Nation!\n\nSeu box ${boxName} foi criado com sucesso!\n\nEmail: ${to}\nSenha Temporária: ${tempPassword}\n\nAltere sua senha no primeiro login.`,
+  });
+
+  console.log('[Email] Email de boas-vindas do box enviado:', info.messageId);
+  
+  return {
+    success: true,
+    messageId: info.messageId,
+  };
+}

@@ -108,6 +108,8 @@ export default function GestaoBoxesLiga() {
         nome: boxName,
         tipo: "parceiro",
         endereco: boxEndereco || undefined,
+        telefone: boxTelefone || undefined,
+        email: boxEmail || undefined,
       });
       utils.boxes.getAll.invalidate();
       utils.boxes.getMetrics.invalidate();
