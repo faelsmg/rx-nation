@@ -14,4 +14,4 @@ CREATE TABLE `progresso_desafios` (
 	CONSTRAINT `progresso_desafios_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-ALTER TABLE `feed_atividades` CHANGE COLUMN `tipo` `tipo` enum('wod_completo','pr_quebrado','badge_desbloqueado','nivel_subiu','desafio_completo') NOT NULL;
+ALTER TABLE `feed_atividades` MODIFY COLUMN `tipo` enum('wod_completo','pr_quebrado','badge_desbloqueado','nivel_subiu','desafio_completo') NOT NULL;

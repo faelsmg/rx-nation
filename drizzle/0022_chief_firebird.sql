@@ -1,0 +1,2 @@
+ALTER TABLE `inscricoes_campeonatos` MODIFY COLUMN `statusPagamento` enum('pendente','pago','reembolsado') NOT NULL DEFAULT 'pendente';--> statement-breakpoint
+ALTER TABLE `inscricoes_campeonatos` ADD `status` enum('pendente','aprovada','rejeitada') DEFAULT 'pendente' NOT NULL;

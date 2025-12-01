@@ -12,9 +12,8 @@ CREATE TABLE `desafios_semanais` (
     `icone` varchar(10) NOT NULL DEFAULT '🎯',
     `semanaAno` varchar(10) NOT NULL,
 
-    -- aqui a correção importante:
     `dataInicio` timestamp NOT NULL DEFAULT (now()),
-    `dataFim` timestamp NULL DEFAULT NULL,
+    `dataFim` timestamp NOT NULL DEFAULT (now()),
 
     `ativo` boolean NOT NULL DEFAULT true,
     `createdAt` timestamp NOT NULL DEFAULT (now()),

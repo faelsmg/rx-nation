@@ -1,0 +1,1 @@
+ALTER TABLE `notificacoes` MODIFY COLUMN `tipo` enum('wod','comunicado','aula','badge','geral','conquista','campeonato','nivel','desafio','assinatura_vence_7dias','assinatura_vence_3dias','assinatura_vencida','mentoria') NOT NULL;

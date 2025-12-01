@@ -1,0 +1,2 @@
+ALTER TABLE `desafios_semanais` MODIFY COLUMN `dataInicio` timestamp NOT NULL DEFAULT (now());--> statement-breakpoint
+ALTER TABLE `desafios_semanais` MODIFY COLUMN `dataFim` timestamp NOT NULL DEFAULT (now());

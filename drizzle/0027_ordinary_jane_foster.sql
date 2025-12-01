@@ -1,4 +1,3 @@
--- Cria a tabela somente se ela não existir
 CREATE TABLE IF NOT EXISTS `agendamentos_mentoria` (
     `id` int AUTO_INCREMENT NOT NULL,
     `mentoriaId` int NOT NULL,
@@ -35,4 +34,3 @@ CREATE TABLE `mentorias` (
 
   CONSTRAINT `mentorias_id` PRIMARY KEY(`id`)
 );
-

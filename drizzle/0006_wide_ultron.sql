@@ -7,7 +7,7 @@ CREATE TABLE `metas` (
 	`valorAlvo` int NOT NULL,
 	`valorAtual` int NOT NULL DEFAULT 0,
 	`dataInicio` timestamp NOT NULL DEFAULT (now()),
-	`dataFim` timestamp NOT NULL,
+	`dataFim` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`concluida` boolean NOT NULL DEFAULT false,
 	`createdAt` timestamp NOT NULL DEFAULT (now()),
 	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,

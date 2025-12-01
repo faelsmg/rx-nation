@@ -148,8 +148,8 @@ export const campeonatos = mysqlTable("campeonatos", {
   tipo: mysqlEnum("tipo", ["interno", "cidade", "regional", "estadual", "nacional"]).default("interno").notNull(),
   boxId: int("boxId"), // Box organizador (null = liga organiza)
   local: text("local"),
-  dataInicio: timestamp("dataInicio").notNull(),
-  dataFim: timestamp("dataFim").notNull(),
+  dataInicio: timestamp("dataInicio").defaultNow().notNull(),
+  dataFim: timestamp("dataFim").defaultNow().notNull(),
   dataAberturaInscricoes: timestamp("dataAberturaInscricoes"),
   dataFechamentoInscricoes: timestamp("dataFechamentoInscricoes"),
   capacidade: int("capacidade"),
@@ -653,7 +653,7 @@ export const metas = mysqlTable("metas", {
   valorAtual: int("valorAtual").default(0).notNull(), // Progresso atual
   unidade: varchar("unidade", { length: 50 }), // kg, reps, dias, pontos, etc
   dataInicio: timestamp("dataInicio").defaultNow().notNull(),
-  dataFim: timestamp("dataFim").notNull(), // Prazo da meta
+  dataFim: timestamp("dataFim").defaultNow().notNull(), // Prazo da meta
   status: mysqlEnum("status", ["ativa", "completada", "cancelada", "expirada"]).default("ativa").notNull(),
   concluida: boolean("concluida").default(false).notNull(),
   completadaEm: timestamp("completadaEm"),
@@ -906,8 +906,8 @@ export const desafiosSemanais = mysqlTable("desafios_semanais", {
   pontosRecompensa: int("pontosRecompensa").default(50).notNull(),
   icone: varchar("icone", { length: 10 }).default("🎯").notNull(),
   semanaAno: varchar("semanaAno", { length: 10 }).notNull(), // formato: "2025-W01"
-  dataInicio: timestamp("dataInicio").notNull(),
-  dataFim: timestamp("dataFim").notNull(),
+  dataInicio: timestamp("dataInicio").defaultNow().notNull(),
+  dataFim: timestamp("dataFim").defaultNow().notNull(),
   ativo: boolean("ativo").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
