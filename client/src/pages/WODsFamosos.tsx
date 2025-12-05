@@ -2,10 +2,14 @@ import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Clock, Zap, Target, Video, Plus } from "lucide-react";
-import { useState } from "react";
+import { Trophy, Clock, Zap, Target, Video, Plus, Edit2, Save, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 // Galeria curada de WODs clássicos do CrossFit
 const WODS_FAMOSOS = {
@@ -133,6 +137,22 @@ export default function WODsFamosos() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<Categoria>("heroes");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedWod, setSelectedWod] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingWod, setEditingWod] = useState<any>(null);
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [customVideoUrls, setCustomVideoUrls] = useState<Record<number, string>>({});
+
+  // Carregar vídeos customizados do localStorage ao montar o componente
+  useEffect(() => {
+    const saved = localStorage.getItem('wods_custom_videos');
+    if (saved) {
+      try {
+        setCustomVideoUrls(JSON.parse(saved));
+      } catch (e) {
+        console.error('Erro ao carregar vídeos customizados:', e);
+      }
+    }
+  }, []);
 
   const handleAddToPlaylist = (wod: any) => {
     setSelectedWod({
@@ -144,6 +164,32 @@ export default function WODsFamosos() {
       categoria: wod.categoria,
     });
     setDialogOpen(true);
+  };
+
+  const handleEditVideo = (wod: any) => {
+    setEditingWod(wod);
+    setNewVideoUrl(customVideoUrls[wod.id] || wod.videoUrl);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveVideoUrl = () => {
+    if (!editingWod || !newVideoUrl.trim()) {
+      toast.error('Por favor, insira uma URL válida');
+      return;
+    }
+
+    const updated = { ...customVideoUrls, [editingWod.id]: newVideoUrl };
+    setCustomVideoUrls(updated);
+    localStorage.setItem('wods_custom_videos', JSON.stringify(updated));
+    
+    toast.success(`Link do vídeo de "${editingWod.nome}" atualizado!`);
+    setEditDialogOpen(false);
+    setEditingWod(null);
+    setNewVideoUrl("");
+  };
+
+  const getWodVideoUrl = (wod: any) => {
+    return customVideoUrls[wod.id] || wod.videoUrl;
   };
 
   const getDifficultyColor = (dificuldade: string) => {
@@ -240,14 +286,25 @@ export default function WODsFamosos() {
 
                         {/* Video */}
                         <div className="space-y-2">
-                          <h3 className="font-semibold flex items-center gap-2">
-                            <Video className="w-5 h-5 text-primary" />
-                            Vídeo Demonstrativo
-                          </h3>
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold flex items-center gap-2">
+                              <Video className="w-5 h-5 text-primary" />
+                              Vídeo Demonstrativo
+                            </h3>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditVideo(wod)}
+                              className="text-muted-foreground hover:text-primary"
+                            >
+                              <Edit2 className="w-4 h-4 mr-1" />
+                              Editar Link
+                            </Button>
+                          </div>
                           <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                             <iframe
                               className="absolute top-0 left-0 w-full h-full rounded-lg"
-                              src={`https://www.youtube.com/embed/${getVideoId(wod.videoUrl)}`}
+                              src={`https://www.youtube.com/embed/${getVideoId(getWodVideoUrl(wod))}`}
                               title={`${wod.nome} - Demonstração`}
                               frameBorder="0"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -271,6 +328,47 @@ export default function WODsFamosos() {
             videoData={selectedWod}
           />
         )}
+
+        {/* Dialog de Edição de Link do Vídeo */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Link do Vídeo</DialogTitle>
+              <DialogDescription>
+                Atualize o link do YouTube para o WOD "{editingWod?.nome}"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="video-url">URL do YouTube</Label>
+                <Input
+                  id="video-url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={newVideoUrl}
+                  onChange={(e) => setNewVideoUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSaveVideoUrl();
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cole o link completo do vídeo do YouTube
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                <X className="w-4 h-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveVideoUrl}>
+                <Save className="w-4 h-4 mr-2" />
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
