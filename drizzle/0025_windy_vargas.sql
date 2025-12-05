@@ -1,6 +1,20 @@
--- Tabela desafios_semanais já foi criada na migração 0019_medical_carnage
--- Esta migração adiciona apenas a tabela progresso_desafios e modifica feed_atividades
-
+CREATE TABLE `desafios_semanais` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`boxId` int,
+	`tipo` enum('checkins','wods','prs','streak','custom') NOT NULL,
+	`titulo` varchar(255) NOT NULL,
+	`descricao` text NOT NULL,
+	`meta` int NOT NULL,
+	`pontosRecompensa` int NOT NULL DEFAULT 50,
+	`icone` varchar(10) NOT NULL DEFAULT '🎯',
+	`semanaAno` varchar(10) NOT NULL,
+	`dataInicio` timestamp NOT NULL,
+	`dataFim` timestamp NOT NULL,
+	`ativo` boolean NOT NULL DEFAULT true,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `desafios_semanais_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `progresso_desafios` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,

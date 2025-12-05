@@ -421,13 +421,6 @@
       "when": 1764601107230,
       "tag": "0059_dear_roulette",
       "breakpoints": true
-    },
-    {
-      "idx": 60,
-      "version": "5",
-      "when": 1764625342738,
-      "tag": "0060_overrated_mockingbird",
-      "breakpoints": true
     }
   ]
 }
