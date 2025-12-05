@@ -6,15 +6,18 @@ import { getSessionCookieOptions } from "./cookies";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "./email";
 import * as jose from "jose";
 import { nanoid } from "nanoid";
+import bcrypt from "bcryptjs"; // ✅ ADICIONADO: Importar bcrypt
 
-// Função para hash de senha usando Web Crypto API (compatível com Node.js)
+// ✅ CORRIGIDO: Função para hash de senha usando bcrypt
 async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+  return hash;
+}
+
+// ✅ ADICIONADO: Função para comparar senha com hash
+async function comparePassword(password: string, hash: string): Promise<boolean> {
+  return await bcrypt.compare(password, hash);
 }
 
 // Função para validar senha
@@ -71,7 +74,7 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      // Hash da senha
+      // ✅ CORRIGIDO: Hash da senha com bcrypt
       const passwordHash = await hashPassword(password);
 
       // Buscar box se slug foi fornecido
@@ -163,9 +166,9 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      // Verificar senha
-      const passwordHash = await hashPassword(password);
-      if (passwordHash !== user.passwordHash) {
+      // ✅ CORRIGIDO: Verificar senha usando bcrypt.compare
+      const isPasswordValid = await comparePassword(password, user.passwordHash);
+      if (!isPasswordValid) {
         res.status(401).json({ error: "Email ou senha incorretos" });
         return;
       }
@@ -282,7 +285,7 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      // Hash da nova senha
+      // ✅ CORRIGIDO: Hash da nova senha com bcrypt
       const passwordHash = await hashPassword(newPassword);
 
       // Atualizar senha e limpar token
@@ -328,7 +331,7 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      // Hash da nova senha
+      // ✅ CORRIGIDO: Hash da nova senha com bcrypt
       const passwordHash = await hashPassword(newPassword);
 
       // Atualizar senha e marcar que não é mais primeiro login
