@@ -15650,7 +15650,7 @@ export async function getTotalBoxesAtivos(): Promise<number> {
   const result = await db
     .select({ count: count() })
     .from(boxes)
-    .where(eq(boxes.ativo, true));
+    .where(eq(boxes.ativo, 1));
   
   return result[0]?.count || 0;
 }
