@@ -99,11 +99,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       return [
         { icon: Home, label: "Dashboard", path: "/dashboard" },
         { icon: Building2, label: "Gestão do Box", path: "/gestao-box" },
-        { icon: Users, label: "Alunos", path: "/alunos" },
-        { icon: Dumbbell, label: "WODs", path: "/wods" },
-        { icon: MessageCircle, label: "Comunicados", path: "/comunicados" },
+        { icon: Users, label: "Alunos", path: "/gestao-alunos" },
+        { icon: Dumbbell, label: "WODs", path: "/wods-famosos" },
+        // { icon: MessageCircle, label: "Comunicados", path: "/comunicados" }, // TODO: Criar página de comunicados
         { icon: Calendar, label: "Agenda", path: "/agenda" },
-        { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
+        { icon: BarChart3, label: "Relatórios", path: "/dashboard-financeiro" },
         { icon: ScanLine, label: "Scanner Check-in", path: "/scanner-qrcode" },
       ];
     }
