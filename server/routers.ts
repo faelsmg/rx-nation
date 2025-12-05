@@ -5301,6 +5301,14 @@ export const appRouter = router({
           taxaRetencao,
         };
       }),
+    getTotais: protectedProcedure
+      .query(async ({ ctx }) => {
+        // Apenas admin_liga pode acessar
+        if (ctx.user.role !== 'admin_liga') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores da liga podem acessar relatórios' });
+        }
+        return db.getTotaisRelatorios();
+      }),
   }),
 
   // ==================== CONFIGURAÇÕES DA LIGA ====================

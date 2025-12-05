@@ -41,6 +41,7 @@ export default function RelatoriosGlobais() {
   const { user } = useAuth();
   const [periodo, setPeriodo] = useState(30);
   const { data, isLoading } = trpc.relatorios.getDadosGraficos.useQuery({ periodo });
+  const { data: totais } = trpc.relatorios.getTotais.useQuery();
 
   // Configurações de cores para os gráficos
   const cores = {
@@ -199,7 +200,7 @@ export default function RelatoriosGlobais() {
               <Users className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2,543</div>
+              <div className="text-2xl font-bold">{totais?.totalAtletas?.toLocaleString('pt-BR') || 0}</div>
               <p className="text-xs text-muted-foreground">
                 +12% em relação ao mês passado
               </p>
@@ -212,7 +213,7 @@ export default function RelatoriosGlobais() {
               <Building2 className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">45</div>
+              <div className="text-2xl font-bold">{totais?.totalBoxesAtivos || 0}</div>
               <p className="text-xs text-muted-foreground">
                 +3 novos boxes este mês
               </p>
@@ -240,7 +241,7 @@ export default function RelatoriosGlobais() {
               <Trophy className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
+              <div className="text-2xl font-bold">{totais?.totalCampeonatosAtivos || 0}</div>
               <p className="text-xs text-muted-foreground">
                 3 finalizando esta semana
               </p>

@@ -15628,3 +15628,68 @@ export async function verificarENotificarRecordeQuebrado(
     // Não lançar erro para não bloquear a criação do PR
   }
 }
+
+// ==================== FUNÇÕES PARA TOTAIS DOS RELATÓRIOS ====================
+
+/**
+ * Busca o total de atletas cadastrados na plataforma
+ */
+export async function getTotalAtletas(): Promise<number> {
+  const result = await db
+    .select({ count: count() })
+    .from(users)
+    .where(eq(users.role, 'atleta'));
+  
+  return result[0]?.count || 0;
+}
+
+/**
+ * Busca o total de boxes ativos
+ */
+export async function getTotalBoxesAtivos(): Promise<number> {
+  const result = await db
+    .select({ count: count() })
+    .from(boxes)
+    .where(eq(boxes.ativo, true));
+  
+  return result[0]?.count || 0;
+}
+
+/**
+ * Busca o total de campeonatos ativos
+ */
+export async function getTotalCampeonatosAtivos(): Promise<number> {
+  const now = new Date();
+  const result = await db
+    .select({ count: count() })
+    .from(campeonatos)
+    .where(
+      and(
+        lte(campeonatos.dataInicio, now),
+        gte(campeonatos.dataFim, now)
+      )
+    );
+  
+  return result[0]?.count || 0;
+}
+
+/**
+ * Busca todos os totais para o dashboard de relatórios
+ */
+export async function getTotaisRelatorios(): Promise<{
+  totalAtletas: number;
+  totalBoxesAtivos: number;
+  totalCampeonatosAtivos: number;
+}> {
+  const [totalAtletas, totalBoxesAtivos, totalCampeonatosAtivos] = await Promise.all([
+    getTotalAtletas(),
+    getTotalBoxesAtivos(),
+    getTotalCampeonatosAtivos(),
+  ]);
+
+  return {
+    totalAtletas,
+    totalBoxesAtivos,
+    totalCampeonatosAtivos,
+  };
+}
